@@ -1,0 +1,20 @@
+---
+import { getCollection } from 'astro:content'
+
+export async function getStaticPaths() {
+  const pages = await getCollection('pages')
+  const slugs = pages.map((page) => {
+    let slug = page.data.slug.split('/').pop()
+    if (slug === undefined) return
+    return { params: { slug } }
+  }).filter((route) => !!route)
+
+  return slugs
+}
+
+const { slug } = Astro.params
+---
+
+<main>
+  ayyy loquita {slug}
+</main>

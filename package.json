@@ -1,5 +1,5 @@
 {
-  "name": "",
+  "name": "sensatempo",
   "type": "module",
   "version": "0.0.1",
   "scripts": {
@@ -9,10 +9,14 @@
     "astro": "astro"
   },
   "dependencies": {
-    "@astrojs/mdx": "^4.3.0",
     "@astrojs/rss": "^4.0.12",
     "@astrojs/sitemap": "^3.4.1",
+    "@storyblok/astro": "^7.1.2",
+    "@storyblok/js": "^4.1.2",
+    "@tailwindcss/vite": "^4.1.11",
     "astro": "^5.11.0",
-    "sharp": "^0.34.2"
+    "sharp": "^0.34.2",
+    "tailwindcss": "^4.1.11",
+    "vite": "^7.0.3"
   }
 }
