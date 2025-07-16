@@ -1,0 +1,13 @@
+---
+import { AVAILABLE_LANGUAGES } from '~/consts'
+
+export async function getStaticPaths() {
+  return AVAILABLE_LANGUAGES.map((lang) => ({ params: { lang } }))
+}
+
+const { lang } = Astro.params
+---
+
+<main>
+  main thang: {lang}
+</main>

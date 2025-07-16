@@ -26,5 +26,10 @@ export default defineConfig({
   vite: {
     // @ts-ignore
     plugins: [tailwindcss()],
+    resolve: {
+      alias: {
+        '~': new URL('./src', import.meta.url).pathname
+      }
+    }
   },
 });
