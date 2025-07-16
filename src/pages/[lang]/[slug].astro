@@ -1,15 +1,22 @@
 ---
 import { getCollection } from 'astro:content'
+import { AVAILABLE_LANGUAGES } from '~/consts';
 
 export async function getStaticPaths() {
-  const pages = await getCollection('pages')
-  const slugs = pages.map((page) => {
-    let slug = page.data.slug.split('/').pop()
-    if (slug === undefined) return
-    return { params: { slug } }
-  }).filter((route) => !!route)
+  const allPages = await getCollection('pages')
+  const paths = []
 
-  return slugs
+  for (let i = 0; i < AVAILABLE_LANGUAGES.length; i++) {
+    const lang = AVAILABLE_LANGUAGES[i]
+    const pagesInLanguage = allPages.filter((page) => page.data.lang === lang)
+    const pathsInLanguages = pagesInLanguage
+      .filter((page) => page.data.slug !== 'home')
+      .map((page) => ({ params: { lang, slug: page.data.slug } }))
+    
+    paths.push(...pathsInLanguages)
+  }
+
+  return paths
 }
 
 const { slug } = Astro.params
