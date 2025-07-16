@@ -1,5 +1,6 @@
 import type { LoaderContext, Loader } from 'astro/loaders'
 import { apiPlugin, storyblokInit } from '@storyblok/js'
+import { AVAILABLE_LANGUAGES, DEFAULT_LANGUAGE } from '~/consts';
 import { z } from 'astro:content'
 import { loadEnv } from 'vite';
 
@@ -26,39 +27,46 @@ export function pagesLoader(): Loader {
           throw new Error('Unable to init StoryBlok api')
         }
 
-        logger.info('Loading collection - pages')
-        logger.info(`Collection last modified ${meta.get('lastModified')}`)
-
-        const data = await storyblokApi.getAll('cdn/stories', {
-          version: isDev ? 'draft' : 'published',
-          content_type: 'page',
-          per_page: 100,
-        })
-
         if (isDev) store.clear()
-        for (let i = 0; i < data.length; i++) {
-          const story = data[i]
-          const result = await parseData({
-            id: story.uuid,
-            data: {
-              lang: story.lang,
-              slug: story.full_slug,
-              createdAt: new Date(story.created_at),
-              updatedAt: !!story.updated_at ? new Date(story.updated_at) : undefined,
-              content: story.content,
-            }
+        for (let i = 0; i < AVAILABLE_LANGUAGES.length; i++) {
+          const lang = AVAILABLE_LANGUAGES[i] === DEFAULT_LANGUAGE ? undefined : AVAILABLE_LANGUAGES[i];
+
+          logger.info(`Loading collection - ${lang} pages`)
+          logger.info(`Collection last modified ${meta.get('lastModified')}`)
+  
+          const data = await storyblokApi.getAll('cdn/stories', {
+            version: isDev ? 'draft' : 'published',
+            content_type: 'page',
+            per_page: 100,
+            language: lang,
           })
-
-          store.set({
-            id: story.uuid,
-            data: result,
-            digest: generateDigest(result)
-          }) 
+  
+          for (let i = 0; i < data.length; i++) {
+            const story = data[i]
+            const id = `${story.uuid}-${lang}`
+            const result = await parseData({
+              id,
+              data: {
+                lang: story.lang === 'default' ? DEFAULT_LANGUAGE : story.lang,
+                slug: story.slug,
+                createdAt: new Date(story.created_at),
+                updatedAt: !!story.updated_at ? new Date(story.updated_at) : undefined,
+                content: story.content,
+              }
+            })
+  
+            store.set({
+              id,
+              data: result,
+              digest: generateDigest(result)
+            }) 
+          }
+  
+          meta.set('lastModified', new Date().toISOString())
         }
-
-        meta.set('lastModified', new Date().toISOString())
       } catch (error) {
-        logger.error(`Unable to fetch pages -> ${error}`)
+        logger.error(JSON.stringify(error, null, 2))
+        logger.error("Unable to fetch pages")
       }
     },
     schema: async () => z.object({
