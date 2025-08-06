@@ -12,24 +12,24 @@ export default defineConfig({
   site: 'https://sensatempo.com',
 
   integrations: [
-      sitemap(),
-      storyblok({
-          accessToken: env.STORYBLOK_ACCESS_TOKEN,
-          components: {
-            page: 'storyblok/Page',
-            teaser: 'storyblok/Teaser'
-          },
-          apiOptions: {}
-      })
-	],
+    sitemap(),
+    storyblok({
+      accessToken: env.STORYBLOK_ACCESS_TOKEN,
+      components: {
+        page: 'storyblok/Page',
+        teaser: 'storyblok/Teaser',
+      },
+      apiOptions: {},
+    }),
+  ],
 
   vite: {
     // @ts-ignore
     plugins: [tailwindcss()],
     resolve: {
       alias: {
-        '~': new URL('./src', import.meta.url).pathname
-      }
-    }
+        '~': new URL('./src', import.meta.url).pathname,
+      },
+    },
   },
 });

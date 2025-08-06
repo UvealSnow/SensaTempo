@@ -1,10 +1,10 @@
-import { defineCollection } from 'astro:content'
-import { pagesLoader } from './loaders/pages'
+import { defineCollection } from 'astro:content';
+import { pagesLoader } from './loaders/pages';
 
 const pages = defineCollection({
-  loader: pagesLoader()
-})
+  loader: pagesLoader(),
+});
 
 export const collections = {
-  pages
-}
+  pages,
+};

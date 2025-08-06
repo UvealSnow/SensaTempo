@@ -1,21 +1,23 @@
 ---
-import { getCollection } from 'astro:content'
-import Layout from '~/layouts/Layout.astro'
+import { getCollection } from 'astro:content';
+import Layout from '~/layouts/Layout.astro';
 
-import { AVAILABLE_LANGUAGES } from '~/consts'
+import { AVAILABLE_LANGUAGES } from '~/consts';
 
 export async function getStaticPaths() {
-  return AVAILABLE_LANGUAGES.map((lang) => ({ params: { lang } }))
+  return AVAILABLE_LANGUAGES.map((lang) => ({ params: { lang } }));
 }
 
-const { lang } = Astro.params
+const { lang } = Astro.params;
 
-const allPages = await getCollection('pages')
-const page = allPages.find((page) => page.data.lang === lang && page.data.slug === 'home')!
+const allPages = await getCollection('pages');
+const page = allPages.find(
+  (page) => page.data.lang === lang && page.data.slug === 'home'
+)!;
 ---
 
 <Layout>
   main thang: {lang}
-  <br>
+  <br />
   {JSON.stringify(page, null, 2)}
 </Layout>
