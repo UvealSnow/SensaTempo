@@ -1,0 +1,36 @@
+---
+import Header from '~/components/Header.astro'
+import Footer from '~/components/Footer.astro'
+
+import './src/styles/global.css'
+---
+
+<html lang="es">
+  	<head>
+		<meta charset="UTF-8">
+    	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    	<link rel="icon" type="image/x-icon" href="/favicon.svg">
+  	</head>
+ 
+	<body class="bg-off-white min-h-screen flex flex-col">
+    	<Header />
+
+		<main class="py-36 px-4 flex-1">
+			<slot />
+		</main>
+
+    	<Footer />
+  	</body>
+
+	<script>
+		document.addEventListener('DOMContentLoaded', () => {
+			const actionButton = document.querySelector('.navbar .action')!;
+			const icons = actionButton.querySelectorAll('svg');
+
+			actionButton.addEventListener('click', () => {
+				icons.forEach(icon => icon.classList.toggle('hidden'));
+				document.querySelector('.nav-links')?.classList.toggle('hidden');
+			});
+		});
+  	</script>
+</html>

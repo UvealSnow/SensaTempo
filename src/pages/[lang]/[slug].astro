@@ -1,0 +1,27 @@
+---
+import { getCollection } from 'astro:content'
+import { AVAILABLE_LANGUAGES } from '~/consts';
+
+export async function getStaticPaths() {
+  const allPages = await getCollection('pages')
+  const paths = []
+
+  for (let i = 0; i < AVAILABLE_LANGUAGES.length; i++) {
+    const lang = AVAILABLE_LANGUAGES[i]
+    const pagesInLanguage = allPages.filter((page) => page.data.lang === lang)
+    const pathsInLanguages = pagesInLanguage
+      .filter((page) => page.data.slug !== 'home')
+      .map((page) => ({ params: { lang, slug: page.data.slug } }))
+    
+    paths.push(...pathsInLanguages)
+  }
+
+  return paths
+}
+
+const { slug } = Astro.params
+---
+
+<main>
+  ayyy loquita {slug}
+</main>
