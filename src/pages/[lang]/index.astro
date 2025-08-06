@@ -1,5 +1,7 @@
 ---
 import { getCollection } from 'astro:content'
+import Layout from '~/layouts/Layout.astro'
+
 import { AVAILABLE_LANGUAGES } from '~/consts'
 
 export async function getStaticPaths() {
@@ -12,8 +14,8 @@ const allPages = await getCollection('pages')
 const page = allPages.find((page) => page.data.lang === lang && page.data.slug === 'home')!
 ---
 
-<main>
+<Layout>
   main thang: {lang}
   <br>
   {JSON.stringify(page, null, 2)}
-</main>
+</Layout>

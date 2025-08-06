@@ -1,14 +1,32 @@
 ---
+import Header from '~/components/Header.astro'
+
 import './src/styles/global.css'
 ---
 
 <html lang="es">
   <head>
-    <!-- Something here -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
   </head>
-  <body>
-    <main>
+  <body class="bg-off-white">
+    <Header />
+
+    <main class="py-36 px-4">
       <slot />
     </main>
+
   </body>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const actionButton = document.querySelector('.navbar .action')!;
+      const icons = actionButton.querySelectorAll('svg');
+
+      actionButton.addEventListener('click', () => {
+        icons.forEach(icon => icon.classList.toggle('hidden'));
+        document.querySelector('.nav-links')?.classList.toggle('hidden');
+      });
+    });
+  </script>
 </html>

@@ -1,1 +1,18 @@
 @import "tailwindcss";
+
+@font-face {
+    font-family: Molle;
+    src: url('/fonts/Molle-Italic.ttf') format('truetype');
+}
+
+@font-face {
+    font-family: Zain;
+    src: url('/fonts/Zain-Light.ttf') format('truetype');
+}
+
+@theme {
+    --font-display: Molle, cursive;
+    --font-body: Zain, sans-serif;
+    --color-off-white: #F8F8F8;
+}
+
