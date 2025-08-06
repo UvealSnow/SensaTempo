@@ -50,7 +50,7 @@ export function pagesLoader(): Loader {
                 lang: story.lang === 'default' ? DEFAULT_LANGUAGE : story.lang,
                 slug: story.slug,
                 createdAt: new Date(story.created_at),
-                updatedAt: !!story.updated_at ? new Date(story.updated_at) : undefined,
+                updatedAt: story.updated_at ? new Date(story.updated_at) : undefined,
                 content: story.content,
               }
             })
