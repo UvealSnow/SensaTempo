@@ -13,34 +13,35 @@ const links = [
 ];
 ---
 
-<header>
-	<nav class="navbar">
+<header class="header">
+	<div class="navbar">
 		<div class="logo"></div>
-		
+
 		<button class="action">
 			<Menu class="block" />
 			<Close class="hidden" />
 		</button>
-	</nav>
+	</div>
 
-	<div class="nav-links font-body bg-off-white hidden">
-		<ul class="flex flex-col h-full md:flex-row justify-center items-center gap-10">
-			{links.map(link => (
-				<li>
-					<a href={link.href} class="text-gray-700 hover:text-gray-900">
-						{link.label}
-					</a>
-				</li>
-			))}
-		</ul>
+	<div class="nav-links font-body bg-off-white flex hidden">
+		{links.map(link => (
+			<a href={link.href} class="text-gray-700 hover:text-gray-900">
+				{link.label}
+			</a>
+		))}
 	</div>
 </header>
 
 <style lang="scss">
 @reference "tailwindcss";
 
+.header {
+	@apply px-4 py-6 md:p-8;
+}
+
 .navbar {
-	@apply px-4 py-6 flex flex-row justify-between w-full fixed top-0 z-50;
+	@apply flex flex-row justify-between w-full relative top-0 z-50
+		md:block md:relative;
 
 	.logo {
 		background-color: bisque;
@@ -49,11 +50,12 @@ const links = [
 	}
 
 	.action {
-		@apply cursor-pointer;
+		@apply cursor-pointer md:hidden;
 	}
 }
 
 .nav-links {
-	@apply text-4xl h-screen w-screen top-0 left-0 absolute;
+	@apply text-4xl h-screen w-screen top-0 left-0 absolute flex-col gap-8 items-center justify-center
+		md:flex md:flex-row md:text-2xl md:pt-8 md:gap-4 md:justify-between md:top-auto md:left-auto md:h-auto md:w-full md:relative;
 }
 </style>
