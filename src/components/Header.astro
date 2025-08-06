@@ -36,12 +36,14 @@ const links = [
 @reference "tailwindcss";
 
 .header {
-	@apply px-4 py-6 md:p-8;
+	@apply px-4 py-6 md:p-8 
+		lg:flex lg:flex-row lg:justify-between;
 }
 
 .navbar {
 	@apply flex flex-row justify-between w-full relative top-0 z-50
-		md:block md:relative;
+		md:block md:relative
+		lg:w-auto;
 
 	.logo {
 		background-color: bisque;
@@ -56,6 +58,11 @@ const links = [
 
 .nav-links {
 	@apply text-4xl h-screen w-screen top-0 left-0 absolute flex-col gap-8 items-center justify-center
-		md:flex md:flex-row md:text-2xl md:pt-8 md:gap-4 md:justify-between md:top-auto md:left-auto md:h-auto md:w-full md:relative;
+		md:flex md:flex-row md:text-2xl md:pt-8 md:gap-4 md:justify-between md:top-auto md:left-auto md:h-auto md:w-full md:relative
+		lg:justify-end lg:gap-8 lg:pt-0;
+
+	a {
+		@apply md:w-24 md:text-center;
+	}
 }
 </style>
