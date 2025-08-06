@@ -15,14 +15,14 @@
     "editor.codeActionsOnSave": {
         "source.fixAll.eslint": "explicit"
     },
-    // Format on save (but let ESLint handle the formatting for supported files)
+    // Format on save - will use Prettier when extension is installed
     "editor.formatOnSave": true,
     // Astro-specific settings
     "[astro]": {
         "editor.defaultFormatter": "astro-build.astro-vscode",
         "editor.formatOnSave": true
     },
-    // TypeScript settings
+    // TypeScript settings - will use Prettier when extension is installed
     "[typescript]": {
         "editor.defaultFormatter": "dbaeumer.vscode-eslint"
     },

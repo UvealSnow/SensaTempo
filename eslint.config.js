@@ -3,11 +3,12 @@ import tseslint from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
 import astro from 'eslint-plugin-astro';
 import globals from 'globals';
+import prettierConfig from 'eslint-config-prettier';
 
 export default [
   // Base JavaScript recommended rules
   js.configs.recommended,
-  
+
   // TypeScript files configuration
   {
     files: ['**/*.{js,mjs,cjs,ts,tsx}'],
@@ -27,9 +28,12 @@ export default [
     },
     rules: {
       // TypeScript recommended rules
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_' },
+      ],
       '@typescript-eslint/no-explicit-any': 'warn',
-      
+
       // General JavaScript/TypeScript rules
       'no-console': 'warn',
       'no-debugger': 'error',
@@ -41,7 +45,7 @@ export default [
       'no-extra-boolean-cast': 'error',
     },
   },
-  
+
   // Astro files configuration
   ...astro.configs.recommended,
   {
@@ -57,7 +61,7 @@ export default [
       'astro/no-unused-define-vars-in-style': 'error',
     },
   },
-  
+
   // Global ignores
   {
     ignores: [
@@ -69,4 +73,7 @@ export default [
       'pnpm-lock.yaml',
     ],
   },
+
+  // Prettier config (must be last to override conflicting rules)
+  prettierConfig,
 ];

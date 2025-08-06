@@ -1,68 +1,70 @@
 ---
 // import { SITE_TITLE } from '../consts';
-import Menu from '~/assets/icons/menu.svg'
-import Close from '~/assets/icons/close.svg'
+import Menu from '~/assets/icons/menu.svg';
+import Close from '~/assets/icons/close.svg';
 
 const links = [
-	{ href: '/', label: 'Inicio' },
-	{ href: '/proyectos', label: 'Proyectos' },
-	{ href: '/sobre-mi', label: 'Sobre mí' },
-	{ href: '/blog', label: 'Blog' },
-	{ href: '/tienda', label: 'Tienda' },
-	{ href: '/contact', label: 'Contacto' }
+  { href: '/', label: 'Inicio' },
+  { href: '/proyectos', label: 'Proyectos' },
+  { href: '/sobre-mi', label: 'Sobre mí' },
+  { href: '/blog', label: 'Blog' },
+  { href: '/tienda', label: 'Tienda' },
+  { href: '/contact', label: 'Contacto' },
 ];
 ---
 
 <header class="header">
-	<div class="navbar">
-		<div class="logo"></div>
+  <div class="navbar">
+    <div class="logo"></div>
 
-		<button class="action">
-			<Menu class="block" />
-			<Close class="hidden" />
-		</button>
-	</div>
+    <button class="action">
+      <Menu class="block" />
+      <Close class="hidden" />
+    </button>
+  </div>
 
-	<div class="nav-links font-body bg-off-white flex hidden">
-		{links.map(link => (
-			<a href={link.href} class="text-gray-700 hover:text-gray-900">
-				{link.label}
-			</a>
-		))}
-	</div>
+  <div class="nav-links font-body bg-off-white flex hidden">
+    {
+      links.map((link) => (
+        <a href={link.href} class="text-gray-700 hover:text-gray-900">
+          {link.label}
+        </a>
+      ))
+    }
+  </div>
 </header>
 
 <style lang="scss">
-@reference "tailwindcss";
+  @reference "tailwindcss";
 
-.header {
-	@apply px-4 py-6 md:p-8 
+  .header {
+    @apply px-4 py-6 md:p-8 
 		lg:flex lg:flex-row lg:justify-between;
-}
+  }
 
-.navbar {
-	@apply flex flex-row justify-between w-full relative z-50
+  .navbar {
+    @apply flex flex-row justify-between w-full relative z-50
 		md:block md:relative
 		lg:w-auto;
 
-	.logo {
-		background-color: bisque;
-		height: 62px;
-		width: 180px;
-	}
+    .logo {
+      background-color: bisque;
+      height: 62px;
+      width: 180px;
+    }
 
-	.action {
-		@apply cursor-pointer md:hidden;
-	}
-}
+    .action {
+      @apply cursor-pointer md:hidden;
+    }
+  }
 
-.nav-links {
-	@apply text-4xl h-screen w-screen top-0 left-0 absolute flex-col gap-8 items-center justify-center
+  .nav-links {
+    @apply text-4xl h-screen w-screen top-0 left-0 absolute flex-col gap-8 items-center justify-center
 		md:flex md:flex-row md:text-2xl md:pt-8 md:gap-4 md:justify-between md:top-auto md:left-auto md:h-auto md:w-full md:relative
 		lg:justify-end lg:gap-8 lg:pt-0;
 
-	a {
-		@apply md:w-24 md:text-center;
-	}
-}
+    a {
+      @apply md:w-24 md:text-center;
+    }
+  }
 </style>
