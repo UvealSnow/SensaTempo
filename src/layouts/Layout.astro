@@ -1,6 +1,6 @@
 ---
-import Header from '~/components/Header.astro';
-import Footer from '~/components/Footer.astro';
+import Header from '~/components/layout/Header.astro';
+import Footer from '~/components/layout/Footer.astro';
 
 import './src/styles/global.css';
 ---
@@ -12,10 +12,10 @@ import './src/styles/global.css';
     <link rel="icon" type="image/x-icon" href="/favicon.svg" />
   </head>
 
-  <body class="bg-off-white min-h-screen flex flex-col">
+  <body class="bg-off-white min-h-screen flex flex-col container mx-auto">
     <Header />
 
-    <main class="py-36 px-4 flex-1">
+    <main class="pb-8 px-4 flex-1 gap-4">
       <slot />
     </main>
 
