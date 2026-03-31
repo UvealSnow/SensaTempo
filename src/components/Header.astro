@@ -1,0 +1,96 @@
+---
+import {
+  getColSpans,
+  getColStarts,
+  getVerticalAlignment,
+  type FlexSize,
+  type FlexStart,
+  type VerticalAlign,
+} from '~/utils/grid';
+
+interface Props {
+  src: string;
+  size?: FlexSize;
+  start?: FlexStart;
+  vertical?: VerticalAlign;
+  position?: string;
+  height?: string;
+  loading?: 'lazy' | 'eager';
+  class?: string;
+}
+
+const {
+  src,
+  size,
+  start,
+  vertical,
+  position = 'center center',
+  height = '640px',
+  loading = 'lazy',
+  class: className,
+} = Astro.props;
+
+const sizeClass =
+  getColSpans(size ?? { sm: '12/12' }, 'col-span-12') +
+  getColStarts(start ?? {}) +
+  ` ${getVerticalAlignment(vertical)}`;
+---
+
+<section
+  data-sensaheader
+  class={`sensaheader relative overflow-hidden ${sizeClass} ${className ?? ''}`.trim()}
+  style={`--header-height: ${height};`}
+>
+  <div
+    class="sensaheader__bg"
+    style={`background-image: url('${src}'); background-position: ${position};`}
+  ></div>
+
+  <img
+    src={src}
+    alt=""
+    aria-hidden="true"
+    loading={loading}
+    decoding="async"
+    class="sensaheader__preload"
+    onload="this.closest('[data-sensaheader]')?.querySelector('.sensaheader__bg')?.classList.add('is-loaded')"
+  />
+
+  <div class="relative z-10">
+    <slot />
+  </div>
+
+  <style>
+    .sensaheader {
+      min-height: var(--header-height);
+    }
+
+    .sensaheader__bg {
+      position: absolute;
+      inset: 0;
+      background-size: cover;
+      background-repeat: no-repeat;
+      filter: blur(18px);
+      transform: scale(1.03);
+      opacity: 0.65;
+      transition:
+        filter 500ms ease,
+        transform 500ms ease,
+        opacity 500ms ease;
+    }
+
+    .sensaheader__bg.is-loaded {
+      filter: blur(0);
+      transform: scale(1);
+      opacity: 1;
+    }
+
+    .sensaheader__preload {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      pointer-events: none;
+    }
+  </style>
+</section>

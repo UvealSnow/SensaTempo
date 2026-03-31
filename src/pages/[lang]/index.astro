@@ -16,14 +16,11 @@ const allPages = await getCollection('pages');
 const page = allPages.find(
   (page) => page.data.lang === lang && page.data.slug === 'home'
 )!;
+
+console.log(page);
 ---
 
 <Layout>
-  main thang: {lang}
-  <br />
-  {JSON.stringify(page, null, 2)}
-  <br />
-
   <div class="grid grid-cols-12 gap-4">
     <Picture
       src="https://placehold.co/600x400"
