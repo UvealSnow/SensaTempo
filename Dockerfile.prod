@@ -10,14 +10,10 @@ RUN pnpm install --frozen-lockfile
 COPY . .
 RUN pnpm build
 
-# SPA-style hosting on S3/CloudFront usually needs fallback-to-index behavior
-# for deep links. A common pattern is using 404.html as index fallback.
-RUN cp dist/index.html dist/404.html
-
-FROM nginx:1.27-alpine AS preview
+FROM nginxinc/nginx-unprivileged:1.27-alpine AS prod
 
 COPY --from=build /app/dist /usr/share/nginx/html
 
-EXPOSE 80
+EXPOSE 8080
 
 CMD ["nginx", "-g", "daemon off;"]

@@ -10,15 +10,20 @@
     "lint": "eslint . --ext .js,.ts,.astro",
     "lint:fix": "eslint . --ext .js,.ts,.astro --fix",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "docker:preview:build": "docker build -f ./docker/Dockerfile --target live-preview -t sensatempo-preview:latest .",
+    "docker:preview:run": "docker run --rm -p 8080:8080 sensatempo-preview:latest",
+    "docker:prod:build": "docker build -f ./docker/Dockerfile --target build-prod -t sensatempo-prod:latest .",
+    "docker:prod:build:preview": "docker build -f ./docker/Dockerfile --target prod-preview -t sensatempo-prod-preview:latest ."
   },
   "dependencies": {
+    "@astrojs/node": "^10.0.4",
     "@astrojs/rss": "^4.0.18",
     "@astrojs/sitemap": "^3.7.2",
     "@storyblok/astro": "^7.3.9",
     "@storyblok/js": "^4.4.5",
     "@tailwindcss/vite": "^4.2.2",
-    "astro": "^5.18.1",
+    "astro": "^6.1.2",
     "sharp": "^0.34.5",
     "tailwindcss": "^4.2.2",
     "vite": "^7.3.1"
