@@ -7,6 +7,8 @@ on:
   # the CMS sent a webhook telling us the content has been updated.
   # repository_dispatch:
   #   types: [content_updated]
+  # Allows to manually trigger this for any branch from the "Actions" tab
+  workflow_dispatch:
 
 jobs:
   deploy-static-prod:
