@@ -27,7 +27,7 @@ define docker_build
 		--secret id=DOTENV,src=.env \
 		--build-arg PUBLIC_DEFAULT_LANGUAGE=$(PUBLIC_DEFAULT_LANGUAGE) \
 		--build-arg PUBLIC_AVAILABLE_LANGUAGES=$(PUBLIC_AVAILABLE_LANGUAGES) \
-		-t $(2):latest .
+		-t $(if $(2),$(2),$(IMAGE_NAME)):latest .
 endef
 
 .PHONY: build-prod build-preview run-preview run-prod-preview clean
@@ -35,7 +35,7 @@ endef
 # Build the Production Static Site (with secret mount)
 build-prod:
 	$(call draw_header,${GREEN},Building Production Static HTML files...)
-	$(call docker_build,build-prod,${IMAGE_NAME})
+	$(call docker_build,build-prod)
 
 
 # Build the SSR Preview Container
@@ -53,7 +53,7 @@ run-preview:
 # Run the local Nginx preview of the production build
 run-prod-preview:
 	$(call draw_header,${GREEN},Building Production Static Preview...)
-	$(call docker_build,prod-preview,${IMAGE_NAME})
+	$(call docker_build,prod-preview)
 	$(call draw_header,${GREEN},Starting local Node SSG preview on http://localhost:8080)
 	docker run --rm -p 8080:8080 $(IMAGE_NAME):latest
 
