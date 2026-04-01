@@ -1,0 +1,46 @@
+---
+import Menu from '~/assets/icons/menu.svg';
+import Close from '~/assets/icons/close.svg';
+
+const links = [
+  { href: '/', label: 'Inicio' },
+  { href: '/proyectos', label: 'Proyectos' },
+  { href: '/sobre-mi', label: 'Sobre mí' },
+  { href: '/blog', label: 'Blog' },
+  { href: '/tienda', label: 'Tienda' },
+  { href: '/contact', label: 'Contacto' },
+];
+---
+
+<header class="px-4 py-6 md:p-8 lg:flex lg:flex-row lg:justify-between">
+  <div class="relative z-50 flex w-full flex-row justify-between md:block lg:w-auto">
+    <div class="h-[62px] w-[180px] bg-amber-100"></div>
+
+    <button
+      type="button"
+      class="cursor-pointer md:hidden"
+      data-navbar-toggle
+      aria-label="Toggle navigation menu"
+      aria-expanded="false"
+    >
+      <Menu data-navbar-icon-open class="block" />
+      <Close data-navbar-icon-close class="hidden" />
+    </button>
+  </div>
+
+  <nav
+    data-navbar-links
+    class="font-body bg-off-white absolute top-0 left-0 hidden h-screen w-screen flex-col items-center justify-center gap-8 text-4xl md:relative md:top-auto md:left-auto md:flex md:h-auto md:w-full md:flex-row md:justify-between md:gap-4 md:pt-8 md:text-2xl lg:justify-end lg:gap-8 lg:pt-0"
+  >
+    {
+      links.map((link) => (
+        <a
+          href={link.href}
+          class="text-gray-700 hover:text-gray-900 md:w-24 md:text-center"
+        >
+          {link.label}
+        </a>
+      ))
+    }
+  </nav>
+</header>

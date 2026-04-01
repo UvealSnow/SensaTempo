@@ -14,7 +14,7 @@ interface Props {
   start?: FlexStart;
   vertical?: VerticalAlign;
   position?: string;
-  height?: string;
+  heightClass?: string;
   loading?: 'lazy' | 'eager';
   class?: string;
 }
@@ -25,7 +25,7 @@ const {
   start,
   vertical,
   position = 'center center',
-  height = '640px',
+  heightClass = 'h-[320px] sm:h-[420px] md:h-[560px] lg:h-[700px] xl:h-[850px]',
   loading = 'lazy',
   class: className,
 } = Astro.props;
@@ -38,11 +38,10 @@ const sizeClass =
 
 <section
   data-sensaheader
-  class={`sensaheader relative overflow-hidden ${sizeClass} ${className ?? ''}`.trim()}
-  style={`--header-height: ${height};`}
+  class={`header relative overflow-hidden ${heightClass} ${sizeClass} ${className ?? ''}`.trim()}
 >
   <div
-    class="sensaheader__bg"
+    class="header__bg absolute inset-0 bg-cover bg-no-repeat blur-[18px] scale-[1.03] opacity-65 transition-[filter,transform,opacity] duration-500 ease-in-out"
     style={`background-image: url('${src}'); background-position: ${position};`}
   ></div>
 
@@ -52,45 +51,11 @@ const sizeClass =
     aria-hidden="true"
     loading={loading}
     decoding="async"
-    class="sensaheader__preload"
-    onload="this.closest('[data-sensaheader]')?.querySelector('.sensaheader__bg')?.classList.add('is-loaded')"
+    class="header__preload pointer-events-none absolute h-px w-px opacity-0"
+    onload="const bg = this.closest('[data-sensaheader]')?.querySelector('.header__bg'); bg?.classList.remove('blur-[18px]','scale-[1.03]','opacity-65'); bg?.classList.add('blur-0','scale-100','opacity-100');"
   />
 
   <div class="relative z-10">
     <slot />
   </div>
-
-  <style>
-    .sensaheader {
-      min-height: var(--header-height);
-    }
-
-    .sensaheader__bg {
-      position: absolute;
-      inset: 0;
-      background-size: cover;
-      background-repeat: no-repeat;
-      filter: blur(18px);
-      transform: scale(1.03);
-      opacity: 0.65;
-      transition:
-        filter 500ms ease,
-        transform 500ms ease,
-        opacity 500ms ease;
-    }
-
-    .sensaheader__bg.is-loaded {
-      filter: blur(0);
-      transform: scale(1);
-      opacity: 1;
-    }
-
-    .sensaheader__preload {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      opacity: 0;
-      pointer-events: none;
-    }
-  </style>
 </section>

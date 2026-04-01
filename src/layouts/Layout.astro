@@ -1,5 +1,5 @@
 ---
-import Header from '~/components/layout/Header.astro';
+import NavBar from '~/components/layout/NavBar.astro';
 import Footer from '~/components/layout/Footer.astro';
 
 import '../styles/global.css';
@@ -13,7 +13,7 @@ import '../styles/global.css';
   </head>
 
   <body class="bg-off-white min-h-screen flex flex-col">
-    <Header />
+    <NavBar />
 
     <main class="pb-8 px-4 container mx-auto">
       <slot />
@@ -24,12 +24,20 @@ import '../styles/global.css';
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      const actionButton = document.querySelector('.navbar .action')!;
-      const icons = actionButton.querySelectorAll('svg');
+      const actionButton = document.querySelector('[data-navbar-toggle]');
+      const links = document.querySelector('[data-navbar-links]');
+      const openIcon = document.querySelector('[data-navbar-icon-open]');
+      const closeIcon = document.querySelector('[data-navbar-icon-close]');
+
+      if (!actionButton || !links || !openIcon || !closeIcon) return;
 
       actionButton.addEventListener('click', () => {
-        icons.forEach((icon) => icon.classList.toggle('hidden'));
-        document.querySelector('.nav-links')?.classList.toggle('hidden');
+        openIcon.classList.toggle('hidden');
+        closeIcon.classList.toggle('hidden');
+        links.classList.toggle('hidden');
+
+        const expanded = actionButton.getAttribute('aria-expanded') === 'true';
+        actionButton.setAttribute('aria-expanded', expanded ? 'false' : 'true');
       });
     });
   </script>
