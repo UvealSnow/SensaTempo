@@ -1,8 +1,17 @@
+# Multi-stage image: `live-preview` (Node + Lambda Web Adapter) and `prod-preview` (local static Nginx).
+#
+# AWS Lambda (container) pulls from ECR and expects a single-architecture image manifest.
+# BuildKit provenance/SBOM attestations produce an OCI index Lambda rejects — disable them when
+# building/pushing (see Makefile and .github/workflows/preview-deploy.yaml), not here.
+#
+# Preview Lambda in Terraform uses architectures = ["arm64"]; keep Node stages on linux/arm64 so
+# native modules (e.g. sharp) match the runtime.
+
 ARG STORYBLOK_ACCESS_TOKEN
 ARG PUBLIC_DEFAULT_LANGUAGE
 ARG PUBLIC_AVAILABLE_LANGUAGES
 
-FROM node:lts-alpine3.23 AS build-base
+FROM --platform=linux/arm64 node:lts-alpine3.23 AS build-base
 
 WORKDIR /app
 
@@ -39,8 +48,8 @@ ENV PUBLIC_BUILD_TYPE=server
 RUN pnpm build
 
 
-# This is the container that is actually deployed
-FROM node:lts-alpine3.23 AS live-preview
+# Deployed to AWS Lambda (Function URL + Lambda Web Adapter).
+FROM --platform=linux/arm64 node:lts-alpine3.23 AS live-preview
 
 WORKDIR /app
 
@@ -61,8 +70,8 @@ EXPOSE 8080
 CMD ["node", "./dist/server/entry.mjs"]
 
 
-# Local version of the prod build
-FROM nginxinc/nginx-unprivileged:1.27-alpine AS prod-preview
+# Local static preview only (same platform as Makefile / CI for consistency).
+FROM --platform=linux/arm64 nginxinc/nginx-unprivileged:1.27-alpine AS prod-preview
 
 COPY nginx/local-prod-preview.conf /etc/nginx/conf.d/default.conf
 COPY --from=build-prod /app/dist /usr/share/nginx/html

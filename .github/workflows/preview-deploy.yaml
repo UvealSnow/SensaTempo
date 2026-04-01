@@ -40,6 +40,9 @@ jobs:
           tags: ${{ steps.login-ecr.outputs.registry }}/sensatempo-preview:latest
           # Building for ARM64 makes Lambda cheaper and faster
           platforms: linux/arm64
+          # Lambda rejects OCI image indexes from BuildKit attestations (provenance/SBOM)
+          provenance: false
+          sbom: false
           # Docker caching in GitHub Actions to speed up pnpm install steps
           cache-from: type=gha
           cache-to: type=gha,mode=max
