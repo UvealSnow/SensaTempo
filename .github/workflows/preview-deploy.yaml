@@ -1,0 +1,51 @@
+name: Preview Deployment (SSR Container)
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+      - '.gitignore'
+  # Allows to manually trigger this for any branch from the "Actions" tab
+  workflow_dispatch:
+
+jobs:
+  deploy-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          target: live-preview
+          push: true
+          tags: ${{ steps.login-ecr.outputs.registry }}/sensatempo-preview:latest
+          # Building for ARM64 makes Lambda cheaper and faster
+          platforms: linux/arm64
+          # Docker caching in GitHub Actions to speed up pnpm install steps
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Update Lambda Function
+        run: |
+          aws lambda update-function-code \
+            --function-name sensatempo-preview-ssr \
+            --image-uri ${{ steps.login-ecr.outputs.registry }}/sensatempo-preview:latest

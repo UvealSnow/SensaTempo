@@ -1,0 +1,42 @@
+---
+import {
+  getColSpans,
+  getColStarts,
+  getVerticalAlignment,
+  type FlexSize,
+  type FlexStart,
+  type VerticalAlign,
+} from '~/utils/grid';
+
+interface Props {
+  caption: string;
+  size?: FlexSize;
+  start?: FlexStart;
+  vertical?: VerticalAlign;
+  src: string;
+  class?: string;
+}
+
+const { caption, size, start, src, class: className, vertical } = Astro.props;
+
+const sizeClass =
+  getColSpans(size ?? {}, 'basis-full w-full') +
+  getColStarts(start ?? {}) +
+  ` ${getVerticalAlignment(vertical)}`;
+---
+
+<figure
+  class={`relative overflow-hidden picture ${sizeClass} ${className ?? ''}`.trim()}
+>
+  <img
+    src={src}
+    alt={caption}
+    loading="lazy"
+    decoding="async"
+    class="picture__image block w-full object-cover blur-[18px] scale-[1.03] opacity-65 transition-[filter,transform,opacity] duration-500 ease-in-out"
+    onload="this.classList.remove('blur-[18px]','scale-[1.03]','opacity-65'); this.classList.add('blur-0','scale-100','opacity-100')"
+  />
+  <figcaption class="font-body text-gray-500 text-right text-md mt-2">
+    {caption}
+  </figcaption>
+</figure>

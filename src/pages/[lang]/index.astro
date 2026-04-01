@@ -2,6 +2,8 @@
 import { getCollection } from 'astro:content';
 import Layout from '~/layouts/Layout.astro';
 
+import Picture from '~/components/Picture.astro';
+
 import { AVAILABLE_LANGUAGES } from '~/consts';
 
 export async function getStaticPaths() {
@@ -14,10 +16,22 @@ const allPages = await getCollection('pages');
 const page = allPages.find(
   (page) => page.data.lang === lang && page.data.slug === 'home'
 )!;
+
+console.log(page);
 ---
 
 <Layout>
-  main thang: {lang}
-  <br />
-  {JSON.stringify(page, null, 2)}
+  <div class="grid grid-cols-12 gap-4">
+    <Picture
+      src="https://placehold.co/600x400"
+      caption="Something nice"
+      vertical="center"
+      size={{ sm: '6/12' }}
+    />
+    <Picture
+      src="https://placehold.co/600x800"
+      caption="Another nice photo - 27.03.26"
+      size={{ sm: '6/12' }}
+    />
+  </div>
 </Layout>
