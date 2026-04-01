@@ -14,7 +14,10 @@
     "docker:preview:build": "docker build -f ./docker/Dockerfile --target live-preview -t sensatempo-preview:latest .",
     "docker:preview:run": "docker run --rm -p 8080:8080 sensatempo-preview:latest",
     "docker:prod:build": "docker build -f ./docker/Dockerfile --target build-prod -t sensatempo-prod:latest .",
-    "docker:prod:build:preview": "docker build -f ./docker/Dockerfile --target prod-preview -t sensatempo-prod-preview:latest ."
+    "docker:prod:build:preview": "docker build -f ./docker/Dockerfile --target prod-preview -t sensatempo-prod-preview:latest .",
+    "tf:init": "terraform -chdir=./terraform init",
+    "tf:plan": "terraform -chdir=./terraform plan",
+    "tf:apply": "terraform -chdir=./terraform apply"
   },
   "dependencies": {
     "@astrojs/node": "^10.0.4",
