@@ -32,6 +32,9 @@ FROM node:lts-alpine3.23 AS live-preview
 
 WORKDIR /app
 
+# This allows our little server to run in Lambda
+COPY --from=public.ecr.aws/awsguru/aws-lambda-adapter:0.8.4 /lambda-adapter /opt/extensions/lambda-adapter
+
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
 ENV PORT=8080
