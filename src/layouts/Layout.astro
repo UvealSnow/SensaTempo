@@ -24,20 +24,31 @@ import '../styles/global.css';
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      const actionButton = document.querySelector('[data-navbar-toggle]');
-      const links = document.querySelector('[data-navbar-links]');
-      const openIcon = document.querySelector('[data-navbar-icon-open]');
-      const closeIcon = document.querySelector('[data-navbar-icon-close]');
+      const actionButton = document.querySelector<HTMLButtonElement>(
+        '[data-navbar-toggle]'
+      );
+      const links = document.querySelector<HTMLElement>('[data-navbar-links]');
+      const openIcon = document.querySelector<HTMLElement>('[data-navbar-icon-open]');
+      const closeIcon = document.querySelector<HTMLElement>('[data-navbar-icon-close]');
 
       if (!actionButton || !links || !openIcon || !closeIcon) return;
 
-      actionButton.addEventListener('click', () => {
-        openIcon.classList.toggle('hidden');
-        closeIcon.classList.toggle('hidden');
-        links.classList.toggle('hidden');
+      const setMenuState = (isOpen: boolean) => {
+        openIcon.classList.toggle('hidden', isOpen);
+        closeIcon.classList.toggle('hidden', !isOpen);
+        links.classList.toggle('hidden', !isOpen);
+        links.classList.toggle('flex', isOpen);
+        actionButton.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        document.body.classList.toggle('overflow-hidden', isOpen);
+      };
 
-        const expanded = actionButton.getAttribute('aria-expanded') === 'true';
-        actionButton.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+      actionButton.addEventListener('click', () => {
+        const isExpanded = actionButton.getAttribute('aria-expanded') === 'true';
+        setMenuState(!isExpanded);
+      });
+
+      window.addEventListener('resize', () => {
+        if (window.innerWidth >= 768) setMenuState(false);
       });
     });
   </script>
