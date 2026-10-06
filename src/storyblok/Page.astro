@@ -2,11 +2,12 @@
 import { storyblokEditable, type SbBlokData } from '@storyblok/astro';
 import StoryblokComponent from '@storyblok/astro/StoryblokComponent.astro';
 
+// div, not main: Layout already wraps the page in <main>
 const { blok } = Astro.props;
 ---
 
-<main {...storyblokEditable(blok)}>
-  {blok.body.map((blok: SbBlokData) => (
+<div {...storyblokEditable(blok)}>
+  {blok.body?.map((blok: SbBlokData) => (
     <StoryblokComponent blok={blok} />
   ))}
-</main>
+</div>

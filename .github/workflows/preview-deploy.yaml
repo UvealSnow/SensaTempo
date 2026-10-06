@@ -53,10 +53,10 @@ jobs:
       # Build secrets live in SSM Parameter Store, not GitHub (see README "Secrets")
       - name: Load secrets from SSM
         run: |
-          TOKEN=$(aws ssm get-parameter --name /sensatempo/storyblok/access-token \
+          TOKEN=$(aws ssm get-parameter --name /sensatempo/storyblok/preview-token \
             --with-decryption --query Parameter.Value --output text)
           echo "::add-mask::$TOKEN"
-          echo "STORYBLOK_ACCESS_TOKEN=$TOKEN" >> "$GITHUB_ENV"
+          echo "STORYBLOK_PREVIEW_TOKEN=$TOKEN" >> "$GITHUB_ENV"
 
       # Builds the SSR server and zips it with linux-arm64 runtime deps
       - name: Package preview Lambda

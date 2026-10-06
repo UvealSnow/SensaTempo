@@ -39,10 +39,10 @@ jobs:
       # Build secrets live in SSM Parameter Store, not GitHub (see README "Secrets")
       - name: Load secrets from SSM
         run: |
-          TOKEN=$(aws ssm get-parameter --name /sensatempo/storyblok/access-token \
+          TOKEN=$(aws ssm get-parameter --name /sensatempo/storyblok/public-token \
             --with-decryption --query Parameter.Value --output text)
           echo "::add-mask::$TOKEN"
-          echo "STORYBLOK_ACCESS_TOKEN=$TOKEN" >> "$GITHUB_ENV"
+          echo "STORYBLOK_PUBLIC_TOKEN=$TOKEN" >> "$GITHUB_ENV"
 
       - name: Build static site
         run: pnpm build

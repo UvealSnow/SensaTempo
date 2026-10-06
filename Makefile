@@ -48,11 +48,12 @@ run-prod-preview:
 
 
 # Run the SSR preview server locally (what the preview Lambda runs)
+# .env provides the runtime env the Lambda gets from SSM: STORYBLOK_PREVIEW_TOKEN, optional PREVIEW_BASIC_AUTH_*
 run-preview:
 	$(call draw_header,${GREEN},Building SSR preview...)
 	PUBLIC_BUILD_TYPE=server pnpm build
 	$(call draw_header,${GREEN},Starting SSR preview on http://localhost:8080)
-	PORT=8080 node ./dist/server/entry.mjs
+	PORT=8080 NODE_ENV=production node --env-file-if-exists=.env ./dist/server/entry.mjs
 
 
 # Build the SSR preview and zip it for Lambda (linux arm64)
