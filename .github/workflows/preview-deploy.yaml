@@ -7,19 +7,14 @@ on:
     paths-ignore:
       - '**.md'
       - '.gitignore'
-  # Manual trigger from the "Actions" tab. Run it from main (the AWS role only trusts main)
-  # and pick any branch to build; it replaces the shared preview until the next deploy.
-  workflow_dispatch:
+  # Any branch, on demand: called by deploy-branch.yaml (run from main; the AWS role only trusts main).
+  # It replaces the shared preview until the next deploy.
+  workflow_call:
     inputs:
       ref:
-        description: Branch, tag or SHA to deploy to the preview
-        required: true
-        default: main
-
-# One preview Lambda: let the latest deploy win instead of racing
-concurrency:
-  group: preview-deploy
-  cancel-in-progress: true
+        type: string
+        required: false
+        default: ''
 
 permissions:
   id-token: write # GitHub OIDC -> AWS role, no long-lived keys
@@ -28,6 +23,10 @@ permissions:
 jobs:
   deploy-preview:
     runs-on: ubuntu-latest
+    # One preview Lambda: let the latest deploy win instead of racing
+    concurrency:
+      group: preview-deploy
+      cancel-in-progress: true
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4

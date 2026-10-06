@@ -56,9 +56,9 @@ Everything runs on **AWS (us-east-1)** and is pay-per-use: nothing bills while t
 **Temporary URLs** (no custom domain yet):
 
 - Production: https://d1fr6xerqueq2v.cloudfront.net
-- Preview: https://afa27zstg6nybnzhngtxryszny0nbjnt.lambda-url.us-east-1.on.aws/ (basic auth)
+- Preview: https://d22dvpdtgdplg6.cloudfront.net/ (basic auth; Storyblok preview URL: `https://d22dvpdtgdplg6.cloudfront.net/es/`)
 
-**Deploying a branch to the preview:** Actions → _Preview Deployment_ → _Run workflow_, keep "Use workflow from" on `main` and enter the branch in **ref**. It replaces the shared preview until the next deploy (any push to `main` redeploys `main`).
+**Deploying any branch:** Actions → _Deploy branch_ → _Run workflow_. Keep "Use workflow from" on `main` (the AWS role only trusts `main`), enter the branch, tag or SHA in **ref** and pick **target** (`preview`, `production` or `both`). The deploy stays until the next one; any push to `main` redeploys `main`. Production publishes what it's serving at `/version.json`; to roll back, run it again with `ref=main`.
 
 ---
 

@@ -7,8 +7,13 @@ on:
   # the CMS sent a webhook telling us the content has been updated.
   # repository_dispatch:
   #   types: [content_updated]
-  # Manual trigger from the "Actions" tab (the AWS role only trusts main)
-  workflow_dispatch:
+  # Any branch, on demand: called by deploy-branch.yaml (run from main; the AWS role only trusts main)
+  workflow_call:
+    inputs:
+      ref:
+        type: string
+        required: false
+        default: ''
 
 permissions:
   id-token: write # GitHub OIDC -> AWS role, no long-lived keys
@@ -17,8 +22,16 @@ permissions:
 jobs:
   deploy-static-prod:
     runs-on: ubuntu-latest
+    # Queue deploys; never cancel a half-finished S3 sync
+    concurrency:
+      group: prod-deploy
+      cancel-in-progress: false
+    env:
+      REF: ${{ inputs.ref || github.ref_name }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
 
       - uses: pnpm/action-setup@v4
         with:
@@ -51,7 +64,22 @@ jobs:
           PUBLIC_AVAILABLE_LANGUAGES: ${{ vars.PUBLIC_AVAILABLE_LANGUAGES }}
           PUBLIC_BUILD_TYPE: static
 
+      # What prod is serving: https://<site>/version.json
+      - name: Write version.json
+        run: |
+          jq -n --arg ref "$REF" --arg sha "$(git rev-parse HEAD)" \
+            --arg run "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+            --arg at "$(date -u +%FT%TZ)" \
+            '{ref: $ref, sha: $sha, run_url: $run, deployed_at: $at}' > dist/version.json
+
       - name: Deploy to S3
         run: |
           aws s3 sync ./dist s3://${{ vars.AWS_PROD_BUCKET }} --delete
           aws cloudfront create-invalidation --distribution-id ${{ vars.AWS_CF_DIST_ID }} --paths "/*"
+
+      - name: Summary
+        run: |
+          echo "Deployed \`$REF\` ($(git rev-parse --short HEAD)) to production" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$REF" != main ]; then
+            echo "::warning::Production is serving '$REF', not main. The next push to main replaces it; to roll back, run Deploy branch with ref=main."
+          fi
