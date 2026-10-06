@@ -2,13 +2,14 @@
 import { storyblokEditable, type SbBlokData } from '@storyblok/astro';
 import { AVAILABLE_LANGUAGES } from '~/consts';
 import { linkHref, type MultilinkField } from '~/utils/navigation';
+import { currentLang } from '~/utils/page';
 
 interface Props {
-  lang: string;
   blok: SbBlokData | null;
 }
 
-const { lang, blok } = Astro.props;
+const { blok } = Astro.props;
+const lang = currentLang(Astro);
 
 const today = new Date();
 const holder = blok?.copyright_holder as string | undefined;

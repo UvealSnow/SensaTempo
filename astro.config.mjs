@@ -7,7 +7,7 @@ import { storyblok } from '@storyblok/astro';
 import { loadEnv } from 'vite';
 import { isPreviewMode, storyblokToken } from './src/utils/storyblok.ts';
 
-const env = loadEnv('', process.cwd(), 'STORYBLOK');
+const env = loadEnv('', process.cwd(), ['STORYBLOK', 'PUBLIC_']);
 
 // https://astro.build/config
 const isServerBuild = process.env.PUBLIC_BUILD_TYPE === 'server';
@@ -18,8 +18,21 @@ const isPreview = isPreviewMode(
   process.env.PUBLIC_BUILD_TYPE
 );
 
+// Same sources and defaults as DEFAULT_LANGUAGE / AVAILABLE_LANGUAGES in src/consts.ts
+const defaultLocale =
+  process.env.PUBLIC_DEFAULT_LANGUAGE || env.PUBLIC_DEFAULT_LANGUAGE || 'es';
+const locales = (
+  process.env.PUBLIC_AVAILABLE_LANGUAGES ||
+  env.PUBLIC_AVAILABLE_LANGUAGES ||
+  defaultLocale
+).split(',');
+
 export default defineConfig({
   site: 'https://sensatempo.com',
+
+  // Only so components can read Astro.currentLocale; routing stays ours (src/pages/[lang]/ and
+  // the CloudFront root redirect), hence "manual": no i18n middleware redirects or 404s
+  i18n: { locales, defaultLocale, routing: 'manual' },
   // Controlled via PUBLIC_BUILD_TYPE env: "static" | "server"
   output,
   adapter: isServerBuild
