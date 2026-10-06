@@ -36,9 +36,14 @@ data "aws_caller_identity" "current" {}
 
 # --- 0. SECRETS: SSM PARAMETER STORE (SecureString, free standard tier) ---
 # Created once by hand so values never live in code (see README "Secrets"); Terraform only reads them.
-#   /sensatempo/storyblok/access-token         read by CI to build the site
+#   /sensatempo/storyblok/public-token         read by CI to build the static site (published content)
+#   /sensatempo/storyblok/preview-token        read by CI and the preview Lambda (draft content, editor auth)
 #   /sensatempo/preview/basic-auth-user        preview Lambda basic auth
 #   /sensatempo/preview/basic-auth-password
+
+data "aws_ssm_parameter" "storyblok_preview_token" {
+  name = "${local.ssm_prefix}/storyblok/preview-token"
+}
 
 data "aws_ssm_parameter" "preview_basic_auth_user" {
   name = "${local.ssm_prefix}/preview/basic-auth-user"
@@ -222,6 +227,7 @@ resource "aws_lambda_function" "preview_ssr" {
       NODE_ENV                         = "production"
       PREVIEW_BASIC_AUTH_USER          = data.aws_ssm_parameter.preview_basic_auth_user.value
       PREVIEW_BASIC_AUTH_PASSWORD      = data.aws_ssm_parameter.preview_basic_auth_password.value
+      STORYBLOK_PREVIEW_TOKEN          = data.aws_ssm_parameter.storyblok_preview_token.value # drafts + editor auth
     }
   }
 

@@ -3,9 +3,15 @@ import { apiPlugin, storyblokInit } from '@storyblok/js';
 import { AVAILABLE_LANGUAGES, DEFAULT_LANGUAGE } from '~/consts';
 import { z } from 'astro:content';
 import { loadEnv } from 'vite';
+import {
+  contentVersion,
+  isPreviewMode,
+  storyblokToken,
+} from '~/utils/storyblok';
 
 const env = loadEnv('', process.cwd(), 'STORYBLOK');
 const isDev = import.meta.env.DEV;
+const isPreview = isPreviewMode(isDev, import.meta.env.PUBLIC_BUILD_TYPE);
 
 export function pagesLoader(): Loader {
   return {
@@ -19,7 +25,7 @@ export function pagesLoader(): Loader {
     }: LoaderContext): Promise<void> => {
       try {
         const { storyblokApi } = storyblokInit({
-          accessToken: env.STORYBLOK_ACCESS_TOKEN,
+          accessToken: storyblokToken(env, isPreview),
           use: [apiPlugin],
         });
 
@@ -38,7 +44,7 @@ export function pagesLoader(): Loader {
           logger.info(`Collection last modified ${meta.get('lastModified')}`);
 
           const data = await storyblokApi.getAll('cdn/stories', {
-            version: isDev ? 'draft' : 'published',
+            version: contentVersion(isPreview),
             content_type: 'page',
             per_page: 100,
             language: lang,

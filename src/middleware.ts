@@ -24,11 +24,39 @@ function parseBasicAuth(
   }
 }
 
+// Storyblok editor token cutoff, as in Storyblok's own example
+const EDITOR_TOKEN_MAX_AGE_SECONDS = 60 * 60;
+
+/**
+ * Basic auth can't be answered inside the Visual Editor's cross-origin iframe, so the editor is
+ * let in by the `_storyblok_tk` params it appends to the preview URL instead:
+ * token = sha1(space_id:preview_token:timestamp), timestamp in seconds.
+ */
+function isValidEditorRequest(url: URL, previewToken: string): boolean {
+  const spaceId = url.searchParams.get('_storyblok_tk[space_id]');
+  const timestamp = url.searchParams.get('_storyblok_tk[timestamp]');
+  const token = url.searchParams.get('_storyblok_tk[token]');
+  if (!spaceId || !timestamp || !token) return false;
+
+  const age = Math.floor(Date.now() / 1000) - Number(timestamp);
+  if (!Number.isFinite(age) || age > EDITOR_TOKEN_MAX_AGE_SECONDS) return false;
+
+  const expected = createHash('sha1')
+    .update(`${spaceId}:${previewToken}:${timestamp}`)
+    .digest('hex');
+  return safeEqual(token, expected);
+}
+
 export const onRequest = defineMiddleware(async (context, next) => {
   const expectedUser = process.env.PREVIEW_BASIC_AUTH_USER?.trim();
   const expectedPass = process.env.PREVIEW_BASIC_AUTH_PASSWORD?.trim();
+  const previewToken = process.env.STORYBLOK_PREVIEW_TOKEN?.trim();
 
   if (!expectedUser || !expectedPass) {
+    return next();
+  }
+
+  if (previewToken && isValidEditorRequest(context.url, previewToken)) {
     return next();
   }
 

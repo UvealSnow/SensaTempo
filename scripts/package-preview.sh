@@ -3,7 +3,7 @@
 # The Lambda Web Adapter layer runs run.sh and proxies requests to the Node server.
 #
 # Usage: scripts/package-preview.sh [output.zip]
-# Needs STORYBLOK_ACCESS_TOKEN and PUBLIC_* language vars in the env or .env.
+# Needs STORYBLOK_PREVIEW_TOKEN and PUBLIC_* language vars in the env or .env.
 set -euo pipefail
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)

@@ -50,7 +50,7 @@ Everything runs on **AWS (us-east-1)** and is pay-per-use: nothing bills while t
 | Environment    | Hosting                                                                              | Built by                                | Description                                                                                                                                |
 | :------------- | :----------------------------------------------------------------------------------- | :-------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------- |
 | **Production** | **S3 + CloudFront**                                                                  | `prod-deploy.yaml` on push to `main`    | Fully static build (published content). A CloudFront Function maps `/es/about/` to `index.html` and redirects `/` to the default language. |
-| **Preview**    | **Lambda** (zip, Node 24, arm64) + **Lambda Web Adapter** layer, public Function URL | `preview-deploy.yaml` on push to `main` | SSR build for Storyblok editors, protected by HTTP Basic Auth (`src/middleware.ts`).                                                       |
+| **Preview**    | **Lambda** (zip, Node 24, arm64) + **Lambda Web Adapter** layer, public Function URL | `preview-deploy.yaml` on push to `main` | SSR build for Storyblok editors: draft content fetched per request, Visual Editor bridge, HTTP Basic Auth (`src/middleware.ts`).           |
 | **Local QA**   | **Nginx** in Docker                                                                  | `make run-prod-preview`                 | Serves the static production build on http://localhost:8080.                                                                               |
 
 **Temporary URLs** (no custom domain yet):
@@ -68,7 +68,8 @@ Everything runs on **AWS (us-east-1)** and is pay-per-use: nothing bills while t
 - **GNU Make**, **AWS CLI** and **Terraform ≥ 1.10** for infrastructure work
 - **Docker** (BuildKit) only for `make run-prod-preview`
 - A local `.env` file (see `.env.example`) containing:
-  - `STORYBLOK_ACCESS_TOKEN`
+  - `STORYBLOK_PUBLIC_TOKEN` (published content, production builds)
+  - `STORYBLOK_PREVIEW_TOKEN` (draft content, `pnpm dev` and the SSR preview)
   - `PUBLIC_DEFAULT_LANGUAGE` (default: es)
   - `PUBLIC_AVAILABLE_LANGUAGES` (default: es,en)
 
@@ -91,20 +92,23 @@ Everything runs on **AWS (us-east-1)** and is pay-per-use: nothing bills while t
 
 Secrets live in **AWS SSM Parameter Store** as `SecureString`s (free standard tier, AWS-managed `aws/ssm` key). Nothing secret is stored in GitHub or in the repo.
 
-| Parameter                                 | Used by                                                           |
-| :---------------------------------------- | :---------------------------------------------------------------- |
-| `/sensatempo/storyblok/access-token`      | CI builds (read via the GitHub OIDC deploy role)                  |
-| `/sensatempo/preview/basic-auth-user`     | Preview Lambda basic auth (read by Terraform into the Lambda env) |
-| `/sensatempo/preview/basic-auth-password` | Preview Lambda basic auth                                         |
+| Parameter                                 | Used by                                                                                    |
+| :---------------------------------------- | :----------------------------------------------------------------------------------------- |
+| `/sensatempo/storyblok/public-token`      | Production build in CI (read via the GitHub OIDC deploy role)                              |
+| `/sensatempo/storyblok/preview-token`     | Preview build in CI, and the preview Lambda at runtime (draft fetches, Visual Editor auth) |
+| `/sensatempo/preview/basic-auth-user`     | Preview Lambda basic auth (read by Terraform into the Lambda env)                          |
+| `/sensatempo/preview/basic-auth-password` | Preview Lambda basic auth                                                                  |
 
 Create or rotate a value (Terraform only reads these, so values never appear in code):
 
 ```bash
 aws ssm put-parameter --region us-east-1 --type SecureString --overwrite \
-  --name /sensatempo/storyblok/access-token --value '<token>'
+  --name /sensatempo/storyblok/preview-token --value '<token>'
 ```
 
-After rotating the basic auth values, run `pnpm tf:apply` to push them to the Lambda. Locally, builds read the token from `.env`.
+After rotating the preview token or the basic auth values, run `pnpm tf:apply` to push them to the Lambda. Locally, builds read the tokens from `.env`.
+
+**Storyblok Visual Editor:** the preview loads the Storyblok bridge (static builds don't). The editor iframe can't answer the basic auth prompt, so `src/middleware.ts` also lets in requests carrying a valid `_storyblok_tk` (sha1 of `space_id:preview_token:timestamp`, at most 1 hour old). In Storyblok, set the preview URL to `<preview_lambda_url>/es/` and the `home` story's real path to `/`.
 
 **GitHub repository variables** (not secret): `AWS_DEPLOY_ROLE_ARN`, `AWS_PROD_BUCKET`, `AWS_CF_DIST_ID` (from the Terraform outputs), `PUBLIC_DEFAULT_LANGUAGE`, `PUBLIC_AVAILABLE_LANGUAGES`.
 
