@@ -261,6 +261,82 @@ resource "aws_lambda_permission" "preview_function_url_public" {
   depends_on = [aws_lambda_function_url.preview_url]
 }
 
+# Function URLs reject query keys containing [ or ] (InvalidQueryStringException), and the Storyblok
+# Visual Editor sends its auth as _storyblok_tk[token]=... unencoded. CloudFront accepts them, so this
+# function percent-encodes the keys before forwarding; Astro decodes them back for the middleware.
+resource "aws_cloudfront_function" "preview_encode_query" {
+  name    = "sensatempo-preview-encode-query"
+  runtime = "cloudfront-js-2.0"
+  publish = true
+  code    = <<-EOT
+    function handler(event) {
+      var request = event.request;
+      var qs = request.querystring;
+      var out = {};
+
+      for (var key in qs) {
+        out[key.replace(/\[/g, '%5B').replace(/\]/g, '%5D')] = qs[key];
+      }
+      request.querystring = out;
+
+      return request;
+    }
+  EOT
+}
+
+data "aws_cloudfront_cache_policy" "caching_disabled" {
+  name = "Managed-CachingDisabled"
+}
+
+# Everything but Host (the Function URL needs its own), including Authorization and cookies
+data "aws_cloudfront_origin_request_policy" "all_viewer_except_host" {
+  name = "Managed-AllViewerExceptHostHeader"
+}
+
+# Pay-per-request like the rest; no caching, the preview is always rendered fresh
+resource "aws_cloudfront_distribution" "preview" {
+  enabled         = true
+  is_ipv6_enabled = true
+  price_class     = "PriceClass_100"
+  comment         = "SensaTempo preview (Storyblok Visual Editor)"
+
+  origin {
+    domain_name = trimsuffix(trimprefix(aws_lambda_function_url.preview_url.function_url, "https://"), "/")
+    origin_id   = "Lambda-Preview"
+
+    custom_origin_config {
+      http_port              = 80
+      https_port             = 443
+      origin_protocol_policy = "https-only"
+      origin_ssl_protocols   = ["TLSv1.2"]
+    }
+  }
+
+  default_cache_behavior {
+    # POST for Storyblok live preview
+    allowed_methods          = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
+    cached_methods           = ["GET", "HEAD"]
+    target_origin_id         = "Lambda-Preview"
+    cache_policy_id          = data.aws_cloudfront_cache_policy.caching_disabled.id
+    origin_request_policy_id = data.aws_cloudfront_origin_request_policy.all_viewer_except_host.id
+    compress                 = true
+    viewer_protocol_policy   = "redirect-to-https"
+
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.preview_encode_query.arn
+    }
+  }
+
+  restrictions {
+    geo_restriction { restriction_type = "none" }
+  }
+
+  viewer_certificate {
+    cloudfront_default_certificate = true
+  }
+}
+
 # --- 3. CI: GITHUB ACTIONS OIDC (NO LONG-LIVED KEYS) ---
 
 resource "aws_iam_openid_connect_provider" "github" {
@@ -340,6 +416,11 @@ output "prod_bucket" {
 
 output "preview_lambda_url" {
   value = aws_lambda_function_url.preview_url.function_url
+}
+
+# Use this one (not the Function URL) as the Storyblok preview URL
+output "preview_url" {
+  value = "https://${aws_cloudfront_distribution.preview.domain_name}/"
 }
 
 output "github_deploy_role_arn" {
