@@ -1,13 +1,11 @@
 # Variables
 IMAGE_NAME := sensatempo-prod
-PREVIEW_IMAGE := sensatempo-preview
-PREVIEW_LAMBDA_NAME ?= sensatempo-preview-ssr
 DOCKERFILE := ./docker/Dockerfile
+PREVIEW_LAMBDA_NAME ?= sensatempo-preview-ssr
+PREVIEW_ZIP := preview-lambda.zip
 
 # Load PUBLIC variables from .env for build-args
 AWS_REGION ?= us-east-1
-AWS_ACCOUNT_ID ?= $(shell aws sts get-caller-identity --query Account --output text)
-AWS_ECR_REGISTRY = $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com
 PUBLIC_DEFAULT_LANGUAGE ?= $(shell grep '^PUBLIC_DEFAULT_LANGUAGE=' .env | cut -d'=' -f2)
 PUBLIC_AVAILABLE_LANGUAGES ?= $(shell grep '^PUBLIC_AVAILABLE_LANGUAGES=' .env | cut -d'=' -f2)
 
@@ -27,33 +25,18 @@ endef
 define docker_build
 	docker build -f $(DOCKERFILE) \
 		--target $(1) \
-		--platform linux/arm64 \
-		--provenance=false \
-		--sbom=false \
 		--secret id=DOTENV,src=.env \
 		--build-arg PUBLIC_DEFAULT_LANGUAGE=$(PUBLIC_DEFAULT_LANGUAGE) \
 		--build-arg PUBLIC_AVAILABLE_LANGUAGES=$(PUBLIC_AVAILABLE_LANGUAGES) \
-		-t $(if $(2),$(2),$(IMAGE_NAME)):latest .
+		-t $(IMAGE_NAME):latest .
 endef
 
-.PHONY: build-prod build-preview run-preview run-prod-preview clean push-preview-image preview-lambda-update-image
+.PHONY: build-prod run-prod-preview run-preview package-preview deploy-preview clean
 
 # Build the Production Static Site (with secret mount)
 build-prod:
 	$(call draw_header,${GREEN},Building Production Static HTML files...)
 	$(call docker_build,build-prod)
-
-
-# Build the SSR Preview Container
-build-preview:
-	$(call draw_header,${GREEN},Building Live Preview Image...)
-	$(call docker_build,live-preview,${PREVIEW_IMAGE})
-
-
-run-preview:
-	$(call draw_header,${GREEN},Building Live Preview Image...)
-	$(call docker_build,live-preview,${PREVIEW_IMAGE})
-	docker run --rm -p 8080:8080 $(PREVIEW_IMAGE):latest
 
 
 # Run the local Nginx preview of the production build
@@ -64,30 +47,31 @@ run-prod-preview:
 	docker run --rm -p 8080:8080 $(IMAGE_NAME):latest
 
 
-# Push the preview image to ECR and point the Lambda at this tag (Terraform skips image_uri updates on purpose)
-push-preview-image:
-	$(call draw_header,${GREEN},Building Live Preview Image...)
-	$(call docker_build,live-preview,${PREVIEW_IMAGE})
-	$(call draw_header,${GREEN},Pushing Preview Image to ECR...)
-	docker tag $(PREVIEW_IMAGE):latest "$(AWS_ECR_REGISTRY)/$(PREVIEW_IMAGE):latest"
-	aws ecr get-login-password --region $(AWS_REGION) | docker login --username AWS --password-stdin "$(AWS_ECR_REGISTRY)"
-	docker push "$(AWS_ECR_REGISTRY)/$(PREVIEW_IMAGE):latest"
-	$(call draw_header,${GREEN},Updating Lambda function code to new image...)
+# Run the SSR preview server locally (what the preview Lambda runs)
+run-preview:
+	$(call draw_header,${GREEN},Building SSR preview...)
+	PUBLIC_BUILD_TYPE=server pnpm build
+	$(call draw_header,${GREEN},Starting SSR preview on http://localhost:8080)
+	PORT=8080 node ./dist/server/entry.mjs
+
+
+# Build the SSR preview and zip it for Lambda (linux arm64)
+package-preview:
+	$(call draw_header,${GREEN},Packaging preview Lambda...)
+	scripts/package-preview.sh $(PREVIEW_ZIP)
+
+
+# Package and deploy the preview Lambda from this machine (CI does the same on main)
+deploy-preview: package-preview
+	$(call draw_header,${GREEN},Updating Lambda function code...)
 	aws lambda update-function-code \
 		--function-name $(PREVIEW_LAMBDA_NAME) \
-		--image-uri "$(AWS_ECR_REGISTRY)/$(PREVIEW_IMAGE):latest" \
+		--zip-file fileb://$(PREVIEW_ZIP) \
 		--region $(AWS_REGION)
-
-# If the image is already in ECR, only refresh Lambda (same URI forces pull of new :latest digest)
-preview-lambda-update-image:
-	$(call draw_header,${GREEN},Updating Lambda function code to new image...)
-	aws lambda update-function-code \
-		--function-name $(PREVIEW_LAMBDA_NAME) \
-		--image-uri "$(AWS_ECR_REGISTRY)/$(PREVIEW_IMAGE):latest" \
-		--region $(AWS_REGION)
+	aws lambda wait function-updated --function-name $(PREVIEW_LAMBDA_NAME) --region $(AWS_REGION)
 
 
-# Clean up local docker images
+# Clean up local docker images and packages
 clean:
-	docker rmi $(IMAGE_NAME):latest $(PREVIEW_IMAGE):latest || true
-
+	docker rmi $(IMAGE_NAME):latest || true
+	rm -f $(PREVIEW_ZIP)

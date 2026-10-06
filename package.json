@@ -11,17 +11,16 @@
     "lint:fix": "eslint . --ext .js,.ts,.astro --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "docker:preview:build": "make build-preview",
-    "docker:preview:run": "make run-preview",
-    "docker:preview:push": "make push-preview-image",
     "docker:prod:build": "make build-prod",
     "docker:prod:preview": "make run-prod-preview",
     "docker:cleanup": "make clean",
-    "lambda:update": "make preview-lambda-update-image",
+    "preview:local": "make run-preview",
+    "preview:package": "make package-preview",
+    "preview:deploy": "make deploy-preview",
     "tf:init": "terraform -chdir=./terraform init",
-    "tf:plan": "terraform -chdir=./terraform plan",
+    "tf:plan": "terraform -chdir=./terraform plan -var-file=secret.tfvars",
     "tf:apply": "terraform -chdir=./terraform apply -var-file=secret.tfvars",
-    "tf:destroy": "terraform -chdir=./terraform destroy"
+    "tf:destroy": "terraform -chdir=./terraform destroy -var-file=secret.tfvars"
   },
   "dependencies": {
     "@astrojs/node": "^10.0.4",

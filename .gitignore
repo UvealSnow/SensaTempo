@@ -40,3 +40,20 @@ pnpm-debug.log*
 
 # Crash logs
 crash.log
+
+# Lambda packages
+preview-lambda.zip
+terraform/.build/
+
+# Terraform plan files
+tfplan
+*.tfplan
+
+# Local env overrides (.env.example stays tracked)
+.env.local
+.env.*.local
+
+# Local tool state
+.claude/settings.local.json
+.cache/
+coverage/

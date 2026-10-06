@@ -1,15 +1,34 @@
 terraform {
-  required_version = ">= 1.5.0"
+  required_version = ">= 1.10.0"
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 5.0"
+      version = "~> 6.0"
     }
+    archive = {
+      source  = "hashicorp/archive"
+      version = "~> 2.7"
+    }
+  }
+
+  # State bucket is created once by hand (see README); S3-native locking needs no DynamoDB table
+  backend "s3" {
+    bucket       = "sensatempo-tfstate-221135164152"
+    key          = "sensatempo/terraform.tfstate"
+    region       = "us-east-1"
+    encrypt      = true
+    use_lockfile = true
   }
 }
 
 provider "aws" {
   region = "us-east-1"
+}
+
+# Everything here is pay-per-use: no always-on servers, load balancers or NAT gateways.
+
+locals {
+  preview_function_name = "sensatempo-preview-ssr"
 }
 
 # --- 1. PRODUCTION: S3 + CLOUDFRONT (STATIC) ---
@@ -35,10 +54,45 @@ resource "aws_cloudfront_origin_access_control" "default" {
   signing_protocol                  = "sigv4"
 }
 
+# S3 REST origins don't resolve /es/about/ to /es/about/index.html, and there is no root page,
+# so rewrite directory URLs and send / to the default language.
+resource "aws_cloudfront_function" "rewrite_index" {
+  name    = "sensatempo-rewrite-index"
+  runtime = "cloudfront-js-2.0"
+  publish = true
+  code    = <<-EOT
+    function handler(event) {
+      var request = event.request;
+      var uri = request.uri;
+
+      if (uri === '/') {
+        return {
+          statusCode: 302,
+          statusDescription: 'Found',
+          headers: { location: { value: '/${var.default_language}/' } },
+        };
+      }
+
+      if (uri.endsWith('/')) {
+        request.uri += 'index.html';
+      } else if (!uri.split('/').pop().includes('.')) {
+        request.uri += '/index.html';
+      }
+
+      return request;
+    }
+  EOT
+}
+
+data "aws_cloudfront_cache_policy" "caching_optimized" {
+  name = "Managed-CachingOptimized"
+}
+
 resource "aws_cloudfront_distribution" "prod_site" {
-  enabled             = true
-  is_ipv6_enabled     = true
-  default_root_object = "index.html"
+  enabled         = true
+  is_ipv6_enabled = true
+  # North America + Europe edges only: cheapest tier, still covers Mexico
+  price_class = "PriceClass_100"
 
   origin {
     domain_name              = aws_s3_bucket.prod_assets.bucket_regional_domain_name
@@ -47,19 +101,17 @@ resource "aws_cloudfront_distribution" "prod_site" {
   }
 
   default_cache_behavior {
-    allowed_methods  = ["GET", "HEAD"]
-    cached_methods   = ["GET", "HEAD"]
-    target_origin_id = "S3-Production"
-
-    forwarded_values {
-      query_string = false
-      cookies { forward = "none" }
-    }
-
+    allowed_methods        = ["GET", "HEAD"]
+    cached_methods         = ["GET", "HEAD"]
+    target_origin_id       = "S3-Production"
+    cache_policy_id        = data.aws_cloudfront_cache_policy.caching_optimized.id
+    compress               = true
     viewer_protocol_policy = "redirect-to-https"
-    min_ttl                = 0
-    default_ttl            = 3600
-    max_ttl                = 86400
+
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.rewrite_index.arn
+    }
   }
 
   restrictions {
@@ -91,13 +143,7 @@ resource "aws_s3_bucket_policy" "allow_cloudfront" {
   })
 }
 
-# --- 2. PREVIEW: ECR + LAMBDA (SSR CONTAINER) ---
-
-resource "aws_ecr_repository" "preview_app" {
-  name                 = "sensatempo-preview"
-  image_tag_mutability = "MUTABLE"
-  force_delete         = true # Allows terraform destroy even if images exist
-}
+# --- 2. PREVIEW: LAMBDA (SSR, ZIP + LAMBDA WEB ADAPTER LAYER) ---
 
 resource "aws_iam_role" "lambda_exec" {
   name = "preview_lambda_role"
@@ -116,37 +162,67 @@ resource "aws_iam_role_policy_attachment" "lambda_logs" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
+# Created up front so logs expire instead of being kept (and billed) forever
+resource "aws_cloudwatch_log_group" "preview_ssr" {
+  name              = "/aws/lambda/${local.preview_function_name}"
+  retention_in_days = 14
+}
+
+# Placeholder code so the function can be created; CI deploys the real package (scripts/package-preview.sh)
+data "archive_file" "preview_placeholder" {
+  type        = "zip"
+  output_path = "${path.module}/.build/preview-placeholder.zip"
+
+  source {
+    filename = "run.sh"
+    content  = "#!/bin/sh\necho 'Preview not deployed yet' >&2\nexit 1\n"
+  }
+}
+
 resource "aws_lambda_function" "preview_ssr" {
-  function_name = "sensatempo-preview-ssr"
+  function_name = local.preview_function_name
   role          = aws_iam_role.lambda_exec.arn
-  package_type  = "Image"
+  runtime       = "nodejs24.x"
+  handler       = "run.sh"
   architectures = ["arm64"] # Cheaper and faster
 
-  # Placeholder image (GitHub Actions will update this later)
-  image_uri = "${aws_ecr_repository.preview_app.repository_url}:latest"
+  filename         = data.archive_file.preview_placeholder.output_path
+  source_code_hash = data.archive_file.preview_placeholder.output_base64sha256
+
+  # Runs run.sh as a normal Node server and translates Lambda events to HTTP
+  layers = ["arn:aws:lambda:us-east-1:753240598075:layer:LambdaAdapterLayerArm64:${var.lambda_web_adapter_layer_version}"]
 
   timeout     = 30
   memory_size = 512
 
   environment {
     variables = {
-      AWS_LAMBDA_WEB_ADAPTER_PORT = "8080"
-      PREVIEW_BASIC_AUTH_USER     = var.preview_basic_auth_user
-      PREVIEW_BASIC_AUTH_PASSWORD = var.preview_basic_auth_password
+      AWS_LAMBDA_EXEC_WRAPPER          = "/opt/bootstrap"
+      AWS_LWA_PORT                     = "8080"
+      AWS_LWA_READINESS_CHECK_PROTOCOL = "tcp" # "/" may answer 401 (basic auth) or 404
+      HOST                             = "127.0.0.1"
+      PORT                             = "8080"
+      NODE_ENV                         = "production"
+      PREVIEW_BASIC_AUTH_USER          = var.preview_basic_auth_user
+      PREVIEW_BASIC_AUTH_PASSWORD      = var.preview_basic_auth_password
     }
   }
 
-  # Terraform does not track ECR :latest — apply would fight CI/local image pushes.
-  # Env vars, timeout, memory, etc. still update on apply; use the CLI/workflow for new images.
+  # Code is deployed by CI / `make deploy-preview`; apply would otherwise roll it back to the placeholder.
   lifecycle {
-    ignore_changes = [image_uri] # Don't overwrite the GitHub Action's deployment
+    ignore_changes = [filename, source_code_hash]
   }
+
+  depends_on = [
+    aws_cloudwatch_log_group.preview_ssr,
+    aws_iam_role_policy_attachment.lambda_logs,
+  ]
 }
 
-# The public URL for Storyblok to hit
+# The public URL for Storyblok to hit (free; protected by basic auth in src/middleware.ts)
 resource "aws_lambda_function_url" "preview_url" {
   function_name      = aws_lambda_function.preview_ssr.function_name
-  authorization_type = "NONE" # Publicly accessible for the preview domain
+  authorization_type = "NONE"
 }
 
 # Function URLs do not invoke the function until the resource policy allows it.
@@ -162,16 +238,81 @@ resource "aws_lambda_permission" "preview_function_url_public" {
   depends_on = [aws_lambda_function_url.preview_url]
 }
 
+# --- 3. CI: GITHUB ACTIONS OIDC (NO LONG-LIVED KEYS) ---
+
+resource "aws_iam_openid_connect_provider" "github" {
+  url            = "https://token.actions.githubusercontent.com"
+  client_id_list = ["sts.amazonaws.com"]
+}
+
+resource "aws_iam_role" "github_deploy" {
+  name = "sensatempo-github-deploy"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Action    = "sts:AssumeRoleWithWebIdentity"
+      Principal = { Federated = aws_iam_openid_connect_provider.github.arn }
+      Condition = {
+        StringEquals = {
+          "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
+          # Only workflows running on main can deploy
+          "token.actions.githubusercontent.com:sub" = "repo:${var.github_repository}:ref:refs/heads/main"
+        }
+      }
+    }]
+  })
+}
+
+# Just enough to deploy: sync the prod bucket, invalidate the CDN, update the preview code
+resource "aws_iam_role_policy" "github_deploy" {
+  name = "deploy"
+  role = aws_iam_role.github_deploy.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["s3:ListBucket"]
+        Resource = aws_s3_bucket.prod_assets.arn
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"]
+        Resource = "${aws_s3_bucket.prod_assets.arn}/*"
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["cloudfront:CreateInvalidation"]
+        Resource = aws_cloudfront_distribution.prod_site.arn
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["lambda:UpdateFunctionCode", "lambda:GetFunction", "lambda:GetFunctionConfiguration"]
+        Resource = aws_lambda_function.preview_ssr.arn
+      },
+    ]
+  })
+}
+
 # --- OUTPUTS ---
 
 output "cloudfront_domain" {
   value = aws_cloudfront_distribution.prod_site.domain_name
 }
 
+output "cloudfront_distribution_id" {
+  value = aws_cloudfront_distribution.prod_site.id
+}
+
+output "prod_bucket" {
+  value = aws_s3_bucket.prod_assets.bucket
+}
+
 output "preview_lambda_url" {
   value = aws_lambda_function_url.preview_url.function_url
 }
 
-output "ecr_repository_url" {
-  value = aws_ecr_repository.preview_app.repository_url
+output "github_deploy_role_arn" {
+  value = aws_iam_role.github_deploy.arn
 }
