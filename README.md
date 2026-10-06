@@ -47,11 +47,11 @@ Pages are in `src/pages/` and use dynamic routing with the `[lang]` parameter. C
 
 Everything runs on **AWS (us-east-1)** and is pay-per-use: nothing bills while the site has no visitors.
 
-| Environment    | Hosting                                                                              | Built by                                | Description                                                                                                                                |
-| :------------- | :----------------------------------------------------------------------------------- | :-------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------- |
-| **Production** | **S3 + CloudFront**                                                                  | `prod-deploy.yaml` on push to `main`    | Fully static build (published content). A CloudFront Function maps `/es/about/` to `index.html` and redirects `/` to the default language. |
-| **Preview**    | **Lambda** (zip, Node 24, arm64) + **Lambda Web Adapter** layer, public Function URL | `preview-deploy.yaml` on push to `main` | SSR build for Storyblok editors: draft content fetched per request, Visual Editor bridge, HTTP Basic Auth (`src/middleware.ts`).           |
-| **Local QA**   | **Nginx** in Docker                                                                  | `make run-prod-preview`                 | Serves the static production build on http://localhost:8080.                                                                               |
+| Environment    | Hosting                                                                                    | Built by                                | Description                                                                                                                                |
+| :------------- | :----------------------------------------------------------------------------------------- | :-------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------- |
+| **Production** | **S3 + CloudFront**                                                                        | `prod-deploy.yaml` on push to `main`    | Fully static build (published content). A CloudFront Function maps `/es/about/` to `index.html` and redirects `/` to the default language. |
+| **Preview**    | **Lambda** (zip, Node 24, arm64) + **Lambda Web Adapter** layer, behind its own CloudFront | `preview-deploy.yaml` on push to `main` | SSR build for Storyblok editors: draft content fetched per request, Visual Editor bridge, HTTP Basic Auth (`src/middleware.ts`).           |
+| **Local QA**   | **Nginx** in Docker                                                                        | `make run-prod-preview`                 | Serves the static production build on http://localhost:8080.                                                                               |
 
 **Temporary URLs** (no custom domain yet):
 
@@ -108,7 +108,7 @@ aws ssm put-parameter --region us-east-1 --type SecureString --overwrite \
 
 After rotating the preview token or the basic auth values, run `pnpm tf:apply` to push them to the Lambda. Locally, builds read the tokens from `.env`.
 
-**Storyblok Visual Editor:** the preview loads the Storyblok bridge (static builds don't). The editor iframe can't answer the basic auth prompt, so `src/middleware.ts` also lets in requests carrying a valid `_storyblok_tk` (sha1 of `space_id:preview_token:timestamp`, at most 1 hour old) and swaps it for a signed 8-hour session cookie (`SameSite=None; Partitioned`), so links clicked inside the editor keep working. In Storyblok, set the preview URL to `<preview_lambda_url>/es/` and the `home` story's real path to `/`.
+**Storyblok Visual Editor:** the preview loads the Storyblok bridge (static builds don't). The editor iframe can't answer the basic auth prompt, so `src/middleware.ts` also lets in requests carrying a valid `_storyblok_tk` (sha1 of `space_id:preview_token:timestamp`, at most 1 hour old) and swaps it for a signed 8-hour session cookie (`SameSite=None; Partitioned`), so links clicked inside the editor keep working. In Storyblok, set the preview URL to `<preview_url>/es/` (the CloudFront one: Function URLs reject the editor's `_storyblok_tk[...]` query keys, so a CloudFront Function percent-encodes them) and the `home` story's real path to `/`.
 
 **GitHub repository variables** (not secret): `AWS_DEPLOY_ROLE_ARN`, `AWS_PROD_BUCKET`, `AWS_CF_DIST_ID` (from the Terraform outputs), `PUBLIC_DEFAULT_LANGUAGE`, `PUBLIC_AVAILABLE_LANGUAGES`.
 
@@ -121,7 +121,7 @@ Infrastructure lives under **`terraform/`**. State is stored remotely in the `se
 | Area           | Resources                                                                                                                                                                                                       |
 | :------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Production** | Private S3 bucket, CloudFront distribution (Origin Access Control, managed caching policy, `PriceClass_100`), CloudFront Function for index rewrites.                                                           |
-| **Preview**    | Lambda function (zip, `nodejs24.x`, arm64, Lambda Web Adapter layer), Function URL, IAM role, CloudWatch log group (14-day retention).                                                                          |
+| **Preview**    | Lambda function (zip, `nodejs24.x`, arm64, Lambda Web Adapter layer), Function URL, CloudFront distribution in front (no caching), IAM role, CloudWatch log group (14-day retention).                           |
 | **CI**         | GitHub OIDC provider and the `sensatempo-github-deploy` role. Only workflows on `main` can assume it; it can read `/sensatempo/storyblok/*`, sync the bucket, invalidate CloudFront and update the Lambda code. |
 
 ```bash
@@ -130,6 +130,6 @@ pnpm tf:plan
 pnpm tf:apply
 ```
 
-**Outputs:** `cloudfront_domain`, `cloudfront_distribution_id`, `prod_bucket`, `preview_lambda_url`, `github_deploy_role_arn`.
+**Outputs:** `cloudfront_domain`, `cloudfront_distribution_id`, `prod_bucket`, `preview_url`, `preview_lambda_url`, `github_deploy_role_arn`.
 
 Terraform creates the Lambda with placeholder code and ignores code changes afterwards. Real code is deployed by CI or `make deploy-preview`, so `terraform apply` never rolls it back.
