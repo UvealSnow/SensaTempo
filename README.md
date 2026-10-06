@@ -61,7 +61,7 @@ Everything runs on **AWS (us-east-1)** and is pay-per-use: nothing bills while t
 
 **Deploying any branch:** Actions → _Deploy branch_ → _Run workflow_. Keep "Use workflow from" on `main` (the AWS role only trusts `main`), enter the branch, tag or SHA in **ref** and pick **target** (`preview`, `production` or `both`). The deploy stays until the next one; any push to `main` redeploys `main`. Production publishes what it's serving at `/version.json`; to roll back, run it again with `ref=main`.
 
-**Publishing content rebuilds production:** a Storyblok webhook (story published, unpublished, deleted or moved; datasource entries saved or deleted) calls the `sensatempo-storyblok-webhook` Lambda (`terraform/webhook/index.mjs`). It checks the `webhook-signature` (HMAC-SHA1 of the body) and sends a `storyblok-publish` `repository_dispatch` to GitHub, which runs `prod-deploy.yaml` on `main` (~1–2 min). Bursts queue into at most one extra build. This replaces any branch deployed to production. `/version.json` shows the `trigger` (`push`, `dispatch` or `storyblok:<action> <full_slug>`). Storyblok setup: Settings → Webhooks, URL = Terraform output `storyblok_webhook_url`, secret = `/sensatempo/storyblok/webhook-secret`.
+**Publishing content rebuilds production:** a Storyblok webhook (story published, unpublished, deleted or moved; datasource entries saved or deleted) calls the `sensatempo-storyblok-webhook` Lambda (`terraform/webhook/index.mjs`). It requires the webhook secret, either as the `webhook-signature` header (HMAC-SHA1 of the body; paid Storyblok plans) or as `?key=<secret>` in the URL (the free plan has no secret field), and sends a `storyblok-publish` `repository_dispatch` to GitHub, which runs `prod-deploy.yaml` on `main` (~1–2 min). Bursts queue into at most one extra build. This replaces any branch deployed to production. `/version.json` shows the `trigger` (`push`, `dispatch` or `storyblok:<action> <full_slug>`). Storyblok setup: Settings → Webhooks, URL = Terraform output `storyblok_webhook_url` + `?key=<secret>` (secret = `/sensatempo/storyblok/webhook-secret`); on a paid plan put the secret in the secret field instead.
 
 ---
 
@@ -95,14 +95,14 @@ Everything runs on **AWS (us-east-1)** and is pay-per-use: nothing bills while t
 
 Secrets live in **AWS SSM Parameter Store** as `SecureString`s (free standard tier, AWS-managed `aws/ssm` key). Nothing secret is stored in GitHub or in the repo.
 
-| Parameter                                 | Used by                                                                                    |
-| :---------------------------------------- | :----------------------------------------------------------------------------------------- |
-| `/sensatempo/storyblok/public-token`      | Production build in CI (read via the GitHub OIDC deploy role)                              |
-| `/sensatempo/storyblok/preview-token`     | Preview build in CI, and the preview Lambda at runtime (draft fetches, Visual Editor auth) |
-| `/sensatempo/preview/basic-auth-user`     | Preview Lambda basic auth (read by Terraform into the Lambda env)                          |
-| `/sensatempo/preview/basic-auth-password` | Preview Lambda basic auth                                                                  |
-| `/sensatempo/storyblok/webhook-secret`    | Publish webhook Lambda (signature check); the same value goes in Storyblok's webhook form  |
-| `/sensatempo/github/dispatch-token`       | Publish webhook Lambda, to call GitHub's `repository_dispatch` API                         |
+| Parameter                                 | Used by                                                                                             |
+| :---------------------------------------- | :-------------------------------------------------------------------------------------------------- |
+| `/sensatempo/storyblok/public-token`      | Production build in CI (read via the GitHub OIDC deploy role)                                       |
+| `/sensatempo/storyblok/preview-token`     | Preview build in CI, and the preview Lambda at runtime (draft fetches, Visual Editor auth)          |
+| `/sensatempo/preview/basic-auth-user`     | Preview Lambda basic auth (read by Terraform into the Lambda env)                                   |
+| `/sensatempo/preview/basic-auth-password` | Preview Lambda basic auth                                                                           |
+| `/sensatempo/storyblok/webhook-secret`    | Publish webhook Lambda (signature or `?key=` check); the same value goes in Storyblok's webhook URL |
+| `/sensatempo/github/dispatch-token`       | Publish webhook Lambda, to call GitHub's `repository_dispatch` API                                  |
 
 **Dispatch token:** a fine-grained GitHub PAT limited to this repository with only `Contents: read & write` (what `repository_dispatch` needs). Fine-grained PATs expire after at most 1 year: note the expiry date, then rotate by creating a new token, updating the parameter and running `pnpm tf:apply`. Until then publishes fail with 502 in Storyblok's webhook log.
 

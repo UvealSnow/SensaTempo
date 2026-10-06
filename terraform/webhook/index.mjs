@@ -1,8 +1,10 @@
 // Storyblok webhook -> GitHub repository_dispatch, so publishing content rebuilds production.
-// Runs behind a public Lambda Function URL (payload v2.0); the HMAC signature is the only protection.
+// Runs behind a public Lambda Function URL (payload v2.0). Requests must carry the webhook secret,
+// either as Storyblok's HMAC signature (paid plans) or as ?key=<secret> in the URL (free plan, which
+// has no webhook secret field).
 // No dependencies: Node 24's fetch + node:crypto. Tested by index.test.mjs (pnpm test).
 /* eslint-disable no-console -- console is the Lambda log */
-import { createHmac, timingSafeEqual } from 'node:crypto';
+import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 
 const REPOSITORY = 'UvealSnow/SensaTempo';
 export const DISPATCH_URL = `https://api.github.com/repos/${REPOSITORY}/dispatches`;
@@ -29,6 +31,13 @@ const validSignature = (rawBody, signature, secret) => {
   return (
     received.length === expected.length && timingSafeEqual(received, expected)
   );
+};
+
+// ?key=<secret>: hash both sides so timingSafeEqual gets equal lengths
+const validKey = (key, secret) => {
+  if (!secret || typeof key !== 'string' || !key) return false;
+  const digest = (value) => createHash('sha256').update(value).digest();
+  return timingSafeEqual(digest(key), digest(secret));
 };
 
 // Keep client_payload small and plain: it ends up in the workflow's version.json and summary
@@ -63,14 +72,12 @@ export const handler = async (event) => {
     event.body ?? '',
     event.isBase64Encoded ? 'base64' : 'utf8'
   );
+  const secret = process.env.STORYBLOK_WEBHOOK_SECRET;
   if (
-    !validSignature(
-      rawBody,
-      event.headers?.['webhook-signature'],
-      process.env.STORYBLOK_WEBHOOK_SECRET
-    )
+    !validSignature(rawBody, event.headers?.['webhook-signature'], secret) &&
+    !validKey(event.queryStringParameters?.key, secret)
   ) {
-    return reply(401, { error: 'invalid signature' });
+    return reply(401, { error: 'invalid signature or key' });
   }
 
   let payload;
