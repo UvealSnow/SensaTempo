@@ -15,7 +15,7 @@ Sensa Tempo is a minimal, fast, and SEO-friendly photography blog built with [As
 ```text
 ├── public/
 ├── src/
-│   ├── components/       Astro/React/Vue/Svelte components
+│   ├── components/       Astro components
 │   ├── layouts/          Page layouts
 │   ├── loaders/          Storyblok content loaders
 │   ├── middleware.ts     Basic auth for preview
@@ -39,7 +39,7 @@ Pages are in `src/pages/` and use dynamic routing with the `[lang]` parameter. C
 | `pnpm build`        | Build production site to `./dist/`   |
 | `pnpm preview`      | Preview built site locally           |
 | `pnpm format`       | Format files with Prettier           |
-| `pnpm format:check` | Check format compliance (used in CI) |
+| `pnpm format:check` | Check format compliance              |
 | `pnpm lint`         | Lint with ESLint                     |
 | `pnpm lint:fix`     | Fix auto-fixable lint issues         |
 
