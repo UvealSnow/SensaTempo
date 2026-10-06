@@ -1,12 +1,13 @@
 # Variables
 IMAGE_NAME := sensatempo-prod
 PREVIEW_IMAGE := sensatempo-preview
+PREVIEW_LAMBDA_NAME ?= sensatempo-preview-ssr
 DOCKERFILE := ./docker/Dockerfile
 
 # Load PUBLIC variables from .env for build-args
 AWS_REGION ?= us-east-1
 AWS_ACCOUNT_ID ?= $(shell aws sts get-caller-identity --query Account --output text)
-AWS_ECR_REGISTRY := $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com
+AWS_ECR_REGISTRY = $(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com
 PUBLIC_DEFAULT_LANGUAGE ?= $(shell grep '^PUBLIC_DEFAULT_LANGUAGE=' .env | cut -d'=' -f2)
 PUBLIC_AVAILABLE_LANGUAGES ?= $(shell grep '^PUBLIC_AVAILABLE_LANGUAGES=' .env | cut -d'=' -f2)
 
@@ -35,7 +36,7 @@ define docker_build
 		-t $(if $(2),$(2),$(IMAGE_NAME)):latest .
 endef
 
-.PHONY: build-prod build-preview run-preview run-prod-preview clean
+.PHONY: build-prod build-preview run-preview run-prod-preview clean push-preview-image preview-lambda-update-image
 
 # Build the Production Static Site (with secret mount)
 build-prod:
@@ -59,11 +60,11 @@ run-preview:
 run-prod-preview:
 	$(call draw_header,${GREEN},Building Production Static Preview...)
 	$(call docker_build,prod-preview)
-	$(call draw_header,${GREEN},Starting local Node SSG preview on http://localhost:8080)
+	$(call draw_header,${GREEN},Starting local Nginx static preview on http://localhost:8080)
 	docker run --rm -p 8080:8080 $(IMAGE_NAME):latest
 
 
-# Push the preview image to ECR
+# Push the preview image to ECR and point the Lambda at this tag (Terraform skips image_uri updates on purpose)
 push-preview-image:
 	$(call draw_header,${GREEN},Building Live Preview Image...)
 	$(call docker_build,live-preview,${PREVIEW_IMAGE})
@@ -71,6 +72,19 @@ push-preview-image:
 	docker tag $(PREVIEW_IMAGE):latest "$(AWS_ECR_REGISTRY)/$(PREVIEW_IMAGE):latest"
 	aws ecr get-login-password --region $(AWS_REGION) | docker login --username AWS --password-stdin "$(AWS_ECR_REGISTRY)"
 	docker push "$(AWS_ECR_REGISTRY)/$(PREVIEW_IMAGE):latest"
+	$(call draw_header,${GREEN},Updating Lambda function code to new image...)
+	aws lambda update-function-code \
+		--function-name $(PREVIEW_LAMBDA_NAME) \
+		--image-uri "$(AWS_ECR_REGISTRY)/$(PREVIEW_IMAGE):latest" \
+		--region $(AWS_REGION)
+
+# If the image is already in ECR, only refresh Lambda (same URI forces pull of new :latest digest)
+preview-lambda-update-image:
+	$(call draw_header,${GREEN},Updating Lambda function code to new image...)
+	aws lambda update-function-code \
+		--function-name $(PREVIEW_LAMBDA_NAME) \
+		--image-uri "$(AWS_ECR_REGISTRY)/$(PREVIEW_IMAGE):latest" \
+		--region $(AWS_REGION)
 
 
 # Clean up local docker images

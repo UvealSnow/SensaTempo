@@ -17,6 +17,7 @@
     "docker:prod:build": "make build-prod",
     "docker:prod:preview": "make run-prod-preview",
     "docker:cleanup": "make clean",
+    "lambda:update": "make preview-lambda-update-image",
     "tf:init": "terraform -chdir=./terraform init",
     "tf:plan": "terraform -chdir=./terraform plan",
     "tf:apply": "terraform -chdir=./terraform apply -var-file=secret.tfvars",

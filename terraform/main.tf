@@ -130,12 +130,14 @@ resource "aws_lambda_function" "preview_ssr" {
 
   environment {
     variables = {
-      AWS_LAMBDA_WEB_ADAPTER_PORT     = "8080"
-      PREVIEW_BASIC_AUTH_USER         = var.preview_basic_auth_user
-      PREVIEW_BASIC_AUTH_PASSWORD     = var.preview_basic_auth_password
+      AWS_LAMBDA_WEB_ADAPTER_PORT = "8080"
+      PREVIEW_BASIC_AUTH_USER     = var.preview_basic_auth_user
+      PREVIEW_BASIC_AUTH_PASSWORD = var.preview_basic_auth_password
     }
   }
 
+  # Terraform does not track ECR :latest — apply would fight CI/local image pushes.
+  # Env vars, timeout, memory, etc. still update on apply; use the CLI/workflow for new images.
   lifecycle {
     ignore_changes = [image_uri] # Don't overwrite the GitHub Action's deployment
   }
