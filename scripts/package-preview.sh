@@ -20,6 +20,8 @@ node scripts/lambda-package-json.mjs dist/server "$STAGE/package.json"
 
 # Install for the Lambda platform (linux arm64 glibc) whatever machine we're on
 (cd "$STAGE" && npm install --omit=dev --no-package-lock --os=linux --cpu=arm64 --libc=glibc --no-audit --no-fund >/dev/null)
+# sharp's WASM fallback is unused next to the native linux-arm64 binary
+rm -rf "$STAGE/node_modules/@img/sharp-wasm32"
 
 printf '#!/bin/sh\nexec node dist/server/entry.mjs\n' > "$STAGE/run.sh"
 chmod +x "$STAGE/run.sh"

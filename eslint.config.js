@@ -68,6 +68,7 @@ export default [
       'node_modules/**',
       'dist/**',
       '.astro/**',
+      '.claude/**',
       'public/**',
       '*.config.{js,mjs,cjs,ts}',
       'pnpm-lock.yaml',

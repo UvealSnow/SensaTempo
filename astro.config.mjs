@@ -48,6 +48,10 @@ export default defineConfig({
   vite: {
     // @ts-ignore
     plugins: [tailwindcss()],
+    // Bundle (and tree-shake) the Storyblok SDK; as an external it drags ~80 MB of rich-text deps into the Lambda zip
+    ssr: {
+      noExternal: ['@storyblok/js'],
+    },
     resolve: {
       alias: {
         '~': new URL('./src', import.meta.url).pathname,
