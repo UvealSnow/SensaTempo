@@ -25,3 +25,18 @@ pnpm-debug.log*
 
 # keys
 *.pem
+
+# Local .terraform folder (contains plugins/binaries)
+.terraform/
+
+# Terraform state files (Contains your INFRASTRUCTURE SECRETS)
+*.tfstate
+*.tfstate.backup
+*.tfstate.lock.info
+
+# Terraform variables (if you create a secret.tfvars file)
+*.tfvars
+*.tfvars.json
+
+# Crash logs
+crash.log

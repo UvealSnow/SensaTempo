@@ -139,3 +139,49 @@ For the best development experience:
 - `eslint.config.js` - ESLint flat configuration
 - `.vscode/settings.json` - VS Code workspace settings
 - `.vscode/extensions.json` - Recommended extensions
+
+## 🛠 Development & Build Process
+
+This project uses a **multi-stage Docker architecture** managed via a `Makefile` to handle both static production builds and SSR preview environments.
+
+---
+
+### 📋 Prerequisites
+* **Docker** (with BuildKit enabled)
+* **pnpm** (for local dependency management)
+* **GNU Make**
+* A local `.env` file (see `.env.example`) containing:
+    * `STORYBLOK_ACCESS_TOKEN`
+    * `PUBLIC_DEFAULT_LANGUAGE`
+    * `PUBLIC_AVAILABLE_LANGUAGES`
+
+---
+
+### 🏗 Environment Strategy
+
+| Environment | Target | Delivery | Description |
+| :--- | :--- | :--- | :--- |
+| **Production** | `build-prod` | **S3 + CloudFront** | Fully static build. API keys are used only during build-time via Docker Secret Mounts. |
+| **Preview** | `live-preview` | **Lambda + Adapter** | SSR container running with the AWS Lambda Web Adapter. Uses runtime env vars. |
+| **Local QA** | `prod-preview` | **Nginx** | A local Nginx container serving the static production build for final validation. |
+
+---
+
+### 🚀 Essential Commands
+
+| Command | Action |
+| :--- | :--- |
+| `make build-prod` | Builds the static production image using `.env` secrets. |
+| `make build-preview` | Builds the ARM64 container for AWS Lambda deployment. |
+| `make run-prod-preview` | Launches the production build in a local Nginx container at `http://localhost:8080`. |
+| `make clean` | Removes local build images and temporary docker artifacts. |
+
+---
+
+### 🔒 Security & Environment Variables
+
+We prioritize security by ensuring sensitive tokens are never "baked" into Docker image layers.
+
+1. **Build-time Secrets:** For the static production build, the `STORYBLOK_ACCESS_TOKEN` is mounted temporarily using `--mount=type=secret`. It is available during `pnpm build` but does not exist in the final image.
+2. **Runtime Variables:** For the Preview SSR environment, variables are injected by the host (AWS Lambda) at runtime.
+3. **CI/CD:** GitHub Actions uses Open

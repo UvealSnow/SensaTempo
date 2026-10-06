@@ -1,0 +1,64 @@
+---
+import {
+  getColSpans,
+  getColStarts,
+  getVerticalAlignment,
+  type FlexSize,
+  type FlexStart,
+  type VerticalAlign,
+} from '~/utils/grid';
+type TextAlign = 'left' | 'center' | 'right';
+
+interface Props {
+  text: string;
+  header?: string;
+  size?: FlexSize;
+  start?: FlexStart;
+  vertical?: VerticalAlign;
+  textAlign?: TextAlign;
+  class?: string;
+}
+
+const {
+  text,
+  header,
+  size,
+  start,
+  vertical,
+  textAlign = 'left',
+  class: className,
+} = Astro.props;
+
+const textAlignMap: Record<TextAlign, string> = {
+  left: 'text-left',
+  center: 'text-center',
+  right: 'text-right',
+};
+
+const sizeClass =
+  getColSpans(size ?? { sm: '12/12' }, 'col-span-12') +
+  getColStarts(start ?? {}) +
+  ` ${getVerticalAlignment(vertical)}`;
+---
+
+<section class={`${sizeClass} ${className ?? ''} pb-32`.trim()}>
+  {
+    header && (
+      <h1
+        class={`font-display text-4xl md:text-5xl text-[#444] mb-16 mt-24 ${textAlignMap[textAlign]}`}
+      >
+        {header}
+      </h1>
+    )
+  }
+
+  <div
+    class={`font-body text-base leading-5 text-black ${!header && 'pt-16'} ${textAlignMap[textAlign]}`}
+  >
+    {
+      text
+        .split('\n\n')
+        .map((paragraph) => <p class="mb-6 last:mb-0">{paragraph}</p>)
+    }
+  </div>
+</section>

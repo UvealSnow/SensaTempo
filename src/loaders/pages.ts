@@ -9,7 +9,7 @@ const isDev = import.meta.env.DEV;
 
 export function pagesLoader(): Loader {
   return {
-    name: 'storyblok-paged-loader',
+    name: 'storyblok-pages-loader',
     load: async ({
       meta,
       store,

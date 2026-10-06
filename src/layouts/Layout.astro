@@ -1,8 +1,8 @@
 ---
-import Header from '~/components/Header.astro';
-import Footer from '~/components/Footer.astro';
+import NavBar from '~/components/layout/NavBar.astro';
+import Footer from '~/components/layout/Footer.astro';
 
-import './src/styles/global.css';
+import '../styles/global.css';
 ---
 
 <html lang="es">
@@ -13,9 +13,9 @@ import './src/styles/global.css';
   </head>
 
   <body class="bg-off-white min-h-screen flex flex-col">
-    <Header />
+    <NavBar />
 
-    <main class="py-36 px-4 flex-1">
+    <main class="pb-8 px-4 container mx-auto md:px-8 xl:px-0">
       <slot />
     </main>
 
@@ -24,12 +24,31 @@ import './src/styles/global.css';
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      const actionButton = document.querySelector('.navbar .action')!;
-      const icons = actionButton.querySelectorAll('svg');
+      const actionButton = document.querySelector<HTMLButtonElement>(
+        '[data-navbar-toggle]'
+      );
+      const links = document.querySelector<HTMLElement>('[data-navbar-links]');
+      const openIcon = document.querySelector<HTMLElement>('[data-navbar-icon-open]');
+      const closeIcon = document.querySelector<HTMLElement>('[data-navbar-icon-close]');
+
+      if (!actionButton || !links || !openIcon || !closeIcon) return;
+
+      const setMenuState = (isOpen: boolean) => {
+        openIcon.classList.toggle('hidden', isOpen);
+        closeIcon.classList.toggle('hidden', !isOpen);
+        links.classList.toggle('hidden', !isOpen);
+        links.classList.toggle('flex', isOpen);
+        actionButton.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        document.body.classList.toggle('overflow-hidden', isOpen);
+      };
 
       actionButton.addEventListener('click', () => {
-        icons.forEach((icon) => icon.classList.toggle('hidden'));
-        document.querySelector('.nav-links')?.classList.toggle('hidden');
+        const isExpanded = actionButton.getAttribute('aria-expanded') === 'true';
+        setMenuState(!isExpanded);
+      });
+
+      window.addEventListener('resize', () => {
+        if (window.innerWidth >= 768) setMenuState(false);
       });
     });
   </script>

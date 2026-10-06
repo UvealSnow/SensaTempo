@@ -1,6 +1,10 @@
 ---
 import { getCollection } from 'astro:content';
 import { AVAILABLE_LANGUAGES } from '~/consts';
+import Layout from '~/layouts/Layout.astro';
+import Header from '~/components/Header.astro';
+import Picture from '~/components/Picture.astro';
+import Paragraph from '~/components/Paragraph.astro';
 
 export async function getStaticPaths() {
   const allPages = await getCollection('pages');
@@ -18,10 +22,53 @@ export async function getStaticPaths() {
 
   return paths;
 }
-
-const { slug } = Astro.params;
 ---
 
-<main>
-  ayyy loquita {slug}
-</main>
+<Layout>
+  <div class="grid grid-cols-12 gap-4">
+    <Header
+      src="https://www.figma.com/api/mcp/asset/a8f86c1c-6467-432a-a8e9-29ee2cb35827"
+      size={{ sm: '12/12' }}
+      position="center 42%"
+      loading="eager"
+    />
+
+    <Paragraph
+      header="Sample header"
+      text={`Excepteur ullamco labore fugiat nisi voluptate. Velit consectetur id quis pariatur. Est eu ut cupidatat commodo quis. Proident ex anim magna sunt enim amet adipisicing commodo.
+    
+    Consectetur commodo ea nisi incididunt. Sit dolore laboris officia nulla cupidatat Lorem aute ullamco eu non proident velit. Culpa Lorem minim dolor voluptate adipisicing reprehenderit.
+    
+    Ad excepteur dolore reprehenderit culpa sint labore eu velit ullamco duis excepteur pariatur incididunt enim. Consectetur incididunt amet reprehenderit ex deserunt cillum pariatur eiusmod ut duis minim exercitation non in.
+    
+    Sint ullamco dolor nisi magna aliqua voluptate deserunt pariatur. Amet adipisicing cillum irure cillum Lorem enim exercitation aliquip dolore.`}
+      textAlign="left"
+      size={{ sm: '12/12', md: '8/12' }}
+      start={{ md: '3/12' }}
+    />
+
+    <Picture
+      src="https://www.figma.com/api/mcp/asset/387d607b-7976-40fc-b094-1a2556bd5db7"
+      caption="Sample photo caption - 16.07.2025"
+      size={{ sm: '7/12' }}
+    />
+    <Picture
+      src="https://www.figma.com/api/mcp/asset/aea2af7d-fdd1-492e-9299-bd715f611435"
+      caption="Sample photo caption - 16.07.2025"
+      size={{ sm: '5/12' }}
+      start={{ md: '7/12' }}
+      vertical="center"
+    />
+
+    <Paragraph
+      text={`Nisi commodo dolor laborum incididunt officia id excepteur laborum aliquip. Culpa anim sit officia tempor ex ullamco elit exercitation ex in magna sint laboris.
+    
+    Cillum labore enim eiusmod sint laboris ex adipisicing tempor aute ex deserunt qui non anim. Voluptate proident dolor Lorem sint dolor reprehenderit minim dolor.
+    
+    Ipsum proident irure nisi pariatur sint enim magna laborum velit est sit qui sint nisi.`}
+      textAlign="center"
+      size={{ sm: '12/12', md: '8/12' }}
+      start={{ md: '3/12' }}
+    />
+  </div>
+</Layout>
