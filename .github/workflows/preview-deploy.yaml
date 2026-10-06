@@ -7,8 +7,19 @@ on:
     paths-ignore:
       - '**.md'
       - '.gitignore'
-  # Manual trigger from the "Actions" tab (the AWS role only trusts main)
+  # Manual trigger from the "Actions" tab. Run it from main (the AWS role only trusts main)
+  # and pick any branch to build; it replaces the shared preview until the next deploy.
   workflow_dispatch:
+    inputs:
+      ref:
+        description: Branch, tag or SHA to deploy to the preview
+        required: true
+        default: main
+
+# One preview Lambda: let the latest deploy win instead of racing
+concurrency:
+  group: preview-deploy
+  cancel-in-progress: true
 
 permissions:
   id-token: write # GitHub OIDC -> AWS role, no long-lived keys
@@ -20,6 +31,8 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
 
       - uses: pnpm/action-setup@v4
         with:
@@ -58,3 +71,8 @@ jobs:
             --function-name sensatempo-preview-ssr \
             --zip-file fileb://preview-lambda.zip
           aws lambda wait function-updated --function-name sensatempo-preview-ssr
+
+      - name: Summary
+        run: echo "Deployed \`$REF\` ($(git rev-parse --short HEAD)) to the preview" >> "$GITHUB_STEP_SUMMARY"
+        env:
+          REF: ${{ inputs.ref || github.ref_name }}
