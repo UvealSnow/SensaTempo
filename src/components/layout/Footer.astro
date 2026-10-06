@@ -1,13 +1,50 @@
 ---
+import { storyblokEditable, type SbBlokData } from '@storyblok/astro';
+import { AVAILABLE_LANGUAGES } from '~/consts';
+import { linkHref, type MultilinkField } from '~/utils/navigation';
+import { currentLang } from '~/utils/page';
+
+interface Props {
+  blok: SbBlokData | null;
+}
+
+const { blok } = Astro.props;
+const lang = currentLang(Astro);
+
 const today = new Date();
+const holder = blok?.copyright_holder as string | undefined;
+const creditLabel = blok?.credit_label as string | undefined;
+const creditName = blok?.credit_name as string | undefined;
+const creditHref = linkHref(
+  blok?.credit_link as MultilinkField | undefined,
+  lang,
+  AVAILABLE_LANGUAGES
+);
+const isExternal = /^https?:\/\//.test(creditHref ?? '');
 ---
 
-<footer class="font-body text-light-gray p-4 w-full relative z-50 md:p-8 md:z-auto">
+<footer
+  class="font-body text-light-gray p-4 w-full relative z-50 md:p-8 md:z-auto"
+  {...(blok ? storyblokEditable(blok) : {})}
+>
   <p class="leading-4">
-    Copyright {today.getFullYear()} &copy; - Humberto Avila <br />
-    Made by{' '}
-    <a class="underline" href="#">
-      UvealSnow
-    </a>
+    Copyright {today.getFullYear()} &copy;{holder && ` - ${holder}`}
+    {creditName && (
+      <>
+        <br />
+        {creditLabel && `${creditLabel} `}
+        {creditHref ? (
+          <a
+            class="underline"
+            href={creditHref}
+            {...(isExternal ? { target: '_blank', rel: 'noopener' } : {})}
+          >
+            {creditName}
+          </a>
+        ) : (
+          creditName
+        )}
+      </>
+    )}
   </p>
 </footer>

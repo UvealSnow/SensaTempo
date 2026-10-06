@@ -9,14 +9,15 @@ import {
   resolveLinks,
   type LinkBlok,
 } from '~/utils/navigation';
+import { currentLang, currentSlug } from '~/utils/page';
 
 interface Props {
-  lang: string;
-  slug: string;
   blok: SbBlokData | null;
 }
 
-const { lang, slug, blok } = Astro.props;
+const { blok } = Astro.props;
+const lang = currentLang(Astro);
+const slug = currentSlug(Astro);
 
 const logo = blok?.logo as { filename?: string; alt?: string } | undefined;
 

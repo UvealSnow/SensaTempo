@@ -21,7 +21,7 @@ if (!AVAILABLE_LANGUAGES.includes(lang)) {
 const story = await getStoryContent(Astro.locals, lang, HOME_SLUG);
 ---
 
-<Layout lang={lang} slug={HOME_SLUG}>
+<Layout>
   {story ? (
     <StoryblokComponent blok={story} />
   ) : (
