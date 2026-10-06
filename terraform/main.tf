@@ -528,6 +528,118 @@ output "storyblok_webhook_url" {
   value = aws_lambda_function_url.storyblok_webhook.function_url
 }
 
+# --- 5. ALERTS: WEBHOOK ALARMS + BUDGET -> EMAIL ---
+# Free tier: metric filters, the first 10 alarms, SNS email and the first 2 budgets cost nothing.
+# The recipient lives in SSM (created by hand, like the secrets) so it stays out of this public repo.
+
+data "aws_ssm_parameter" "alerts_email" {
+  name = "${local.ssm_prefix}/alerts/email"
+}
+
+resource "aws_sns_topic" "alerts" {
+  name = "sensatempo-alerts"
+}
+
+# AWS emails a confirmation link; nothing is delivered until it's clicked
+resource "aws_sns_topic_subscription" "alerts_email" {
+  topic_arn = aws_sns_topic.alerts.arn
+  protocol  = "email"
+  endpoint  = data.aws_ssm_parameter.alerts_email.value
+}
+
+locals {
+  # Matched against the relay's log lines (terraform/webhook/index.mjs)
+  webhook_metrics = {
+    dispatched   = "\"dispatched\""
+    unauthorized = "\"unauthorized\""
+    failed       = "?\"dispatch failed\" ?\"dispatch rejected\""
+  }
+}
+
+resource "aws_cloudwatch_log_metric_filter" "storyblok_webhook" {
+  for_each       = local.webhook_metrics
+  name           = "storyblok-webhook-${each.key}"
+  log_group_name = aws_cloudwatch_log_group.storyblok_webhook.name
+  pattern        = each.value
+
+  metric_transformation {
+    name          = "Webhook${title(each.key)}"
+    namespace     = "SensaTempo"
+    value         = "1"
+    default_value = "0"
+  }
+}
+
+# Normal editing is a handful of publishes per session; sustained spam (a leaked key) crosses this fast
+resource "aws_cloudwatch_metric_alarm" "webhook_too_many_rebuilds" {
+  alarm_name          = "sensatempo-webhook-too-many-rebuilds"
+  alarm_description   = "More than 30 production rebuilds triggered by the Storyblok webhook in 1 hour. If it isn't bulk publishing, rotate /sensatempo/storyblok/webhook-secret."
+  namespace           = "SensaTempo"
+  metric_name         = aws_cloudwatch_log_metric_filter.storyblok_webhook["dispatched"].metric_transformation[0].name
+  statistic           = "Sum"
+  period              = 3600
+  evaluation_periods  = 1
+  threshold           = 30
+  comparison_operator = "GreaterThanThreshold"
+  treat_missing_data  = "notBreaching"
+  alarm_actions       = [aws_sns_topic.alerts.arn]
+}
+
+# Real Storyblok calls never 401: someone is probing the URL, or the key changed without updating Storyblok
+resource "aws_cloudwatch_metric_alarm" "webhook_unauthorized" {
+  alarm_name          = "sensatempo-webhook-unauthorized"
+  alarm_description   = "More than 50 rejected (401) calls to the Storyblok webhook in 5 minutes."
+  namespace           = "SensaTempo"
+  metric_name         = aws_cloudwatch_log_metric_filter.storyblok_webhook["unauthorized"].metric_transformation[0].name
+  statistic           = "Sum"
+  period              = 300
+  evaluation_periods  = 1
+  threshold           = 50
+  comparison_operator = "GreaterThanThreshold"
+  treat_missing_data  = "notBreaching"
+  alarm_actions       = [aws_sns_topic.alerts.arn]
+}
+
+# Publishes silently not reaching prod, usually an expired /sensatempo/github/dispatch-token
+resource "aws_cloudwatch_metric_alarm" "webhook_failed" {
+  alarm_name          = "sensatempo-webhook-failed"
+  alarm_description   = "The Storyblok webhook couldn't trigger a production rebuild (GitHub refused or was unreachable). Check the dispatch token."
+  namespace           = "SensaTempo"
+  metric_name         = aws_cloudwatch_log_metric_filter.storyblok_webhook["failed"].metric_transformation[0].name
+  statistic           = "Sum"
+  period              = 300
+  evaluation_periods  = 1
+  threshold           = 1
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  treat_missing_data  = "notBreaching"
+  alarm_actions       = [aws_sns_topic.alerts.arn]
+}
+
+# Account-wide (baseline ~$1.2/month, Route 53). Separate from the hand-made "Monthly budget" ($10).
+resource "aws_budgets_budget" "sensatempo" {
+  name         = "sensatempo-monthly"
+  budget_type  = "COST"
+  limit_amount = "5"
+  limit_unit   = "USD"
+  time_unit    = "MONTHLY"
+
+  notification {
+    comparison_operator        = "GREATER_THAN"
+    threshold                  = 100
+    threshold_type             = "PERCENTAGE"
+    notification_type          = "FORECASTED"
+    subscriber_email_addresses = [data.aws_ssm_parameter.alerts_email.value]
+  }
+
+  notification {
+    comparison_operator        = "GREATER_THAN"
+    threshold                  = 100
+    threshold_type             = "PERCENTAGE"
+    notification_type          = "ACTUAL"
+    subscriber_email_addresses = [data.aws_ssm_parameter.alerts_email.value]
+  }
+}
+
 # --- OUTPUTS ---
 
 output "cloudfront_domain" {
