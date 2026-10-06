@@ -15,6 +15,7 @@ const functionUrlEvent = ({
   signature = sign(body),
   method = 'POST',
   base64 = false,
+  key,
 }) => ({
   version: '2.0',
   rawPath: '/',
@@ -22,6 +23,7 @@ const functionUrlEvent = ({
     'content-type': 'application/json',
     ...(signature === null ? {} : { 'webhook-signature': signature }),
   },
+  ...(key === undefined ? {} : { queryStringParameters: { key } }),
   requestContext: { http: { method, path: '/' } },
   body: base64 ? Buffer.from(body).toString('base64') : body,
   isBase64Encoded: base64,
@@ -121,6 +123,26 @@ test('a missing or wrong signature is rejected with 401', async () => {
     (await handler(functionUrlEvent({ body: published }))).statusCode,
     401
   );
+  assert.equal(fetchMock.mock.callCount(), 0);
+});
+
+test('an unsigned request with the secret as ?key= dispatches (free plan)', async () => {
+  const response = await handler(
+    functionUrlEvent({ body: published, signature: null, key: SECRET })
+  );
+  assert.equal(response.statusCode, 202);
+  assert.equal(fetchMock.mock.callCount(), 1);
+});
+
+test('a missing or wrong ?key= is rejected with 401', async () => {
+  for (const key of ['', 'wrong', `${SECRET}x`]) {
+    const event = functionUrlEvent({ body: published, signature: null, key });
+    assert.equal((await handler(event)).statusCode, 401);
+  }
+
+  delete process.env.STORYBLOK_WEBHOOK_SECRET;
+  const event = functionUrlEvent({ body: published, signature: null, key: '' });
+  assert.equal((await handler(event)).statusCode, 401);
   assert.equal(fetchMock.mock.callCount(), 0);
 });
 
