@@ -9,3 +9,8 @@ dist
 .env.*
 coverage
 .vscode
+
+# Terraform files hold infrastructure secrets
+terraform
+*.tfvars
+*.tfstate*

@@ -28,8 +28,12 @@ import '../styles/global.css';
         '[data-navbar-toggle]'
       );
       const links = document.querySelector<HTMLElement>('[data-navbar-links]');
-      const openIcon = document.querySelector<HTMLElement>('[data-navbar-icon-open]');
-      const closeIcon = document.querySelector<HTMLElement>('[data-navbar-icon-close]');
+      const openIcon = document.querySelector<HTMLElement>(
+        '[data-navbar-icon-open]'
+      );
+      const closeIcon = document.querySelector<HTMLElement>(
+        '[data-navbar-icon-close]'
+      );
 
       if (!actionButton || !links || !openIcon || !closeIcon) return;
 
@@ -43,7 +47,8 @@ import '../styles/global.css';
       };
 
       actionButton.addEventListener('click', () => {
-        const isExpanded = actionButton.getAttribute('aria-expanded') === 'true';
+        const isExpanded =
+          actionButton.getAttribute('aria-expanded') === 'true';
         setMenuState(!isExpanded);
       });
 

@@ -1,7 +1,7 @@
 // @ts-check
 import sitemap from '@astrojs/sitemap';
 import tailwindcss from '@tailwindcss/vite';
-import { defineConfig } from 'astro/config';
+import { defineConfig, sessionDrivers } from 'astro/config';
 import node from '@astrojs/node';
 import { storyblok } from '@storyblok/astro';
 import { loadEnv } from 'vite';
@@ -21,6 +21,17 @@ export default defineConfig({
         mode: 'standalone',
       })
     : undefined,
+
+  // Default Node adapter sessions use the filesystem; Lambda only allows writes under /tmp.
+  ...(isServerBuild
+    ? {
+        session: {
+          driver: sessionDrivers.fsLite({
+            base: '/tmp/astro-sessions',
+          }),
+        },
+      }
+    : {}),
 
   integrations: [
     sitemap(),

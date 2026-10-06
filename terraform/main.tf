@@ -9,7 +9,7 @@ terraform {
 }
 
 provider "aws" {
-  region = "us-east-1" # Recommended for CloudFront/ACM ease
+  region = "us-east-1"
 }
 
 # --- 1. PRODUCTION: S3 + CLOUDFRONT (STATIC) ---
@@ -131,9 +131,13 @@ resource "aws_lambda_function" "preview_ssr" {
   environment {
     variables = {
       AWS_LAMBDA_WEB_ADAPTER_PORT = "8080"
+      PREVIEW_BASIC_AUTH_USER     = var.preview_basic_auth_user
+      PREVIEW_BASIC_AUTH_PASSWORD = var.preview_basic_auth_password
     }
   }
 
+  # Terraform does not track ECR :latest — apply would fight CI/local image pushes.
+  # Env vars, timeout, memory, etc. still update on apply; use the CLI/workflow for new images.
   lifecycle {
     ignore_changes = [image_uri] # Don't overwrite the GitHub Action's deployment
   }
@@ -143,6 +147,19 @@ resource "aws_lambda_function" "preview_ssr" {
 resource "aws_lambda_function_url" "preview_url" {
   function_name      = aws_lambda_function.preview_ssr.function_name
   authorization_type = "NONE" # Publicly accessible for the preview domain
+}
+
+# Function URLs do not invoke the function until the resource policy allows it.
+# Without this, browsers get: {"Message":"Forbidden"...} (authorization_type NONE still needs InvokeFunctionUrl).
+resource "aws_lambda_permission" "preview_function_url_public" {
+  statement_id           = "AllowPublicFunctionUrlInvoke"
+  action                 = "lambda:InvokeFunctionUrl"
+  function_name          = aws_lambda_function.preview_ssr.function_name
+  principal              = "*"
+  function_url_auth_type = "NONE"
+
+  # URL config must exist; avoids rare ordering/drift where permission applies before URL exists.
+  depends_on = [aws_lambda_function_url.preview_url]
 }
 
 # --- OUTPUTS ---
