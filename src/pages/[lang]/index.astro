@@ -5,6 +5,7 @@ import Layout from '~/layouts/Layout.astro';
 import Picture from '~/components/Picture.astro';
 
 import { AVAILABLE_LANGUAGES } from '~/consts';
+import { HOME_SLUG } from '~/utils/navigation';
 import { getStoryContent } from '~/utils/stories';
 
 // Static build only; the preview server renders every request
@@ -17,10 +18,10 @@ if (!AVAILABLE_LANGUAGES.includes(lang)) {
   return new Response(null, { status: 404 });
 }
 
-const story = await getStoryContent(Astro.locals, lang, 'home');
+const story = await getStoryContent(Astro.locals, lang, HOME_SLUG);
 ---
 
-<Layout>
+<Layout lang={lang} slug={HOME_SLUG}>
   {story ? (
     <StoryblokComponent blok={story} />
   ) : (

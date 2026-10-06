@@ -1,9 +1,3 @@
-variable "default_language" {
-  type        = string
-  default     = "es"
-  description = "Language the site root (/) redirects to. Keep in sync with PUBLIC_DEFAULT_LANGUAGE."
-}
-
 variable "github_repository" {
   type        = string
   default     = "UvealSnow/SensaTempo"

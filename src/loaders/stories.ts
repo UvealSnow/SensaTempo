@@ -1,5 +1,5 @@
 import type { LoaderContext, Loader } from 'astro/loaders';
-import { apiPlugin, storyblokInit } from '@storyblok/js';
+import { apiPlugin, storyblokInit, type ISbStoriesParams } from '@storyblok/js';
 import { AVAILABLE_LANGUAGES, DEFAULT_LANGUAGE } from '~/consts';
 import { z } from 'astro:content';
 import { loadEnv } from 'vite';
@@ -13,9 +13,13 @@ const env = loadEnv('', process.cwd(), 'STORYBLOK');
 const isDev = import.meta.env.DEV;
 const isPreview = isPreviewMode(isDev, import.meta.env.PUBLIC_BUILD_TYPE);
 
-export function pagesLoader(): Loader {
+/**
+ * Every story matching `params` (e.g. `content_type: 'page'`), once per available language.
+ * `name` labels the loader and its logs.
+ */
+export function storiesLoader(name: string, params: ISbStoriesParams): Loader {
   return {
-    name: 'storyblok-pages-loader',
+    name: `storyblok-${name}-loader`,
     load: async ({
       meta,
       store,
@@ -40,12 +44,12 @@ export function pagesLoader(): Loader {
               ? undefined
               : AVAILABLE_LANGUAGES[i];
 
-          logger.info(`Loading collection - ${AVAILABLE_LANGUAGES[i]} pages`);
+          logger.info(`Loading collection - ${AVAILABLE_LANGUAGES[i]} ${name}`);
           logger.info(`Collection last modified ${meta.get('lastModified')}`);
 
           const data = await storyblokApi.getAll('cdn/stories', {
+            ...params,
             version: contentVersion(isPreview),
-            content_type: 'page',
             per_page: 100,
             language: lang,
           });
@@ -78,7 +82,7 @@ export function pagesLoader(): Loader {
       } catch (error) {
         const message =
           error instanceof Error ? error.message : JSON.stringify(error);
-        logger.error(`Unable to fetch pages: ${message}`);
+        logger.error(`Unable to fetch ${name}:${message}`);
         // Fail the build rather than ship (and sync to S3) a site with no content
         if (!isDev) throw error;
       }

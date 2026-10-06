@@ -3,6 +3,7 @@ import { getCollection } from 'astro:content';
 import StoryblokComponent from '@storyblok/astro/StoryblokComponent.astro';
 import { AVAILABLE_LANGUAGES } from '~/consts';
 import Layout from '~/layouts/Layout.astro';
+import { HOME_SLUG } from '~/utils/navigation';
 import { getStoryContent } from '~/utils/stories';
 
 // Static build only; the preview server renders every request
@@ -14,7 +15,7 @@ export async function getStaticPaths() {
     const lang = AVAILABLE_LANGUAGES[i];
     const pagesInLanguage = allPages.filter((page) => page.data.lang === lang);
     const pathsInLanguages = pagesInLanguage
-      .filter((page) => page.data.slug !== 'home')
+      .filter((page) => page.data.slug !== HOME_SLUG)
       .map((page) => ({ params: { lang, slug: page.data.slug } }));
 
     paths.push(...pathsInLanguages);
@@ -33,6 +34,6 @@ if (!story) {
 }
 ---
 
-<Layout>
+<Layout lang={lang} slug={slug}>
   <StoryblokComponent blok={story} />
 </Layout>

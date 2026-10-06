@@ -77,21 +77,50 @@ resource "aws_cloudfront_origin_access_control" "default" {
 }
 
 # S3 REST origins don't resolve /es/about/ to /es/about/index.html, and there is no root page,
-# so rewrite directory URLs and send / to the default language.
+# so rewrite directory URLs and send / to /es/ or /en/ by the browser's preferred language.
+# The 302 is generated at viewer-request, so nothing is cached per language.
+# Tested by terraform/rewrite-index.test.mjs (pnpm test), which extracts this heredoc.
 resource "aws_cloudfront_function" "rewrite_index" {
   name    = "sensatempo-rewrite-index"
   runtime = "cloudfront-js-2.0"
   publish = true
   code    = <<-EOT
+    // Spanish when the highest-q Accept-Language entry is es or es-*; ties keep header order
+    function prefersSpanish(header) {
+      var best = '';
+      var bestQ = 0;
+      var entries = header.split(',');
+
+      for (var i = 0; i < entries.length; i++) {
+        var params = entries[i].split(';');
+        var tag = params[0].trim().toLowerCase();
+        var q = 1;
+        for (var j = 1; j < params.length; j++) {
+          var param = params[j].trim().toLowerCase();
+          if (param.indexOf('q=') === 0) q = parseFloat(param.slice(2));
+        }
+        if (tag && q > bestQ) {
+          best = tag;
+          bestQ = q;
+        }
+      }
+
+      return best === 'es' || best.indexOf('es-') === 0;
+    }
+
     function handler(event) {
       var request = event.request;
       var uri = request.uri;
 
       if (uri === '/') {
+        var acceptLanguage = request.headers['accept-language'];
+        // No header (crawlers) → English; hreflang alternates point them at /es/ too
+        var lang =
+          acceptLanguage && prefersSpanish(acceptLanguage.value) ? 'es' : 'en';
         return {
           statusCode: 302,
           statusDescription: 'Found',
-          headers: { location: { value: '/${var.default_language}/' } },
+          headers: { location: { value: '/' + lang + '/' } },
         };
       }
 
