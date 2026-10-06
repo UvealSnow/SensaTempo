@@ -34,7 +34,7 @@ export function pagesLoader(): Loader {
               ? undefined
               : AVAILABLE_LANGUAGES[i];
 
-          logger.info(`Loading collection - ${lang} pages`);
+          logger.info(`Loading collection - ${AVAILABLE_LANGUAGES[i]} pages`);
           logger.info(`Collection last modified ${meta.get('lastModified')}`);
 
           const data = await storyblokApi.getAll('cdn/stories', {
@@ -70,8 +70,11 @@ export function pagesLoader(): Loader {
           meta.set('lastModified', new Date().toISOString());
         }
       } catch (error) {
-        logger.error(JSON.stringify(error, null, 2));
-        logger.error('Unable to fetch pages');
+        const message =
+          error instanceof Error ? error.message : JSON.stringify(error);
+        logger.error(`Unable to fetch pages: ${message}`);
+        // Fail the build rather than ship (and sync to S3) a site with no content
+        if (!isDev) throw error;
       }
     },
     schema: async () =>

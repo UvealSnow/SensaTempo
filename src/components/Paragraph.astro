@@ -53,7 +53,7 @@ const sizeClass =
   }
 
   <div
-    class={`font-body text-base leading-5 text-black ${!header && 'pt-16'} ${textAlignMap[textAlign]}`}
+    class={`font-body text-base leading-5 text-black ${header ? '' : 'pt-16'} ${textAlignMap[textAlign]}`}
   >
     {
       text

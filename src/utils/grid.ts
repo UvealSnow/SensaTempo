@@ -69,5 +69,6 @@ export const getColStarts = (starts: FlexStart): string =>
   applyResponsiveMap(starts, startMap);
 
 export const getVerticalAlignment = (vertical?: VerticalAlign): string =>
-  vertical ? (verticalAlignMap[vertical] ?? verticalAlignMap.start) : verticalAlignMap.start;
-
+  vertical
+    ? (verticalAlignMap[vertical] ?? verticalAlignMap.start)
+    : verticalAlignMap.start;

@@ -7,17 +7,17 @@
 # Preview Lambda in Terraform uses architectures = ["arm64"]; keep Node stages on linux/arm64 so
 # native modules (e.g. sharp) match the runtime.
 
-ARG STORYBLOK_ACCESS_TOKEN
-ARG PUBLIC_DEFAULT_LANGUAGE
-ARG PUBLIC_AVAILABLE_LANGUAGES
+# Storyblok token comes from the DOTENV secret mount; never pass it as a build-arg (it would be baked into image history).
+#
+# Node is pinned to 24: newer Node releases no longer bundle corepack, which we use to get pnpm.
 
-FROM --platform=linux/arm64 node:lts-alpine3.23 AS build-base
+FROM --platform=linux/arm64 node:24-alpine3.23 AS build-base
 
 WORKDIR /app
 
 RUN corepack enable
 
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 
 COPY . .
@@ -43,13 +43,32 @@ RUN --mount=type=secret,id=DOTENV \
 # through a sub-domain (preview.sensatempo.mx)
 FROM build-base AS build-preview
 
+ARG PUBLIC_DEFAULT_LANGUAGE
+ARG PUBLIC_AVAILABLE_LANGUAGES
+
+ENV PUBLIC_DEFAULT_LANGUAGE=$PUBLIC_DEFAULT_LANGUAGE
+ENV PUBLIC_AVAILABLE_LANGUAGES=$PUBLIC_AVAILABLE_LANGUAGES
 ENV NODE_ENV=production
 ENV PUBLIC_BUILD_TYPE=server
-RUN pnpm build
+
+RUN --mount=type=secret,id=DOTENV \
+    export $(grep -v '^#' /run/secrets/DOTENV | xargs) && \
+    pnpm build
+
+
+# Runtime dependencies only: the server bundle still imports some packages from node_modules.
+FROM --platform=linux/arm64 node:24-alpine3.23 AS prod-deps
+
+WORKDIR /app
+
+RUN corepack enable
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN pnpm install --prod --frozen-lockfile
 
 
 # Deployed to AWS Lambda (Function URL + Lambda Web Adapter).
-FROM --platform=linux/arm64 node:lts-alpine3.23 AS live-preview
+FROM --platform=linux/arm64 node:24-alpine3.23 AS live-preview
 
 WORKDIR /app
 
@@ -60,6 +79,7 @@ ENV NODE_ENV=production
 ENV HOST=0.0.0.0
 ENV PORT=8080
 
+COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=build-preview /app/dist ./dist
 RUN chown -R node:node /app
 

@@ -1,5 +1,4 @@
 ---
-import { getCollection } from 'astro:content';
 import Layout from '~/layouts/Layout.astro';
 
 import Picture from '~/components/Picture.astro';
@@ -10,14 +9,7 @@ export async function getStaticPaths() {
   return AVAILABLE_LANGUAGES.map((lang) => ({ params: { lang } }));
 }
 
-const { lang } = Astro.params;
-
-const allPages = await getCollection('pages');
-const page = allPages.find(
-  (page) => page.data.lang === lang && page.data.slug === 'home'
-)!;
-
-console.log(page);
+// TODO: render the `home` story for Astro.params.lang instead of the placeholders below
 ---
 
 <Layout>

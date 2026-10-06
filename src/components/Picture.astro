@@ -20,7 +20,7 @@ interface Props {
 const { caption, size, start, src, class: className, vertical } = Astro.props;
 
 const sizeClass =
-  getColSpans(size ?? {}, 'basis-full w-full') +
+  getColSpans(size ?? { sm: '12/12' }, 'col-span-12') +
   getColStarts(start ?? {}) +
   ` ${getVerticalAlignment(vertical)}`;
 ---

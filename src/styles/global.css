@@ -1,5 +1,8 @@
 @import 'tailwindcss';
 
+/* src/utils/grid.ts builds responsive grid classes at runtime, so Tailwind can't find them by scanning */
+@source inline("{md:,lg:}col-{span,start}-{1..12}");
+
 @font-face {
   font-family: Molle;
   src: url('/fonts/Molle-Italic.ttf') format('truetype');
