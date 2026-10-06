@@ -42,16 +42,17 @@ Pages are in `src/pages/` and use dynamic routing with the `[lang]` parameter. C
 | `pnpm format:check` | Check format compliance              |
 | `pnpm lint`         | Lint with ESLint                     |
 | `pnpm lint:fix`     | Fix auto-fixable lint issues         |
+| `pnpm test`         | Run unit tests (`node --test`)       |
 
 ## 🛠 Development & Deployment
 
 Everything runs on **AWS (us-east-1)** and is pay-per-use: nothing bills while the site has no visitors.
 
-| Environment    | Hosting                                                                                    | Built by                                | Description                                                                                                                                |
-| :------------- | :----------------------------------------------------------------------------------------- | :-------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------- |
-| **Production** | **S3 + CloudFront**                                                                        | `prod-deploy.yaml` on push to `main`    | Fully static build (published content). A CloudFront Function maps `/es/about/` to `index.html` and redirects `/` to the default language. |
-| **Preview**    | **Lambda** (zip, Node 24, arm64) + **Lambda Web Adapter** layer, behind its own CloudFront | `preview-deploy.yaml` on push to `main` | SSR build for Storyblok editors: draft content fetched per request, Visual Editor bridge, HTTP Basic Auth (`src/middleware.ts`).           |
-| **Local QA**   | **Nginx** in Docker                                                                        | `make run-prod-preview`                 | Serves the static production build on http://localhost:8080.                                                                               |
+| Environment    | Hosting                                                                                    | Built by                                | Description                                                                                                                                                 |
+| :------------- | :----------------------------------------------------------------------------------------- | :-------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Production** | **S3 + CloudFront**                                                                        | `prod-deploy.yaml` on push to `main`    | Fully static build (published content). A CloudFront Function maps `/es/about/` to `index.html` and redirects `/` to `/es/` or `/en/` by `Accept-Language`. |
+| **Preview**    | **Lambda** (zip, Node 24, arm64) + **Lambda Web Adapter** layer, behind its own CloudFront | `preview-deploy.yaml` on push to `main` | SSR build for Storyblok editors: draft content fetched per request, Visual Editor bridge, HTTP Basic Auth (`src/middleware.ts`).                            |
+| **Local QA**   | **Nginx** in Docker                                                                        | `make run-prod-preview`                 | Serves the static production build on http://localhost:8080.                                                                                                |
 
 **Temporary URLs** (no custom domain yet):
 

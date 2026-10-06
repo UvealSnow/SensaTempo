@@ -2,18 +2,46 @@
 import NavBar from '~/components/layout/NavBar.astro';
 import Footer from '~/components/layout/Footer.astro';
 
+import { AVAILABLE_LANGUAGES } from '~/consts';
+import { pagePath } from '~/utils/navigation';
+import { getLayoutStory, NAVBAR } from '~/utils/stories';
+
 import '../styles/global.css';
+
+interface Props {
+  lang: string;
+  // Story slug of the page (`home` for the language root); the same in every language
+  slug: string;
+}
+
+// Crawlers and browsers whose language isn't listed get English
+const X_DEFAULT_LANGUAGE = 'en';
+
+const { lang, slug } = Astro.props;
+const navbar = await getLayoutStory(Astro.locals, lang, NAVBAR);
 ---
 
-<html lang="es">
+<html lang={lang}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/x-icon" href="/favicon.svg" />
+    {AVAILABLE_LANGUAGES.map((alternate) => (
+      <link
+        rel="alternate"
+        hreflang={alternate}
+        href={new URL(pagePath(alternate, slug), Astro.site)}
+      />
+    ))}
+    <link
+      rel="alternate"
+      hreflang="x-default"
+      href={new URL(pagePath(X_DEFAULT_LANGUAGE, slug), Astro.site)}
+    />
   </head>
 
   <body class="bg-off-white min-h-screen flex flex-col">
-    <NavBar />
+    <NavBar lang={lang} slug={slug} blok={navbar} />
 
     <main class="pb-8 px-4 container mx-auto md:px-8 xl:px-0">
       <slot />
