@@ -1,4 +1,5 @@
 ---
+import Analytics from '~/components/layout/Analytics.astro';
 import NavBar from '~/components/layout/NavBar.astro';
 import Footer from '~/components/layout/Footer.astro';
 
@@ -37,6 +38,7 @@ const [navbar, footer] = await Promise.all([
       hreflang="x-default"
       href={new URL(pagePath(X_DEFAULT_LANGUAGE, slug), Astro.site)}
     />
+    <Analytics />
   </head>
 
   <body class="bg-off-white min-h-screen flex flex-col">
