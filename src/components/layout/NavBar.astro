@@ -2,42 +2,30 @@
 import { storyblokEditable, type SbBlokData } from '@storyblok/astro';
 import Menu from '~/assets/icons/menu.svg';
 import Close from '~/assets/icons/close.svg';
-import { AVAILABLE_LANGUAGES } from '~/consts';
+import { AVAILABLE_LANGUAGES, SITE_TITLE } from '~/consts';
 import {
   HOME_SLUG,
-  linkHref,
-  linkSlug,
   pagePath,
-  type MultilinkField,
+  resolveLinks,
+  type LinkBlok,
 } from '~/utils/navigation';
 
 interface Props {
   lang: string;
   slug: string;
-  // `layout/navbar` content; null while the story is missing or unpublished
   blok: SbBlokData | null;
 }
-
-interface NavLinkBlok extends SbBlokData {
-  label?: string;
-  link?: MultilinkField;
-}
-
-const SITE_NAME = 'SensaTempo';
 
 const { lang, slug, blok } = Astro.props;
 
 const logo = blok?.logo as { filename?: string; alt?: string } | undefined;
 
-const links = ((blok?.links as NavLinkBlok[] | undefined) ?? [])
-  .map((link) => ({
-    blok: link,
-    href: linkHref(link.link, lang, AVAILABLE_LANGUAGES),
-    isActive: linkSlug(link.link, AVAILABLE_LANGUAGES) === slug,
-  }))
-  .filter(({ blok, href }) => blok.label && href);
-
-// Same page in the other languages; slugs are shared across languages
+const links = resolveLinks(
+  blok?.links as (LinkBlok & SbBlokData)[] | undefined,
+  lang,
+  slug,
+  AVAILABLE_LANGUAGES
+);
 const languages = AVAILABLE_LANGUAGES.filter((other) => other !== lang);
 ---
 
@@ -48,12 +36,12 @@ const languages = AVAILABLE_LANGUAGES.filter((other) => other !== lang);
   <div class="relative z-50 flex w-full flex-row justify-between md:block lg:w-auto">
     <a
       href={pagePath(lang, HOME_SLUG)}
-      aria-label={logo?.filename ? undefined : SITE_NAME}
+      aria-label={logo?.filename ? undefined : SITE_TITLE}
     >
       {logo?.filename ? (
         <img
           src={logo.filename}
-          alt={logo.alt || SITE_NAME}
+          alt={logo.alt || SITE_TITLE}
           class="h-[62px] w-auto"
         />
       ) : (
@@ -77,14 +65,14 @@ const languages = AVAILABLE_LANGUAGES.filter((other) => other !== lang);
     data-navbar-links
     class="font-body bg-off-white absolute top-0 left-0 z-40 hidden h-screen w-screen flex-col items-center justify-center gap-8 text-4xl md:relative md:top-auto md:left-auto md:z-auto md:flex md:h-auto md:w-full md:flex-row md:justify-between md:gap-4 md:pt-8 md:text-2xl lg:justify-end lg:gap-8 lg:pt-0"
   >
-    {links.map(({ blok: link, href, isActive }) => (
+    {links.map(({ blok: link, label, href, isActive }) => (
       <a
         href={href}
         aria-current={isActive ? 'page' : undefined}
         class="text-gray-700 hover:text-gray-900 aria-[current=page]:text-gray-900 aria-[current=page]:underline md:w-24 md:text-center"
         {...storyblokEditable(link)}
       >
-        {link.label}
+        {label}
       </a>
     ))}
 

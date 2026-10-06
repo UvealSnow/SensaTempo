@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { linkHref, linkSlug, pagePath } from './navigation.ts';
+import { linkHref, linkSlug, pagePath, resolveLinks } from './navigation.ts';
 
 const languages = ['es', 'en'];
 
@@ -57,4 +57,26 @@ test('empty links have no href', () => {
     linkHref({ linktype: 'url', url: '', cached_url: '' }, 'es', languages),
     null
   );
+});
+
+test('resolveLinks drops empty blocks and marks the current page', () => {
+  const links = resolveLinks(
+    [
+      { label: 'Inicio', link: { linktype: 'story', cached_url: 'home' } },
+      { label: 'Sobre mí', link: { linktype: 'story', cached_url: 'about' } },
+      { label: 'Sin destino', link: { linktype: 'story', cached_url: '' } },
+      { link: { linktype: 'url', url: 'https://example.com' } },
+    ],
+    'en',
+    'about',
+    languages
+  );
+  assert.deepEqual(
+    links.map(({ label, href, isActive }) => [label, href, isActive]),
+    [
+      ['Inicio', '/en/', false],
+      ['Sobre mí', '/en/about/', true],
+    ]
+  );
+  assert.deepEqual(resolveLinks(undefined, 'es', 'home', languages), []);
 });

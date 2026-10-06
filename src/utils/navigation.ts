@@ -54,3 +54,37 @@ export function linkHref(
 
   return link.url || link.cached_url || null;
 }
+
+// A Storyblok block with a label and a multilink (`nav_link` in the navbar; reused by the footer)
+export interface LinkBlok {
+  label?: string;
+  link?: MultilinkField;
+}
+
+export interface ResolvedLink<T extends LinkBlok> {
+  blok: T;
+  label: string;
+  href: string;
+  isActive: boolean;
+}
+
+/** Link blocks as hrefs in `lang`, marking the current page; blocks missing a label or target are dropped. */
+export function resolveLinks<T extends LinkBlok>(
+  bloks: readonly T[] | undefined,
+  lang: string,
+  currentSlug: string,
+  languages: readonly string[]
+): ResolvedLink<T>[] {
+  return (bloks ?? []).flatMap((blok) => {
+    const href = linkHref(blok.link, lang, languages);
+    if (!blok.label || !href) return [];
+    return [
+      {
+        blok,
+        label: blok.label,
+        href,
+        isActive: linkSlug(blok.link, languages) === currentSlug,
+      },
+    ];
+  });
+}
