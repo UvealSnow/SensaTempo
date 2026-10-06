@@ -159,6 +159,8 @@ Everything runs on **AWS (`us-east-1`)** and is pay-per-use: nothing bills while
 | **Preview**    | **Lambda** (zip, Node 24, arm64) + **Lambda Web Adapter** layer, public Function URL | `preview-deploy.yaml` on push to `main` | SSR build for Storyblok editors, protected by HTTP Basic Auth (`src/middleware.ts`).                                                       |
 | **Local QA**   | **Nginx** in Docker                                                                  | `make run-prod-preview`                 | Serves the static production build on http://localhost:8080.                                                                               |
 
+**Deploying a branch to the preview:** Actions → _Preview Deployment_ → _Run workflow_, keep "Use workflow from" on `main` and enter the branch in **ref**. It replaces the shared preview until the next deploy (any push to `main` redeploys `main`).
+
 ---
 
 ### 📋 Prerequisites
