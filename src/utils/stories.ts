@@ -12,7 +12,8 @@ export const isPreview = isPreviewMode(
 
 // Stories under layout/ and the component of their content type
 export const NAVBAR = { slug: 'layout/navbar', component: 'Navbar' } as const;
-type LayoutStory = typeof NAVBAR;
+export const FOOTER = { slug: 'layout/footer', component: 'Footer' } as const;
+type LayoutStory = typeof NAVBAR | typeof FOOTER;
 
 const PAGE_COMPONENT = 'page';
 

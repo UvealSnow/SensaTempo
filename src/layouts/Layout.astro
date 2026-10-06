@@ -4,7 +4,7 @@ import Footer from '~/components/layout/Footer.astro';
 
 import { AVAILABLE_LANGUAGES } from '~/consts';
 import { pagePath } from '~/utils/navigation';
-import { getLayoutStory, NAVBAR } from '~/utils/stories';
+import { FOOTER, getLayoutStory, NAVBAR } from '~/utils/stories';
 
 import '../styles/global.css';
 
@@ -18,7 +18,10 @@ interface Props {
 const X_DEFAULT_LANGUAGE = 'en';
 
 const { lang, slug } = Astro.props;
-const navbar = await getLayoutStory(Astro.locals, lang, NAVBAR);
+const [navbar, footer] = await Promise.all([
+  getLayoutStory(Astro.locals, lang, NAVBAR),
+  getLayoutStory(Astro.locals, lang, FOOTER),
+]);
 ---
 
 <html lang={lang}>
@@ -47,7 +50,7 @@ const navbar = await getLayoutStory(Astro.locals, lang, NAVBAR);
       <slot />
     </main>
 
-    <Footer />
+    <Footer lang={lang} blok={footer} />
   </body>
 
   <script>
