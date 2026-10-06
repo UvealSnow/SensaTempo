@@ -1,5 +1,5 @@
 import { defineMiddleware } from 'astro:middleware';
-import { createHash, timingSafeEqual } from 'node:crypto';
+import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 
 // Hash first so both buffers have equal length, as timingSafeEqual requires
 const safeEqual = (a: string, b: string): boolean =>
@@ -47,6 +47,28 @@ function isValidEditorRequest(url: URL, previewToken: string): boolean {
   return safeEqual(token, expected);
 }
 
+// Links clicked inside the editor iframe drop the `_storyblok_tk` params, so a valid token is
+// swapped for a signed session cookie. The iframe is cross-site (app.storyblok.com), hence
+// SameSite=None + Partitioned (CHIPS) so browsers that block third-party cookies still keep it.
+const EDITOR_COOKIE = 'sb_editor';
+const EDITOR_SESSION_SECONDS = 8 * 60 * 60;
+
+// Signed with the preview token: server-only, and rotating it ends all editor sessions
+const signSession = (expires: number, previewToken: string): string =>
+  createHmac('sha256', previewToken)
+    .update(`editor-session:${expires}`)
+    .digest('hex');
+
+function isValidEditorSession(
+  value: string | undefined,
+  previewToken: string
+): boolean {
+  const [expires, signature] = value?.split('.') ?? [];
+  if (!expires || !signature) return false;
+  if (!(Number(expires) > Math.floor(Date.now() / 1000))) return false;
+  return safeEqual(signature, signSession(Number(expires), previewToken));
+}
+
 export const onRequest = defineMiddleware(async (context, next) => {
   const expectedUser = process.env.PREVIEW_BASIC_AUTH_USER?.trim();
   const expectedPass = process.env.PREVIEW_BASIC_AUTH_PASSWORD?.trim();
@@ -57,6 +79,29 @@ export const onRequest = defineMiddleware(async (context, next) => {
   }
 
   if (previewToken && isValidEditorRequest(context.url, previewToken)) {
+    const expires = Math.floor(Date.now() / 1000) + EDITOR_SESSION_SECONDS;
+    context.cookies.set(
+      EDITOR_COOKIE,
+      `${expires}.${signSession(expires, previewToken)}`,
+      {
+        path: '/',
+        maxAge: EDITOR_SESSION_SECONDS,
+        httpOnly: true,
+        secure: true,
+        sameSite: 'none',
+        partitioned: true,
+      }
+    );
+    return next();
+  }
+
+  if (
+    previewToken &&
+    isValidEditorSession(
+      context.cookies.get(EDITOR_COOKIE)?.value,
+      previewToken
+    )
+  ) {
     return next();
   }
 

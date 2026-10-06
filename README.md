@@ -108,7 +108,7 @@ aws ssm put-parameter --region us-east-1 --type SecureString --overwrite \
 
 After rotating the preview token or the basic auth values, run `pnpm tf:apply` to push them to the Lambda. Locally, builds read the tokens from `.env`.
 
-**Storyblok Visual Editor:** the preview loads the Storyblok bridge (static builds don't). The editor iframe can't answer the basic auth prompt, so `src/middleware.ts` also lets in requests carrying a valid `_storyblok_tk` (sha1 of `space_id:preview_token:timestamp`, at most 1 hour old). In Storyblok, set the preview URL to `<preview_lambda_url>/es/` and the `home` story's real path to `/`.
+**Storyblok Visual Editor:** the preview loads the Storyblok bridge (static builds don't). The editor iframe can't answer the basic auth prompt, so `src/middleware.ts` also lets in requests carrying a valid `_storyblok_tk` (sha1 of `space_id:preview_token:timestamp`, at most 1 hour old) and swaps it for a signed 8-hour session cookie (`SameSite=None; Partitioned`), so links clicked inside the editor keep working. In Storyblok, set the preview URL to `<preview_lambda_url>/es/` and the `home` story's real path to `/`.
 
 **GitHub repository variables** (not secret): `AWS_DEPLOY_ROLE_ARN`, `AWS_PROD_BUCKET`, `AWS_CF_DIST_ID` (from the Terraform outputs), `PUBLIC_DEFAULT_LANGUAGE`, `PUBLIC_AVAILABLE_LANGUAGES`.
 
