@@ -1,15 +1,20 @@
 ---
+import { currentLang } from '~/utils/page';
+
 interface Props {
   date: Date;
+  class?: string;
 }
 
-const { date } = Astro.props;
+const { date, class: className } = Astro.props;
 ---
 
-<time datetime={date.toISOString()}>
-  {date.toLocaleDateString('en-us', {
+<time datetime={date.toISOString()} class={className}>
+  {date.toLocaleDateString(currentLang(Astro), {
     year: 'numeric',
-    month: 'short',
+    month: 'long',
     day: 'numeric',
+    // Storyblok dates are UTC days; don't let the build machine's zone shift them
+    timeZone: 'UTC',
   })}
 </time>

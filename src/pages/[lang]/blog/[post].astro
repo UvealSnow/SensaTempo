@@ -1,0 +1,46 @@
+---
+import { getCollection } from 'astro:content';
+import { AVAILABLE_LANGUAGES } from '~/consts';
+import Layout from '~/layouts/Layout.astro';
+import Post from '~/storyblok/Post.astro';
+import { imageUrl } from '~/utils/images';
+import { BLOG_FOLDER } from '~/utils/posts';
+import { getPost } from '~/utils/stories';
+
+// Static build only; the preview server renders every request
+export async function getStaticPaths() {
+  const posts = await getCollection('posts');
+  return posts.flatMap(({ data }) => {
+    const post = data.slug.slice(`${BLOG_FOLDER}/`.length);
+    // Only direct children of the blog folder: one URL segment
+    return post && !post.includes('/')
+      ? [{ params: { lang: data.lang, post } }]
+      : [];
+  });
+}
+
+const { lang = '', post: slug = '' } = Astro.params;
+const post = AVAILABLE_LANGUAGES.includes(lang)
+  ? await getPost(Astro.locals, lang, slug)
+  : null;
+
+if (!post) {
+  return new Response(null, { status: 404 });
+}
+
+const { content, publishedAt } = post;
+const cover = content.cover as { filename?: string } | undefined;
+// Social preview; JPEG because not every network reads WebP
+const image = cover?.filename
+  ? imageUrl(cover.filename, 1200, 630, { format: 'jpeg' })
+  : undefined;
+---
+
+<Layout
+  title={content.title as string | undefined}
+  description={content.excerpt as string | undefined}
+  image={image}
+  type="article"
+>
+  <Post blok={content} publishedAt={publishedAt} />
+</Layout>

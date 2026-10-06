@@ -13,9 +13,50 @@
   src: url('/fonts/Zain-Light.ttf') format('truetype');
 }
 
+/* Real bold and italic for rich text, instead of synthesized ones */
+@font-face {
+  font-family: Zain;
+  font-weight: 700;
+  src: url('/fonts/Zain-Bold.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: Zain;
+  font-style: italic;
+  src: url('/fonts/Zain-LightItalic.ttf') format('truetype');
+}
+
 @theme {
   --font-display: Molle, cursive;
   --font-body: Zain, sans-serif;
   --color-off-white: #f8f8f8;
   --color-light-gray: #777777;
+  --color-dark-gray: #444444;
+}
+
+/* Storyblok rich text (storyblok/Text.astro): a blank line between blocks, like the design */
+@layer components {
+  .rich-text > * + * {
+    margin-top: 1lh;
+  }
+  .rich-text a {
+    text-decoration: underline;
+  }
+  .rich-text strong,
+  .rich-text b {
+    font-weight: 700;
+  }
+  .rich-text ul {
+    list-style: disc;
+    padding-inline-start: 1.5rem;
+  }
+  .rich-text ol {
+    list-style: decimal;
+    padding-inline-start: 1.5rem;
+  }
+  .rich-text blockquote {
+    border-inline-start: 2px solid var(--color-light-gray);
+    padding-inline-start: 1rem;
+    font-style: italic;
+  }
 }

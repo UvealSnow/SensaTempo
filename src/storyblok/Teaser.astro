@@ -4,4 +4,6 @@ import { storyblokEditable } from '@storyblok/astro';
 const { blok } = Astro.props;
 ---
 
-<div {...storyblokEditable(blok)}>Teaser {JSON.stringify(blok, null, 2)}</div>
+<div class="col-span-12" {...storyblokEditable(blok)}>
+  Teaser {JSON.stringify(blok, null, 2)}
+</div>

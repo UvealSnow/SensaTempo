@@ -58,12 +58,17 @@ export default defineConfig({
       accessToken: storyblokToken(env, isPreview),
       components: {
         page: 'storyblok/Page',
+        post: 'storyblok/Post',
+        picture: 'storyblok/Picture',
+        text: 'storyblok/Text',
+        post_list: 'storyblok/PostList',
         teaser: 'storyblok/Teaser',
       },
       apiOptions: {},
       // Visual Editor support on the preview server only; the static site never loads the bridge.
       // livePreview re-renders on each keystroke by POSTing the edited story to the page.
-      bridge: isServerBuild,
+      // The bridge resolves post_list.posts in live edits too, like the server fetch does
+      bridge: isServerBuild ? { resolveRelations: ['post_list.posts'] } : false,
       livePreview: isServerBuild,
       // Blocks without an Astro component yet shouldn't break the editor; prod builds still fail
       enableFallbackComponent: isServerBuild,

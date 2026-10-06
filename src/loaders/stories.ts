@@ -1,6 +1,7 @@
 import type { LoaderContext, Loader } from 'astro/loaders';
 import { apiPlugin, storyblokInit, type ISbStoriesParams } from '@storyblok/js';
 import { AVAILABLE_LANGUAGES, DEFAULT_LANGUAGE } from '~/consts';
+import { storySlug } from '~/utils/navigation';
 import { z } from 'astro:content';
 import { loadEnv } from 'vite';
 import {
@@ -61,8 +62,13 @@ export function storiesLoader(name: string, params: ISbStoriesParams): Loader {
               id,
               data: {
                 lang: story.lang === 'default' ? DEFAULT_LANGUAGE : story.lang,
-                slug: story.slug,
+                // Without the language, keeping folders: `about`, `blog` (start page), `blog/x`
+                slug:
+                  storySlug(story.full_slug, AVAILABLE_LANGUAGES) ?? story.slug,
                 createdAt: new Date(story.created_at),
+                publishedAt: story.first_published_at
+                  ? new Date(story.first_published_at)
+                  : undefined,
                 updatedAt: story.updated_at
                   ? new Date(story.updated_at)
                   : undefined,
@@ -91,6 +97,7 @@ export function storiesLoader(name: string, params: ISbStoriesParams): Loader {
       lang: z.string(),
       slug: z.string(),
       createdAt: z.date(),
+      publishedAt: z.date().optional(),
       updatedAt: z.date().optional(),
       content: z.unknown(),
     }),

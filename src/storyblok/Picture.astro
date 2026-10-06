@@ -1,0 +1,31 @@
+---
+import { storyblokEditable, type SbBlokData } from '@storyblok/astro';
+import Picture from '~/components/Picture.astro';
+import { blokPlacement, type GridBlok } from '~/utils/grid';
+import {
+  responsiveImage,
+  type Ratio,
+  type StoryblokAsset,
+} from '~/utils/images';
+
+interface Props {
+  blok: SbBlokData &
+    GridBlok & { image?: StoryblokAsset; caption?: string; ratio?: Ratio };
+}
+
+const { blok } = Astro.props;
+const placement = blokPlacement(blok);
+const image = responsiveImage(blok.image, {
+  ratio: blok.ratio || 'golden',
+  spans: placement.size,
+});
+---
+
+{image && (
+  <Picture
+    image={image}
+    caption={blok.caption}
+    {...placement}
+    {...storyblokEditable(blok)}
+  />
+)}

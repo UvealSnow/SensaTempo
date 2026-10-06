@@ -1,6 +1,13 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { linkHref, linkSlug, pagePath, resolveLinks } from './navigation.ts';
+import {
+  linkHref,
+  linkSlug,
+  pagePath,
+  resolveLinks,
+  slugFromPath,
+  storySlug,
+} from './navigation.ts';
 
 const languages = ['es', 'en'];
 
@@ -79,4 +86,20 @@ test('resolveLinks drops empty blocks and marks the current page', () => {
     ]
   );
   assert.deepEqual(resolveLinks(undefined, 'es', 'home', languages), []);
+});
+
+test('storySlug drops the language and handles folder start pages', () => {
+  assert.equal(storySlug('blog/luz', languages), 'blog/luz');
+  assert.equal(storySlug('en/blog/luz', languages), 'blog/luz');
+  assert.equal(storySlug('blog/', languages), 'blog');
+  assert.equal(storySlug('en/blog/', languages), 'blog');
+  assert.equal(storySlug('en', languages), 'en');
+  assert.equal(storySlug('', languages), null);
+});
+
+test('slugFromPath maps URLs back to story slugs', () => {
+  assert.equal(slugFromPath('/es/', languages), 'home');
+  assert.equal(slugFromPath('/en', languages), 'home');
+  assert.equal(slugFromPath('/en/about/', languages), 'about');
+  assert.equal(slugFromPath('/es/blog/luz', languages), 'blog/luz');
 });
