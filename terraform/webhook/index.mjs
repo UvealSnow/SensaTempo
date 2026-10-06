@@ -77,6 +77,8 @@ export const handler = async (event) => {
     !validSignature(rawBody, event.headers?.['webhook-signature'], secret) &&
     !validKey(event.queryStringParameters?.key, secret)
   ) {
+    // Counted by the "unauthorized" CloudWatch metric filter (terraform/main.tf)
+    console.log('unauthorized');
     return reply(401, { error: 'invalid signature or key' });
   }
 

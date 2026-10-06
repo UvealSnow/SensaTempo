@@ -103,6 +103,7 @@ Secrets live in **AWS SSM Parameter Store** as `SecureString`s (free standard ti
 | `/sensatempo/preview/basic-auth-password` | Preview Lambda basic auth                                                                           |
 | `/sensatempo/storyblok/webhook-secret`    | Publish webhook Lambda (signature or `?key=` check); the same value goes in Storyblok's webhook URL |
 | `/sensatempo/github/dispatch-token`       | Publish webhook Lambda, to call GitHub's `repository_dispatch` API                                  |
+| `/sensatempo/alerts/email`                | Alert recipient (`String`, not secret; kept out of this public repo)                                |
 
 **Dispatch token:** a fine-grained GitHub PAT limited to this repository with only `Contents: read & write` (what `repository_dispatch` needs). Fine-grained PATs expire after at most 1 year: note the expiry date, then rotate by creating a new token, updating the parameter and running `pnpm tf:apply`. Until then publishes fail with 502 in Storyblok's webhook log.
 
@@ -137,6 +138,13 @@ pnpm tf:init
 pnpm tf:plan
 pnpm tf:apply
 ```
+
+**Alerts** (email via SNS topic `sensatempo-alerts`; confirm the subscription email once):
+
+- `sensatempo-webhook-too-many-rebuilds`: > 30 webhook-triggered rebuilds in 1 hour
+- `sensatempo-webhook-unauthorized`: > 50 rejected (401) webhook calls in 5 minutes
+- `sensatempo-webhook-failed`: any failed dispatch to GitHub (usually an expired dispatch token)
+- Budget `sensatempo-monthly`: forecast or actual account spend over $5/month
 
 **Outputs:** `cloudfront_domain`, `cloudfront_distribution_id`, `prod_bucket`, `preview_url`, `preview_lambda_url`, `github_deploy_role_arn`, `storyblok_webhook_url`.
 
