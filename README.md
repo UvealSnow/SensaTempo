@@ -69,6 +69,7 @@ This project uses **Prettier** for code formatting and **ESLint** for code linti
 Prettier is configured with the latest stable configuration for automatic code formatting.
 
 **Features:**
+
 - ✅ Prettier 3.6.2 installed
 - ✅ Astro support with `prettier-plugin-astro`
 - ✅ ESLint integration with `eslint-config-prettier`
@@ -76,6 +77,7 @@ Prettier is configured with the latest stable configuration for automatic code f
 - ✅ Format on save enabled
 
 **Scripts:**
+
 ```bash
 # Format all files
 pnpm format
@@ -85,6 +87,7 @@ pnpm format:check
 ```
 
 **Prettier Rules:**
+
 - Semi-colons: enabled
 - Single quotes: enabled
 - Trailing commas: ES5 compatible
@@ -98,6 +101,7 @@ pnpm format:check
 ESLint is configured with TypeScript and Astro support to catch potential issues and enforce coding standards.
 
 **Features:**
+
 - ✅ Modern flat config format
 - ✅ TypeScript support with `@typescript-eslint`
 - ✅ Astro file support with `eslint-plugin-astro`
@@ -105,6 +109,7 @@ ESLint is configured with TypeScript and Astro support to catch potential issues
 - ✅ Browser and Node.js globals configured
 
 **Scripts:**
+
 ```bash
 # Check for linting issues
 pnpm lint
@@ -114,6 +119,7 @@ pnpm lint:fix
 ```
 
 **ESLint Rules Enabled:**
+
 - JavaScript/TypeScript recommended rules
 - No unused variables (with underscore prefix exception)
 - No console warnings, debugger errors
@@ -147,35 +153,36 @@ For the best development experience:
 
 Everything runs on **AWS (`us-east-1`)** and is pay-per-use: nothing bills while the site has no visitors.
 
-| Environment | Hosting | Built by | Description |
-| :--- | :--- | :--- | :--- |
-| **Production** | **S3 + CloudFront** | `prod-deploy.yaml` on push to `main` | Fully static build (published content). A CloudFront Function maps `/es/about/` to `index.html` and redirects `/` to the default language. |
-| **Preview** | **Lambda** (zip, Node 24, arm64) + **Lambda Web Adapter** layer, public Function URL | `preview-deploy.yaml` on push to `main` | SSR build for Storyblok editors, protected by HTTP Basic Auth (`src/middleware.ts`). |
-| **Local QA** | **Nginx** in Docker | `make run-prod-preview` | Serves the static production build on http://localhost:8080. |
+| Environment    | Hosting                                                                              | Built by                                | Description                                                                                                                                |
+| :------------- | :----------------------------------------------------------------------------------- | :-------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------- |
+| **Production** | **S3 + CloudFront**                                                                  | `prod-deploy.yaml` on push to `main`    | Fully static build (published content). A CloudFront Function maps `/es/about/` to `index.html` and redirects `/` to the default language. |
+| **Preview**    | **Lambda** (zip, Node 24, arm64) + **Lambda Web Adapter** layer, public Function URL | `preview-deploy.yaml` on push to `main` | SSR build for Storyblok editors, protected by HTTP Basic Auth (`src/middleware.ts`).                                                       |
+| **Local QA**   | **Nginx** in Docker                                                                  | `make run-prod-preview`                 | Serves the static production build on http://localhost:8080.                                                                               |
 
 ---
 
 ### 📋 Prerequisites
-* **pnpm** and **Node 24**
-* **GNU Make**, **AWS CLI** and **Terraform ≥ 1.10** for infrastructure work
-* **Docker** (BuildKit) only for `make run-prod-preview`
-* A local `.env` file (see `.env.example`) containing:
-    * `STORYBLOK_ACCESS_TOKEN`
-    * `PUBLIC_DEFAULT_LANGUAGE`
-    * `PUBLIC_AVAILABLE_LANGUAGES`
+
+- **pnpm** and **Node 24**
+- **GNU Make**, **AWS CLI** and **Terraform ≥ 1.10** for infrastructure work
+- **Docker** (BuildKit) only for `make run-prod-preview`
+- A local `.env` file (see `.env.example`) containing:
+  - `STORYBLOK_ACCESS_TOKEN`
+  - `PUBLIC_DEFAULT_LANGUAGE`
+  - `PUBLIC_AVAILABLE_LANGUAGES`
 
 ---
 
 ### 🚀 Makefile targets
 
-| Target | Action |
-| :--- | :--- |
-| `make run-preview` | Build the SSR preview and run it locally on **http://localhost:8080** (what the Lambda runs). |
-| `make package-preview` | Build the SSR preview and zip it for Lambda (`preview-lambda.zip`, linux-arm64 runtime deps only). |
-| `make deploy-preview` | Package and upload the preview to the `sensatempo-preview-ssr` Lambda from your machine. |
-| `make build-prod` | Build the static production site in Docker (`.env` mounted as a build secret). |
-| `make run-prod-preview` | Build the static site and serve it with **Nginx** on **http://localhost:8080**. |
-| `make clean` | Remove the local Docker image and preview zip. |
+| Target                  | Action                                                                                             |
+| :---------------------- | :------------------------------------------------------------------------------------------------- |
+| `make run-preview`      | Build the SSR preview and run it locally on **http://localhost:8080** (what the Lambda runs).      |
+| `make package-preview`  | Build the SSR preview and zip it for Lambda (`preview-lambda.zip`, linux-arm64 runtime deps only). |
+| `make deploy-preview`   | Package and upload the preview to the `sensatempo-preview-ssr` Lambda from your machine.           |
+| `make build-prod`       | Build the static production site in Docker (`.env` mounted as a build secret).                     |
+| `make run-prod-preview` | Build the static site and serve it with **Nginx** on **http://localhost:8080**.                    |
+| `make clean`            | Remove the local Docker image and preview zip.                                                     |
 
 ---
 
@@ -183,11 +190,11 @@ Everything runs on **AWS (`us-east-1`)** and is pay-per-use: nothing bills while
 
 Secrets live in **AWS SSM Parameter Store** as `SecureString`s (free standard tier, AWS-managed `aws/ssm` key). Nothing secret is stored in GitHub or in the repo.
 
-| Parameter | Used by |
-| :--- | :--- |
-| `/sensatempo/storyblok/access-token` | CI builds (read via the GitHub OIDC deploy role) |
-| `/sensatempo/preview/basic-auth-user` | Preview Lambda basic auth (read by Terraform into the Lambda env) |
-| `/sensatempo/preview/basic-auth-password` | Preview Lambda basic auth |
+| Parameter                                 | Used by                                                           |
+| :---------------------------------------- | :---------------------------------------------------------------- |
+| `/sensatempo/storyblok/access-token`      | CI builds (read via the GitHub OIDC deploy role)                  |
+| `/sensatempo/preview/basic-auth-user`     | Preview Lambda basic auth (read by Terraform into the Lambda env) |
+| `/sensatempo/preview/basic-auth-password` | Preview Lambda basic auth                                         |
 
 Create or rotate a value (Terraform only reads these, so values never appear in code):
 
@@ -206,11 +213,11 @@ After rotating the basic auth values, run `pnpm tf:apply` to push them to the La
 
 Infrastructure lives under **`terraform/`**. State is stored remotely in the `sensatempo-tfstate-221135164152` S3 bucket (versioned, S3-native locking). That bucket was created once by hand, as were the SSM parameters above.
 
-| Area | Resources |
-| :--- | :--- |
-| **Production** | Private S3 bucket, CloudFront distribution (Origin Access Control, managed caching policy, `PriceClass_100`), CloudFront Function for index rewrites. |
-| **Preview** | Lambda function (zip, `nodejs24.x`, arm64, Lambda Web Adapter layer), Function URL, IAM role, CloudWatch log group (14-day retention). |
-| **CI** | GitHub OIDC provider and the `sensatempo-github-deploy` role. Only workflows on `main` can assume it; it can read `/sensatempo/storyblok/*`, sync the bucket, invalidate CloudFront and update the Lambda code. |
+| Area           | Resources                                                                                                                                                                                                       |
+| :------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Production** | Private S3 bucket, CloudFront distribution (Origin Access Control, managed caching policy, `PriceClass_100`), CloudFront Function for index rewrites.                                                           |
+| **Preview**    | Lambda function (zip, `nodejs24.x`, arm64, Lambda Web Adapter layer), Function URL, IAM role, CloudWatch log group (14-day retention).                                                                          |
+| **CI**         | GitHub OIDC provider and the `sensatempo-github-deploy` role. Only workflows on `main` can assume it; it can read `/sensatempo/storyblok/*`, sync the bucket, invalidate CloudFront and update the Lambda code. |
 
 ```bash
 pnpm tf:init

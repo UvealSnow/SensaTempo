@@ -77,13 +77,12 @@ export function pagesLoader(): Loader {
         if (!isDev) throw error;
       }
     },
-    schema: async () =>
-      z.object({
-        lang: z.string(),
-        slug: z.string(),
-        createdAt: z.date(),
-        updatedAt: z.date().optional(),
-        content: z.unknown(),
-      }),
+    schema: z.object({
+      lang: z.string(),
+      slug: z.string(),
+      createdAt: z.date(),
+      updatedAt: z.date().optional(),
+      content: z.unknown(),
+    }),
   };
 }
