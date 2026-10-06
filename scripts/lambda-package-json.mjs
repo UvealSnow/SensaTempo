@@ -3,11 +3,10 @@
 //
 // Usage: node scripts/lambda-package-json.mjs <dist/server> <output package.json>
 import { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
-import { builtinModules, createRequire } from 'node:module';
+import { builtinModules } from 'node:module';
 import { join } from 'node:path';
 
 const [serverDir, outFile] = process.argv.slice(2);
-const require = createRequire(join(process.cwd(), 'package.json'));
 const builtins = new Set(builtinModules);
 
 const files = (dir) =>
@@ -32,11 +31,14 @@ for (const file of files(serverDir)) {
 
 const dependencies = {};
 for (const spec of specifiers) {
-  if (spec.startsWith('node:') || spec.includes('${')) continue;
+  // Skip node: builtins, astro:* virtual modules (matched inside strings) and template literals
+  if (spec.includes(':') || spec.includes('${')) continue;
   const parts = spec.split('/');
   const name = spec.startsWith('@') ? parts.slice(0, 2).join('/') : parts[0];
   if (builtins.has(name)) continue;
-  dependencies[name] = require(`${name}/package.json`).version;
+  // Read from disk: some packages (e.g. sharp) don't export ./package.json
+  const pkg = join(process.cwd(), 'node_modules', name, 'package.json');
+  dependencies[name] = JSON.parse(readFileSync(pkg, 'utf8')).version;
 }
 
 writeFileSync(

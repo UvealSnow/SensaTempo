@@ -3,6 +3,7 @@ build/
 dist/
 node_modules/
 .astro/
+.claude/
 
 # Ignore generated files:
 pnpm-lock.yaml

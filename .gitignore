@@ -55,5 +55,6 @@ tfplan
 
 # Local tool state
 .claude/settings.local.json
+.claude/worktrees/
 .cache/
 coverage/
