@@ -143,16 +143,22 @@ For the best development experience:
 - `.vscode/settings.json` - VS Code workspace settings
 - `.vscode/extensions.json` - Recommended extensions
 
-## 🛠 Development & Build Process
+## 🛠 Development & Deployment
 
-This project uses a **multi-stage Docker architecture** managed via a `Makefile` to handle both static production builds and SSR preview environments.
+Everything runs on **AWS (`us-east-1`)** and is pay-per-use: nothing bills while the site has no visitors.
+
+| Environment | Hosting | Built by | Description |
+| :--- | :--- | :--- | :--- |
+| **Production** | **S3 + CloudFront** | `prod-deploy.yaml` on push to `main` | Fully static build (published content). A CloudFront Function maps `/es/about/` to `index.html` and redirects `/` to the default language. |
+| **Preview** | **Lambda** (zip, Node 24, arm64) + **Lambda Web Adapter** layer, public Function URL | `preview-deploy.yaml` on push to `main` | SSR build for Storyblok editors, protected by HTTP Basic Auth (`src/middleware.ts`). |
+| **Local QA** | **Nginx** in Docker | `make run-prod-preview` | Serves the static production build on http://localhost:8080. |
 
 ---
 
 ### 📋 Prerequisites
-* **Docker** (with BuildKit enabled)
-* **pnpm** (for local dependency management)
-* **GNU Make**
+* **pnpm** and **Node 24**
+* **GNU Make**, **AWS CLI** and **Terraform ≥ 1.10** for infrastructure work
+* **Docker** (BuildKit) only for `make run-prod-preview`
 * A local `.env` file (see `.env.example`) containing:
     * `STORYBLOK_ACCESS_TOKEN`
     * `PUBLIC_DEFAULT_LANGUAGE`
@@ -160,68 +166,58 @@ This project uses a **multi-stage Docker architecture** managed via a `Makefile`
 
 ---
 
-### 🏗 Environment Strategy
-
-| Environment | Target | Delivery | Description |
-| :--- | :--- | :--- | :--- |
-| **Production** | `build-prod` | **S3 + CloudFront** | Fully static build. API keys are used only during build-time via Docker Secret Mounts. |
-| **Preview** | `live-preview` | **Lambda + Adapter** | SSR container running with the AWS Lambda Web Adapter. Uses runtime env vars. |
-| **Local QA** | `prod-preview` | **Nginx** | A local Nginx container serving the static production build for final validation. |
-
----
-
 ### 🚀 Makefile targets
-
-All image builds use `./docker/Dockerfile`, **linux/arm64**, and BuildKit **without** provenance/SBOM attestations (Lambda-compatible single-arch manifests). The production and preview build paths mount your repo **`.env`** as a secret (`DOTENV`) so `STORYBLOK_ACCESS_TOKEN` and other values are available during `pnpm build` without ending up in image layers.
-
-**Optional Make variables:** `AWS_REGION` (default `us-east-1`), `AWS_ACCOUNT_ID` (default from `aws sts get-caller-identity`). `PUBLIC_DEFAULT_LANGUAGE` and `PUBLIC_AVAILABLE_LANGUAGES` are read from `.env` when invoking Make.
 
 | Target | Action |
 | :--- | :--- |
-| `make build-prod` | Build the static production stage (`build-prod`); tags `sensatempo-prod:latest`. |
-| `make build-preview` | Build the SSR Lambda preview image (`live-preview`); tags `sensatempo-preview:latest`. |
-| `make run-preview` | Build the preview image (if needed) and run it locally on **http://localhost:8080**. |
-| `make run-prod-preview` | Build the static site, then run it in a local **Nginx** container on **http://localhost:8080** (`prod-preview` stage). |
-| `make push-preview-image` | Build the preview image, tag it for **ECR** (`<account>.dkr.ecr.<region>.amazonaws.com/sensatempo-preview:latest`), log in with the AWS CLI, and push. Requires AWS credentials and ECR permissions. |
-| `make clean` | Remove local `sensatempo-prod:latest` and `sensatempo-preview:latest` images (ignores errors if missing). |
+| `make run-preview` | Build the SSR preview and run it locally on **http://localhost:8080** (what the Lambda runs). |
+| `make package-preview` | Build the SSR preview and zip it for Lambda (`preview-lambda.zip`, linux-arm64 runtime deps only). |
+| `make deploy-preview` | Package and upload the preview to the `sensatempo-preview-ssr` Lambda from your machine. |
+| `make build-prod` | Build the static production site in Docker (`.env` mounted as a build secret). |
+| `make run-prod-preview` | Build the static site and serve it with **Nginx** on **http://localhost:8080**. |
+| `make clean` | Remove the local Docker image and preview zip. |
 
 ---
 
-### 🔒 Security & Environment Variables
+### 🔒 Secrets
 
-We prioritize security by ensuring sensitive tokens are never "baked" into Docker image layers.
+Secrets live in **AWS SSM Parameter Store** as `SecureString`s (free standard tier, AWS-managed `aws/ssm` key). Nothing secret is stored in GitHub or in the repo.
 
-1. **Build-time secrets:** For local Make builds, `.env` is mounted with `--mount=type=secret` during `pnpm build` and is not copied into the final image.
-2. **Runtime variables:** The preview SSR container expects variables from the host (for example **AWS Lambda** environment variables set in Terraform).
-3. **CI/CD:** The production workflow builds the static image with GitHub **Actions secrets** (for example `STORYBLOK_ACCESS_TOKEN`), copies `./dist` out of the container, syncs to **S3**, and creates a **CloudFront** invalidation using repository secrets for AWS credentials and resource IDs.
+| Parameter | Used by |
+| :--- | :--- |
+| `/sensatempo/storyblok/access-token` | CI builds (read via the GitHub OIDC deploy role) |
+| `/sensatempo/preview/basic-auth-user` | Preview Lambda basic auth (read by Terraform into the Lambda env) |
+| `/sensatempo/preview/basic-auth-password` | Preview Lambda basic auth |
+
+Create or rotate a value (Terraform only reads these, so values never appear in code):
+
+```bash
+aws ssm put-parameter --region us-east-1 --type SecureString --overwrite \
+  --name /sensatempo/storyblok/access-token --value '<token>'
+```
+
+After rotating the basic auth values, run `pnpm tf:apply` to push them to the Lambda. Locally, builds read the token from `.env`.
+
+**GitHub repository variables** (not secret): `AWS_DEPLOY_ROLE_ARN`, `AWS_PROD_BUCKET`, `AWS_CF_DIST_ID` (from the Terraform outputs), `PUBLIC_DEFAULT_LANGUAGE`, `PUBLIC_AVAILABLE_LANGUAGES`.
 
 ---
 
 ### ☁️ Terraform (AWS)
 
-Infrastructure lives under **`terraform/`**. It targets **AWS** in **`us-east-1`** (see `provider "aws"` in `main.tf`). Requires **Terraform ≥ 1.5** and the **hashicorp/aws** provider (~> 5.x).
+Infrastructure lives under **`terraform/`**. State is stored remotely in the `sensatempo-tfstate-221135164152` S3 bucket (versioned, S3-native locking). That bucket was created once by hand, as were the SSM parameters above.
 
-**What it manages**
-
-| Area | Resources (summary) |
+| Area | Resources |
 | :--- | :--- |
-| **Production (static)** | Private S3 bucket for assets, **CloudFront** distribution with **Origin Access Control** (OAC), bucket policy allowing only that distribution to read objects. |
-| **Preview (SSR)** | **ECR** repository `sensatempo-preview`, **Lambda** function (container image, **arm64**) with the **Lambda Web Adapter** port env vars, **function URL** (public invoke), IAM role and **public invoke permission** for the URL. |
-
-**Variables** (`variables.tf`)
-
-- `preview_basic_auth_user` / `preview_basic_auth_password` — optional HTTP Basic Auth for the preview Lambda. Empty strings disable auth. Marked sensitive; pass them with a **`-var-file`** (for example `secret.tfvars`) that you **do not commit**.
-
-Example (after `cd terraform`):
+| **Production** | Private S3 bucket, CloudFront distribution (Origin Access Control, managed caching policy, `PriceClass_100`), CloudFront Function for index rewrites. |
+| **Preview** | Lambda function (zip, `nodejs24.x`, arm64, Lambda Web Adapter layer), Function URL, IAM role, CloudWatch log group (14-day retention). |
+| **CI** | GitHub OIDC provider and the `sensatempo-github-deploy` role. Only workflows on `main` can assume it; it can read `/sensatempo/storyblok/*`, sync the bucket, invalidate CloudFront and update the Lambda code. |
 
 ```bash
-terraform init
-terraform plan -var-file=secret.tfvars
-terraform apply -var-file=secret.tfvars
+pnpm tf:init
+pnpm tf:plan
+pnpm tf:apply
 ```
 
-**Outputs:** `cloudfront_domain`, `preview_lambda_url`, `ecr_repository_url`.
+**Outputs:** `cloudfront_domain`, `cloudfront_distribution_id`, `prod_bucket`, `preview_lambda_url`, `github_deploy_role_arn`.
 
-**Deploying new preview images:** CI/CD can push a new image to ECR and update the Lambda image URI. The Lambda resource uses `lifecycle { ignore_changes = [image_uri] }` so routine **`terraform apply`** does not revert the image to Terraform’s placeholder while still allowing first-time provisioning.
-
-**State:** Keep `terraform.tfstate` (and any backups) secure and preferably remote (for example S3 backend); the repo layout is suitable for local runs only if that matches your team’s process.
+Terraform creates the Lambda with placeholder code and ignores code changes afterwards. Real code is deployed by CI or `make deploy-preview`, so `terraform apply` never rolls it back.

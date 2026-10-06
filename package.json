@@ -18,9 +18,9 @@
     "preview:package": "make package-preview",
     "preview:deploy": "make deploy-preview",
     "tf:init": "terraform -chdir=./terraform init",
-    "tf:plan": "terraform -chdir=./terraform plan -var-file=secret.tfvars",
-    "tf:apply": "terraform -chdir=./terraform apply -var-file=secret.tfvars",
-    "tf:destroy": "terraform -chdir=./terraform destroy -var-file=secret.tfvars"
+    "tf:plan": "terraform -chdir=./terraform plan",
+    "tf:apply": "terraform -chdir=./terraform apply",
+    "tf:destroy": "terraform -chdir=./terraform destroy"
   },
   "dependencies": {
     "@astrojs/node": "^10.0.4",
