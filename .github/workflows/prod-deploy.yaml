@@ -7,8 +7,12 @@ on:
   # the CMS sent a webhook telling us the content has been updated.
   # repository_dispatch:
   #   types: [content_updated]
-  # Allows to manually trigger this for any branch from the "Actions" tab
+  # Manual trigger from the "Actions" tab (the AWS role only trusts main)
   workflow_dispatch:
+
+permissions:
+  id-token: write # GitHub OIDC -> AWS role, no long-lived keys
+  contents: read
 
 jobs:
   deploy-static-prod:
@@ -16,32 +20,31 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # The Dockerfile pins linux/arm64, so the x86 runner needs emulation
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
 
-      - name: Write build secrets
-        run: echo "STORYBLOK_ACCESS_TOKEN=$STORYBLOK_ACCESS_TOKEN" > "$RUNNER_TEMP/build.env"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build static site
+        run: pnpm build
         env:
           STORYBLOK_ACCESS_TOKEN: ${{ secrets.STORYBLOK_ACCESS_TOKEN }}
+          PUBLIC_DEFAULT_LANGUAGE: ${{ vars.PUBLIC_DEFAULT_LANGUAGE }}
+          PUBLIC_AVAILABLE_LANGUAGES: ${{ vars.PUBLIC_AVAILABLE_LANGUAGES }}
+          PUBLIC_BUILD_TYPE: static
 
-      - name: Build static assets
-        run: |
-          docker build -f ./docker/Dockerfile \
-            --secret id=DOTENV,src="$RUNNER_TEMP/build.env" \
-            --build-arg PUBLIC_DEFAULT_LANGUAGE=${{ vars.PUBLIC_DEFAULT_LANGUAGE }} \
-            --build-arg PUBLIC_AVAILABLE_LANGUAGES=${{ vars.PUBLIC_AVAILABLE_LANGUAGES }} \
-            --target build-prod \
-            -t sensatempo-prod:latest .
-          docker create --name tmp-container sensatempo-prod:latest
-          docker cp tmp-container:/app/dist ./dist
-          docker rm tmp-container
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: us-east-1
 
       - name: Deploy to S3
         run: |
-          aws s3 sync ./dist s3://${{ secrets.AWS_PROD_BUCKET }} --delete
-          aws cloudfront create-invalidation --distribution-id ${{ secrets.AWS_CF_DIST_ID }} --paths "/*"
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: us-east-1
+          aws s3 sync ./dist s3://${{ vars.AWS_PROD_BUCKET }} --delete
+          aws cloudfront create-invalidation --distribution-id ${{ vars.AWS_CF_DIST_ID }} --paths "/*"

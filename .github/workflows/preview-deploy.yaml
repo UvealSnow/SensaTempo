@@ -1,4 +1,4 @@
-name: Preview Deployment (SSR Container)
+name: Preview Deployment (SSR Lambda)
 
 on:
   push:
@@ -7,8 +7,12 @@ on:
     paths-ignore:
       - '**.md'
       - '.gitignore'
-  # Allows to manually trigger this for any branch from the "Actions" tab
+  # Manual trigger from the "Actions" tab (the AWS role only trusts main)
   workflow_dispatch:
+
+permissions:
+  id-token: write # GitHub OIDC -> AWS role, no long-lived keys
+  contents: read
 
 jobs:
   deploy-preview:
@@ -17,52 +21,33 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - uses: pnpm/action-setup@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
+          version: 10
 
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
 
-      # The image targets linux/arm64, so the x86 runner needs emulation
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+      - run: pnpm install --frozen-lockfile
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Write build secrets
-        run: echo "STORYBLOK_ACCESS_TOKEN=$STORYBLOK_ACCESS_TOKEN" > "$RUNNER_TEMP/build.env"
+      # Builds the SSR server and zips it with linux-arm64 runtime deps
+      - name: Package preview Lambda
+        run: scripts/package-preview.sh preview-lambda.zip
         env:
           STORYBLOK_ACCESS_TOKEN: ${{ secrets.STORYBLOK_ACCESS_TOKEN }}
+          PUBLIC_DEFAULT_LANGUAGE: ${{ vars.PUBLIC_DEFAULT_LANGUAGE }}
+          PUBLIC_AVAILABLE_LANGUAGES: ${{ vars.PUBLIC_AVAILABLE_LANGUAGES }}
 
-      - name: Build and Push Docker Image
-        uses: docker/build-push-action@v5
+      - uses: aws-actions/configure-aws-credentials@v4
         with:
-          context: .
-          target: live-preview
-          secret-files: |
-            DOTENV=${{ runner.temp }}/build.env
-          build-args: |
-            PUBLIC_DEFAULT_LANGUAGE=${{ vars.PUBLIC_DEFAULT_LANGUAGE }}
-            PUBLIC_AVAILABLE_LANGUAGES=${{ vars.PUBLIC_AVAILABLE_LANGUAGES }}
-          push: true
-          tags: ${{ steps.login-ecr.outputs.registry }}/sensatempo-preview:latest
-          # Building for ARM64 makes Lambda cheaper and faster
-          platforms: linux/arm64
-          # Lambda rejects OCI image indexes from BuildKit attestations (provenance/SBOM)
-          provenance: false
-          sbom: false
-          # Docker caching in GitHub Actions to speed up pnpm install steps
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: us-east-1
 
       - name: Update Lambda Function
         run: |
           aws lambda update-function-code \
             --function-name sensatempo-preview-ssr \
-            --image-uri ${{ steps.login-ecr.outputs.registry }}/sensatempo-preview:latest
+            --zip-file fileb://preview-lambda.zip
+          aws lambda wait function-updated --function-name sensatempo-preview-ssr
