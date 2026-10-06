@@ -29,6 +29,23 @@ provider "aws" {
 
 locals {
   preview_function_name = "sensatempo-preview-ssr"
+  ssm_prefix            = "/sensatempo"
+}
+
+data "aws_caller_identity" "current" {}
+
+# --- 0. SECRETS: SSM PARAMETER STORE (SecureString, free standard tier) ---
+# Created once by hand so values never live in code (see README "Secrets"); Terraform only reads them.
+#   /sensatempo/storyblok/access-token         read by CI to build the site
+#   /sensatempo/preview/basic-auth-user        preview Lambda basic auth
+#   /sensatempo/preview/basic-auth-password
+
+data "aws_ssm_parameter" "preview_basic_auth_user" {
+  name = "${local.ssm_prefix}/preview/basic-auth-user"
+}
+
+data "aws_ssm_parameter" "preview_basic_auth_password" {
+  name = "${local.ssm_prefix}/preview/basic-auth-password"
 }
 
 # --- 1. PRODUCTION: S3 + CLOUDFRONT (STATIC) ---
@@ -203,8 +220,8 @@ resource "aws_lambda_function" "preview_ssr" {
       HOST                             = "127.0.0.1"
       PORT                             = "8080"
       NODE_ENV                         = "production"
-      PREVIEW_BASIC_AUTH_USER          = var.preview_basic_auth_user
-      PREVIEW_BASIC_AUTH_PASSWORD      = var.preview_basic_auth_password
+      PREVIEW_BASIC_AUTH_USER          = data.aws_ssm_parameter.preview_basic_auth_user.value
+      PREVIEW_BASIC_AUTH_PASSWORD      = data.aws_ssm_parameter.preview_basic_auth_password.value
     }
   }
 
@@ -264,13 +281,19 @@ resource "aws_iam_role" "github_deploy" {
   })
 }
 
-# Just enough to deploy: sync the prod bucket, invalidate the CDN, update the preview code
+# Just enough to deploy: read build secrets, sync the prod bucket, invalidate the CDN, update the preview code
 resource "aws_iam_role_policy" "github_deploy" {
   name = "deploy"
   role = aws_iam_role.github_deploy.id
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
+      {
+        # SecureStrings use the AWS-managed aws/ssm key, so no kms:Decrypt grant is needed
+        Effect   = "Allow"
+        Action   = ["ssm:GetParameter"]
+        Resource = "arn:aws:ssm:us-east-1:${data.aws_caller_identity.current.account_id}:parameter${local.ssm_prefix}/storyblok/*"
+      },
       {
         Effect   = "Allow"
         Action   = ["s3:ListBucket"]

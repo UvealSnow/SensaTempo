@@ -32,18 +32,25 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      # Builds the SSR server and zips it with linux-arm64 runtime deps
-      - name: Package preview Lambda
-        run: scripts/package-preview.sh preview-lambda.zip
-        env:
-          STORYBLOK_ACCESS_TOKEN: ${{ secrets.STORYBLOK_ACCESS_TOKEN }}
-          PUBLIC_DEFAULT_LANGUAGE: ${{ vars.PUBLIC_DEFAULT_LANGUAGE }}
-          PUBLIC_AVAILABLE_LANGUAGES: ${{ vars.PUBLIC_AVAILABLE_LANGUAGES }}
-
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
           aws-region: us-east-1
+
+      # Build secrets live in SSM Parameter Store, not GitHub (see README "Secrets")
+      - name: Load secrets from SSM
+        run: |
+          TOKEN=$(aws ssm get-parameter --name /sensatempo/storyblok/access-token \
+            --with-decryption --query Parameter.Value --output text)
+          echo "::add-mask::$TOKEN"
+          echo "STORYBLOK_ACCESS_TOKEN=$TOKEN" >> "$GITHUB_ENV"
+
+      # Builds the SSR server and zips it with linux-arm64 runtime deps
+      - name: Package preview Lambda
+        run: scripts/package-preview.sh preview-lambda.zip
+        env:
+          PUBLIC_DEFAULT_LANGUAGE: ${{ vars.PUBLIC_DEFAULT_LANGUAGE }}
+          PUBLIC_AVAILABLE_LANGUAGES: ${{ vars.PUBLIC_AVAILABLE_LANGUAGES }}
 
       - name: Update Lambda Function
         run: |
