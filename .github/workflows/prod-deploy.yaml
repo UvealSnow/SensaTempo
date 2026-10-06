@@ -4,9 +4,10 @@ on:
   # We have a new main version
   push:
     branches: [main]
-  # the CMS sent a webhook telling us the content has been updated.
-  # repository_dispatch:
-  #   types: [content_updated]
+  # Content was published in Storyblok: the sensatempo-storyblok-webhook Lambda relays it here.
+  # Always runs on the default branch, so REF below resolves to main (inputs.ref is empty).
+  repository_dispatch:
+    types: [storyblok-publish]
   # Any branch, on demand: called by deploy-branch.yaml (run from main; the AWS role only trusts main)
   workflow_call:
     inputs:
@@ -29,6 +30,21 @@ jobs:
     env:
       REF: ${{ inputs.ref || github.ref_name }}
     steps:
+      # push, dispatch (Deploy branch) or storyblok:<action> <full_slug>. The payload goes through
+      # env, never inline, and is cut to printable characters before reaching GITHUB_ENV.
+      - name: Describe trigger
+        env:
+          SB_ACTION: ${{ github.event.client_payload.action }}
+          SB_SLUG: ${{ github.event.client_payload.full_slug }}
+        run: |
+          case "$GITHUB_EVENT_NAME" in
+            push) TRIGGER=push ;;
+            repository_dispatch) TRIGGER="storyblok:$SB_ACTION $SB_SLUG" ;;
+            *) TRIGGER=dispatch ;;
+          esac
+          TRIGGER=$(printf '%s' "$TRIGGER" | tr -cd '[:print:]' | cut -c1-200)
+          echo "TRIGGER=$TRIGGER" >> "$GITHUB_ENV"
+
       - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref || github.ref }}
@@ -67,10 +83,10 @@ jobs:
       # What prod is serving: https://<site>/version.json
       - name: Write version.json
         run: |
-          jq -n --arg ref "$REF" --arg sha "$(git rev-parse HEAD)" \
+          jq -n --arg ref "$REF" --arg sha "$(git rev-parse HEAD)" --arg trigger "$TRIGGER" \
             --arg run "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
             --arg at "$(date -u +%FT%TZ)" \
-            '{ref: $ref, sha: $sha, run_url: $run, deployed_at: $at}' > dist/version.json
+            '{ref: $ref, sha: $sha, trigger: $trigger, run_url: $run, deployed_at: $at}' > dist/version.json
 
       - name: Deploy to S3
         run: |
@@ -79,7 +95,7 @@ jobs:
 
       - name: Summary
         run: |
-          echo "Deployed \`$REF\` ($(git rev-parse --short HEAD)) to production" >> "$GITHUB_STEP_SUMMARY"
+          echo "Deployed \`$REF\` ($(git rev-parse --short HEAD)) to production (trigger: \`$TRIGGER\`)" >>"$GITHUB_STEP_SUMMARY"
           if [ "$REF" != main ]; then
             echo "::warning::Production is serving '$REF', not main. The next push to main replaces it; to roll back, run Deploy branch with ref=main."
           fi

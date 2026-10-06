@@ -429,6 +429,105 @@ resource "aws_iam_role_policy" "github_deploy" {
   })
 }
 
+# --- 4. STORYBLOK PUBLISH WEBHOOK: RELAY LAMBDA -> GITHUB repository_dispatch ---
+# Storyblok can't send an Authorization header, so this verifies its webhook-signature and calls
+# GitHub's dispatches API, which runs prod-deploy.yaml on main. Code: webhook/index.mjs (no deps).
+# SSM parameters, created by hand like the ones above:
+#   /sensatempo/storyblok/webhook-secret   also entered in Storyblok's webhook settings
+#   /sensatempo/github/dispatch-token      fine-grained PAT, this repo only, Contents: read & write
+
+locals {
+  webhook_function_name = "sensatempo-storyblok-webhook"
+}
+
+data "aws_ssm_parameter" "storyblok_webhook_secret" {
+  name = "${local.ssm_prefix}/storyblok/webhook-secret"
+}
+
+data "aws_ssm_parameter" "github_dispatch_token" {
+  name = "${local.ssm_prefix}/github/dispatch-token"
+}
+
+resource "aws_iam_role" "storyblok_webhook" {
+  name = "sensatempo-storyblok-webhook"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action    = "sts:AssumeRole"
+      Effect    = "Allow"
+      Principal = { Service = "lambda.amazonaws.com" }
+    }]
+  })
+}
+
+# Logs only: the secrets arrive as env vars, so no SSM access at runtime
+resource "aws_iam_role_policy_attachment" "storyblok_webhook_logs" {
+  role       = aws_iam_role.storyblok_webhook.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+resource "aws_cloudwatch_log_group" "storyblok_webhook" {
+  name              = "/aws/lambda/${local.webhook_function_name}"
+  retention_in_days = 14
+}
+
+# Only the handler; index.test.mjs stays out of the package
+data "archive_file" "storyblok_webhook" {
+  type        = "zip"
+  source_file = "${path.module}/webhook/index.mjs"
+  output_path = "${path.module}/.build/storyblok-webhook.zip"
+}
+
+resource "aws_lambda_function" "storyblok_webhook" {
+  function_name = local.webhook_function_name
+  role          = aws_iam_role.storyblok_webhook.arn
+  runtime       = "nodejs24.x"
+  handler       = "index.handler"
+  architectures = ["arm64"]
+
+  filename         = data.archive_file.storyblok_webhook.output_path
+  source_code_hash = data.archive_file.storyblok_webhook.output_base64sha256
+
+  timeout     = 10
+  memory_size = 128
+  # Caps cost if the public URL is flooded; Storyblok sends one request per event
+  reserved_concurrent_executions = 2
+
+  environment {
+    variables = {
+      STORYBLOK_WEBHOOK_SECRET = data.aws_ssm_parameter.storyblok_webhook_secret.value
+      GITHUB_DISPATCH_TOKEN    = data.aws_ssm_parameter.github_dispatch_token.value
+    }
+  }
+
+  depends_on = [
+    aws_cloudwatch_log_group.storyblok_webhook,
+    aws_iam_role_policy_attachment.storyblok_webhook_logs,
+  ]
+}
+
+# Public: Storyblok can't sign AWS requests. The handler rejects anything without a valid signature.
+resource "aws_lambda_function_url" "storyblok_webhook" {
+  function_name      = aws_lambda_function.storyblok_webhook.function_name
+  authorization_type = "NONE"
+}
+
+# authorization_type NONE still needs the resource policy (see preview_function_url_public)
+resource "aws_lambda_permission" "storyblok_webhook_function_url_public" {
+  statement_id           = "AllowPublicFunctionUrlInvoke"
+  action                 = "lambda:InvokeFunctionUrl"
+  function_name          = aws_lambda_function.storyblok_webhook.function_name
+  principal              = "*"
+  function_url_auth_type = "NONE"
+
+  depends_on = [aws_lambda_function_url.storyblok_webhook]
+}
+
+# Storyblok → Settings → Webhooks → URL
+output "storyblok_webhook_url" {
+  value = aws_lambda_function_url.storyblok_webhook.function_url
+}
+
 # --- OUTPUTS ---
 
 output "cloudfront_domain" {
