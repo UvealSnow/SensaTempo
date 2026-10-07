@@ -15,11 +15,9 @@ interface Props extends Omit<HTMLAttributes<'figure'>, 'class'> {
   size?: FlexSize;
   start?: FlexStart;
   vertical?: VerticalAlign;
-  // A resized Storyblok image (utils/images.ts), or a plain URL
   image?: ResponsiveImage | null;
   src?: string;
-  // Only for the first image on screen (the LCP): loads at once and paints without the fade, which
-  // would delay LCP. Everything else loads when scrolled near and fades in over its placeholder
+  // First image on screen only: no lazy loading or fade, both would delay LCP
   eager?: boolean;
   class?: string;
 }

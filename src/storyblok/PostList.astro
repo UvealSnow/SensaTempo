@@ -16,7 +16,6 @@ interface Props {
 const { blok } = Astro.props;
 const lang = currentLang(Astro);
 const posts = postSummaries(blok.posts, AVAILABLE_LANGUAGES);
-// Cards are 6/12 from md up
 const cardSpans = { md: '6/12', lg: '6/12' };
 ---
 

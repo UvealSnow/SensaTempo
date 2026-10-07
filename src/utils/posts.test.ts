@@ -1,8 +1,8 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
 import { byDateDesc, parseStoryblokDate, postSummaries } from './posts.ts';
+import { LANGUAGES } from './fixtures.ts';
 
-const languages = ['es', 'en'];
 const post = (slug: string, date?: string, first?: string) => ({
   full_slug: slug,
   first_published_at: first ?? null,
@@ -32,15 +32,14 @@ test('postSummaries keeps the editor order and drops unresolved entries', () => 
       { ...post('blog/untitled'), content: { component: 'post' } },
       post('blog/a', '', '2026-02-01T10:00:00.000Z'),
     ],
-    languages
+    LANGUAGES
   );
   assert.deepEqual(
     summaries.map(({ slug }) => slug),
     ['blog/b', 'blog/a']
   );
-  // No date: falls back to the first publish
   assert.equal(summaries[1].date?.toISOString(), '2026-02-01T10:00:00.000Z');
-  assert.deepEqual(postSummaries(undefined, languages), []);
+  assert.deepEqual(postSummaries(undefined, LANGUAGES), []);
 });
 
 test('byDateDesc puts the newest first and undated posts last', () => {
@@ -50,7 +49,7 @@ test('byDateDesc puts the newest first and undated posts last', () => {
       post('blog/undated'),
       post('blog/new', '2026-01-01 00:00'),
     ],
-    languages
+    LANGUAGES
   );
   assert.deepEqual(
     summaries.sort(byDateDesc).map(({ slug }) => slug),

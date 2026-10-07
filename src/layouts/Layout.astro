@@ -3,7 +3,7 @@ import NavBar from '~/components/layout/NavBar.astro';
 import Footer from '~/components/layout/Footer.astro';
 import BaseHead from '~/components/layout/BaseHead.astro';
 
-import { AVAILABLE_LANGUAGES } from '~/consts';
+import { AVAILABLE_LANGUAGES, X_DEFAULT_LANGUAGE } from '~/consts';
 import { pagePath } from '~/utils/navigation';
 import { currentLang, currentSlug } from '~/utils/page';
 import { FOOTER, getLayoutStory, NAVBAR } from '~/utils/stories';
@@ -16,9 +16,6 @@ interface Props {
   image?: string;
   type?: 'website' | 'article';
 }
-
-// Crawlers and browsers whose language isn't listed get English
-const X_DEFAULT_LANGUAGE = 'en';
 
 const lang = currentLang(Astro);
 const slug = currentSlug(Astro);
@@ -34,7 +31,6 @@ const [navbar, footer] = await Promise.all([
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/x-icon" href="/favicon.svg" />
     <BaseHead {...Astro.props} />
-    <!-- Pictures fade in from a blurred preview via onload; without JS, show them straight away -->
     <noscript>
       <style>
         .picture__image {

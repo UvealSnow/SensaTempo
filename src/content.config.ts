@@ -5,12 +5,10 @@ import { BLOG_FOLDER, PAGE_RELATIONS } from './utils/posts';
 const pages = defineCollection({
   loader: storiesLoader('pages', {
     content_type: 'page',
-    // `post_list` blocks get their posts (title, cover, slug…) inline
     resolve_relations: PAGE_RELATIONS,
   }),
 });
 
-// Blog posts, under the blog folder (whose start page is a `page`)
 const posts = defineCollection({
   loader: storiesLoader('posts', {
     content_type: 'post',

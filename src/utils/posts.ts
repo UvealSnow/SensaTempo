@@ -1,5 +1,6 @@
 // Blog post summaries for lists and feeds. Pure functions (no `~` or astro imports) so
 // `node --test` can run posts.test.ts directly.
+import dayjs from './dates.ts';
 import type { StoryblokAsset } from './images.ts';
 import { storySlug } from './navigation.ts';
 
@@ -30,15 +31,10 @@ export interface PostSummary {
   date: Date | null;
 }
 
-/** Storyblok datetimes are `YYYY-MM-DD HH:mm` in UTC. */
+/** Storyblok datetimes (`YYYY-MM-DD HH:mm`) and timestamps are UTC. */
 export function parseStoryblokDate(value?: string | null): Date | null {
-  if (!value) return null;
-  const date = new Date(
-    /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(value)
-      ? `${value.replace(' ', 'T')}:00Z`
-      : value
-  );
-  return Number.isNaN(date.getTime()) ? null : date;
+  const date = value ? dayjs.utc(value) : null;
+  return date?.isValid() ? date.toDate() : null;
 }
 
 /** The post's date: the editor's `date`, else its first publish. */

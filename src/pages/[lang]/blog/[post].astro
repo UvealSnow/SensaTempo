@@ -12,7 +12,6 @@ export async function getStaticPaths() {
   const posts = await getCollection('posts');
   return posts.flatMap(({ data }) => {
     const post = data.slug.slice(`${BLOG_FOLDER}/`.length);
-    // Only direct children of the blog folder: one URL segment
     return post && !post.includes('/')
       ? [{ params: { lang: data.lang, post } }]
       : [];

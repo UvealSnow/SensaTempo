@@ -62,7 +62,6 @@ export function storiesLoader(name: string, params: ISbStoriesParams): Loader {
               id,
               data: {
                 lang: story.lang === 'default' ? DEFAULT_LANGUAGE : story.lang,
-                // Without the language, keeping folders: `about`, `blog` (start page), `blog/x`
                 slug:
                   storySlug(story.full_slug, AVAILABLE_LANGUAGES) ?? story.slug,
                 createdAt: new Date(story.created_at),

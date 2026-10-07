@@ -3,7 +3,6 @@
 
 export type Ratio = 'golden' | 'square' | 'original';
 
-// Storyblok asset field
 export interface StoryblokAsset {
   filename?: string | null;
   alt?: string | null;
@@ -16,7 +15,6 @@ export interface ResponsiveImage {
   sizes: string;
   width: number;
   height: number;
-  // ~1 KB version shown blurred while the full image loads
   placeholder: string;
   alt: string;
 }

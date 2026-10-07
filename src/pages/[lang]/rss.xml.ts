@@ -9,7 +9,6 @@ export function getStaticPaths() {
   return AVAILABLE_LANGUAGES.map((lang) => ({ params: { lang } }));
 }
 
-/** Every post in the language, newest first (not the blog page's curated list). */
 export const GET: APIRoute = async ({ params, site }) => {
   const lang = params.lang ?? '';
   if (!AVAILABLE_LANGUAGES.includes(lang) || !site) {
