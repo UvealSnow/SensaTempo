@@ -18,19 +18,38 @@ export const pagePath = (lang: string, slug: string): string =>
   slug === HOME_SLUG ? `/${lang}/` : `/${lang}/${slug}/`;
 
 /**
- * Slug of a story link without the language prefix: resolved links in a translation come back as
- * `en/about`, unresolved ones (Visual Editor payloads) only carry `cached_url`.
+ * Slug of a story without the language prefix, from its `full_slug`: stories in a translation come
+ * back as `en/about`, and a folder's start page as `blog/`.
+ */
+export function storySlug(
+  fullSlug: string,
+  languages: readonly string[]
+): string | null {
+  const parts = fullSlug.split('/').filter(Boolean);
+  if (parts.length > 1 && languages.includes(parts[0])) parts.shift();
+  return parts.length ? parts.join('/') : null;
+}
+
+/** Slug of the page at `pathname` (`/en/blog/x/` → `blog/x`), `home` for a language root. */
+export function slugFromPath(
+  pathname: string,
+  languages: readonly string[]
+): string {
+  const parts = pathname.split('/').filter(Boolean);
+  if (languages.includes(parts[0])) parts.shift();
+  return parts.length ? parts.join('/') : HOME_SLUG;
+}
+
+/**
+ * Slug of a story link without the language prefix. Unresolved links (Visual Editor payloads) only
+ * carry `cached_url`.
  */
 export function linkSlug(
   link: MultilinkField | undefined,
   languages: readonly string[]
 ): string | null {
   if (link?.linktype !== 'story') return null;
-  const parts = (link.story?.full_slug || link.cached_url || '')
-    .split('/')
-    .filter(Boolean);
-  if (parts.length > 1 && languages.includes(parts[0])) parts.shift();
-  return parts.length ? parts.join('/') : null;
+  return storySlug(link.story?.full_slug || link.cached_url || '', languages);
 }
 
 /** Href for a multilink in `lang`, or null when the field is empty. */

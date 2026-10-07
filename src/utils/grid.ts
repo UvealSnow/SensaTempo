@@ -72,3 +72,36 @@ export const getVerticalAlignment = (vertical?: VerticalAlign): string =>
   vertical
     ? (verticalAlignMap[vertical] ?? verticalAlignMap.start)
     : verticalAlignMap.start;
+
+// Grid fields of the `picture` and `text` Storyblok blocks
+export interface GridBlok {
+  size?: string;
+  start?: string;
+  size_tablet?: string;
+  start_tablet?: string;
+  vertical?: string;
+}
+
+/** Placement of a block: full width on phones, then the tablet (md) and desktop (lg) settings. */
+export function blokPlacement(blok: GridBlok): {
+  size: FlexSize;
+  start: FlexStart;
+  vertical: VerticalAlign;
+} {
+  const size = blok.size || '12/12';
+  const sizeTablet = blok.size_tablet || size;
+  const start = blok.start || undefined;
+  const startTablet = blok.start_tablet || start;
+  return {
+    size: { sm: '12/12', md: sizeTablet, lg: size },
+    start: {
+      ...(startTablet ? { md: startTablet } : {}),
+      ...(start ? { lg: start } : {}),
+    },
+    vertical: (['start', 'center', 'end'] as const).includes(
+      blok.vertical as VerticalAlign
+    )
+      ? (blok.vertical as VerticalAlign)
+      : 'start',
+  };
+}

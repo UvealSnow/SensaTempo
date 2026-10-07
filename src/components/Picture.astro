@@ -1,4 +1,6 @@
 ---
+import type { HTMLAttributes } from 'astro/types';
+import type { ResponsiveImage } from '~/utils/images';
 import {
   getColSpans,
   getColStarts,
@@ -8,16 +10,29 @@ import {
   type VerticalAlign,
 } from '~/utils/grid';
 
-interface Props {
-  caption: string;
+interface Props extends Omit<HTMLAttributes<'figure'>, 'class'> {
+  caption?: string;
   size?: FlexSize;
   start?: FlexStart;
   vertical?: VerticalAlign;
-  src: string;
+  image?: ResponsiveImage | null;
+  src?: string;
+  // First image on screen only: no lazy loading or fade, both would delay LCP
+  eager?: boolean;
   class?: string;
 }
 
-const { caption, size, start, src, class: className, vertical } = Astro.props;
+const {
+  caption,
+  size,
+  start,
+  vertical,
+  image,
+  src,
+  eager = false,
+  class: className,
+  ...attrs
+} = Astro.props;
 
 const sizeClass =
   getColSpans(size ?? { sm: '12/12' }, 'col-span-12') +
@@ -26,17 +41,37 @@ const sizeClass =
 ---
 
 <figure
-  class={`relative overflow-hidden picture ${sizeClass} ${className ?? ''}`.trim()}
+  class={`relative picture ${sizeClass} ${className ?? ''}`.trim()}
+  {...attrs}
 >
-  <img
-    src={src}
-    alt={caption}
-    loading="lazy"
-    decoding="async"
-    class="picture__image block w-full object-cover blur-[18px] scale-[1.03] opacity-65 transition-[filter,transform,opacity] duration-500 ease-in-out"
-    onload="this.classList.remove('blur-[18px]','scale-[1.03]','opacity-65'); this.classList.add('blur-0','scale-100','opacity-100')"
-  />
-  <figcaption class="font-body text-gray-500 text-right text-md mt-2">
-    {caption}
-  </figcaption>
+  <div
+    class="relative overflow-hidden bg-light-gray/20"
+    style={image ? `aspect-ratio: ${image.width} / ${image.height}` : undefined}
+  >
+    {image && (
+      <div
+        aria-hidden="true"
+        class="absolute inset-0 scale-110 bg-cover bg-center blur-xl"
+        style={`background-image: url('${image.placeholder}')`}
+      />
+    )}
+    <img
+      src={image?.src ?? src}
+      srcset={image?.srcset}
+      sizes={image?.sizes}
+      width={image?.width}
+      height={image?.height}
+      alt={image?.alt ?? caption ?? ''}
+      loading={eager ? 'eager' : 'lazy'}
+      fetchpriority={eager ? 'high' : undefined}
+      decoding="async"
+      class={`picture__image relative block h-full w-full object-cover ${eager ? '' : 'opacity-0 transition-opacity duration-500 ease-in-out'}`}
+      onload={eager ? undefined : "this.classList.remove('opacity-0')"}
+    />
+  </div>
+  {caption && (
+    <figcaption class="font-body text-dark-gray mt-2 text-right text-lg">
+      {caption}
+    </figcaption>
+  )}
 </figure>

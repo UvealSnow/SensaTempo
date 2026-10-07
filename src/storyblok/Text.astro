@@ -1,0 +1,52 @@
+---
+import { storyblokEditable, type SbBlokData } from '@storyblok/astro';
+import StoryblokRichText from '@storyblok/astro/StoryblokRichText.astro';
+import {
+  blokPlacement,
+  getColSpans,
+  getColStarts,
+  getVerticalAlignment,
+  type GridBlok,
+} from '~/utils/grid';
+
+interface Props {
+  blok: SbBlokData &
+    GridBlok & {
+      heading?: string;
+      heading_level?: 'h1' | 'h2' | 'h3';
+      content?: unknown;
+      align?: 'left' | 'right';
+    };
+}
+
+const { blok } = Astro.props;
+const { size, start, vertical } = blokPlacement(blok);
+const Heading = blok.heading_level || 'h2';
+const headingSize = {
+  h1: 'text-4xl md:text-[40px]',
+  h2: 'text-3xl md:text-[32px]',
+  h3: 'text-2xl',
+}[Heading];
+const hasContent =
+  !!blok.content &&
+  typeof blok.content === 'object' &&
+  ((blok.content as { content?: unknown[] }).content?.length ?? 0) > 0;
+---
+
+<section
+  class={`${getColSpans(size, 'col-span-12')}${getColStarts(start)} ${getVerticalAlignment(vertical)} ${blok.align === 'right' ? 'text-right' : 'text-left'}`}
+  {...storyblokEditable(blok)}
+>
+  {blok.heading && (
+    <Heading
+      class={`font-display text-dark-gray mb-8 leading-tight md:mb-12 ${headingSize}`}
+    >
+      {blok.heading}
+    </Heading>
+  )}
+  {hasContent && (
+    <div class="rich-text font-body text-xl leading-[26px] text-black">
+      <StoryblokRichText document={blok.content as never} />
+    </div>
+  )}
+</section>
