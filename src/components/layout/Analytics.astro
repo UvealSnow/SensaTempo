@@ -1,15 +1,10 @@
 ---
-import { isPreviewMode } from '~/utils/storyblok';
+import { cloudflareAnalyticsToken } from '~/utils/analytics';
 
-// Cloudflare Web Analytics: cookieless page views, so no consent banner. Production builds only:
-// the preview (editors) and `pnpm dev` would skew the numbers. The token is public (it ends up in the page).
-const token = import.meta.env.PUBLIC_CF_ANALYTICS_TOKEN?.trim();
-const enabled =
-  token &&
-  !isPreviewMode(import.meta.env.DEV, import.meta.env.PUBLIC_BUILD_TYPE);
+const token = cloudflareAnalyticsToken(import.meta.env);
 ---
 
-{enabled && (
+{token && (
   <script
     is:inline
     defer
