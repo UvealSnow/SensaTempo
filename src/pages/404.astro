@@ -1,0 +1,147 @@
+---
+import type { SbBlokData } from '@storyblok/astro';
+import Analytics from '~/components/layout/Analytics.astro';
+import { AVAILABLE_LANGUAGES, SITE_TITLE, X_DEFAULT_LANGUAGE } from '~/consts';
+import { acceptLanguages, pickLanguage } from '~/utils/language';
+import { HOME_SLUG, pagePath } from '~/utils/navigation';
+import { getLayoutStory, isPreview, NAVBAR, NOT_FOUND } from '~/utils/stories';
+
+import '../styles/global.css';
+
+interface NotFoundText {
+  title: string;
+  text: string;
+  link_label: string;
+}
+
+// Used while the `layout/not-found` story (or a field) is missing, so the build never fails
+const FALLBACK: Record<string, NotFoundText> = {
+  es: {
+    title: 'Página no encontrada',
+    text: 'La página que buscas no existe o fue movida.',
+    link_label: 'Volver al inicio',
+  },
+  en: {
+    title: 'Page not found',
+    text: "The page you're looking for doesn't exist or has moved.",
+    link_label: 'Back to home',
+  },
+};
+
+// Prod serves this one static page for every missing URL (CloudFront error page), so it holds every
+// language and the inline script below shows the visitor's. The preview server knows the request,
+// so it renders only that language: from the URL before any rewrite, else Accept-Language.
+const languages = isPreview
+  ? [
+      pickLanguage(
+        Astro.originPathname,
+        acceptLanguages(Astro.request.headers.get('accept-language')),
+        AVAILABLE_LANGUAGES
+      ),
+    ]
+  : AVAILABLE_LANGUAGES;
+const initialLang = languages.includes(X_DEFAULT_LANGUAGE)
+  ? X_DEFAULT_LANGUAGE
+  : languages[0];
+
+if (isPreview) Astro.response.status = 404;
+
+const field = (blok: SbBlokData | null, name: keyof NotFoundText) => {
+  const value = blok?.[name];
+  return typeof value === 'string' && value.trim() ? value : null;
+};
+
+const sections = await Promise.all(
+  languages.map(async (lang) => {
+    const [story, navbar] = await Promise.all([
+      getLayoutStory(Astro.locals, lang, NOT_FOUND).catch(() => null),
+      getLayoutStory(Astro.locals, lang, NAVBAR).catch(() => null),
+    ]);
+    const fallback = FALLBACK[lang] ?? FALLBACK[X_DEFAULT_LANGUAGE];
+    return {
+      lang,
+      title: field(story, 'title') ?? fallback.title,
+      text: field(story, 'text') ?? fallback.text,
+      linkLabel: field(story, 'link_label') ?? fallback.link_label,
+      logo: navbar?.logo as { filename?: string; alt?: string } | undefined,
+    };
+  })
+);
+
+const fullTitle = (title: string) => `${title} · ${SITE_TITLE}`;
+const titles = Object.fromEntries(
+  sections.map(({ lang, title }) => [lang, fullTitle(title)])
+);
+const initialTitle = titles[initialLang];
+
+// Only the section matching <html data-lang> shows; without JS that's the x-default language
+const visibility = sections
+  .map(
+    ({ lang }) =>
+      `html[data-lang="${lang}"] section[data-lang]:not([data-lang="${lang}"]) { display: none; }`
+  )
+  .join('\n');
+
+// Blocking, so the right section is picked before first paint. pickLanguage is self-contained.
+// `<` escaped so CMS text can't close the script tag
+const json = (value: unknown) => JSON.stringify(value).replace(/</g, '\\u003c');
+const pickScript = `(function () {
+  var titles = ${json(titles)};
+  var lang = (${pickLanguage.toString()})(
+    location.pathname,
+    navigator.languages || [navigator.language || ''],
+    ${json(AVAILABLE_LANGUAGES)}
+  );
+  if (!titles[lang]) lang = ${json(initialLang)};
+  document.documentElement.lang = lang;
+  document.documentElement.setAttribute('data-lang', lang);
+  document.title = titles[lang];
+})();`;
+---
+
+<html lang={initialLang} data-lang={initialLang}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <link rel="icon" type="image/x-icon" href="/favicon.svg" />
+    <title>{initialTitle}</title>
+    <style is:inline set:html={visibility} />
+    {!isPreview && <script is:inline set:html={pickScript} />}
+    <Analytics />
+  </head>
+
+  <body class="bg-off-white min-h-screen flex flex-col">
+    {sections.map(({ lang, title, text, linkLabel, logo }) => (
+      <section
+        data-lang={lang}
+        lang={lang}
+        class="flex flex-1 flex-col items-center justify-center gap-6 px-4 py-16 text-center"
+      >
+        <a href={pagePath(lang, HOME_SLUG)}>
+          {logo?.filename ? (
+            <img
+              src={logo.filename}
+              alt={logo.alt || SITE_TITLE}
+              class="h-[62px] w-auto"
+            />
+          ) : (
+            <span class="font-display text-dark-gray text-4xl">
+              {SITE_TITLE}
+            </span>
+          )}
+        </a>
+        <h1 class="font-display text-dark-gray text-5xl md:text-6xl">
+          {title}
+        </h1>
+        <p class="font-body text-light-gray max-w-prose text-2xl">{text}</p>
+        <a
+          href={pagePath(lang, HOME_SLUG)}
+          class="font-body text-2xl text-gray-700 underline hover:text-gray-900"
+        >
+          {linkLabel}
+        </a>
+      </section>
+    ))}
+  </body>
+</html>

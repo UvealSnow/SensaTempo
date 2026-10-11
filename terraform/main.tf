@@ -85,7 +85,8 @@ resource "aws_cloudfront_function" "rewrite_index" {
   runtime = "cloudfront-js-2.0"
   publish = true
   code    = <<-EOT
-    // Spanish when the highest-q Accept-Language entry is es or es-*; ties keep header order
+    // Spanish when the highest-q Accept-Language entry is es or es-*; ties keep header order.
+    // Same rule as pickLanguage in src/utils/language.ts (the 404 page): keep them in sync
     function prefersSpanish(header) {
       var best = '';
       var bestQ = 0;
@@ -162,6 +163,18 @@ resource "aws_cloudfront_distribution" "prod_site" {
     function_association {
       event_type   = "viewer-request"
       function_arn = aws_cloudfront_function.rewrite_index.arn
+    }
+  }
+
+  # Missing objects come back from S3 as 403 (OAC only grants s3:GetObject), so both map to the
+  # 404 page; it picks its language in the browser (src/pages/404.astro)
+  dynamic "custom_error_response" {
+    for_each = [403, 404]
+    content {
+      error_code            = custom_error_response.value
+      response_code         = 404
+      response_page_path    = "/404.html"
+      error_caching_min_ttl = 60
     }
   }
 

@@ -30,6 +30,8 @@ Sensa Tempo is a minimal, fast, and SEO-friendly photography blog built with [As
 
 Pages are in `src/pages/` and use dynamic routing with the `[lang]` parameter. Content is fetched from Storyblok via loaders in `src/loaders/`.
 
+**404 page:** `src/pages/404.astro`, text from the `layout/not-found` story (`NotFound`; built-in fallback strings if it's missing). Production builds one `404.html` with every language, which CloudFront serves for missing paths (S3 403/404 → 404); a blocking inline script shows the language from the URL prefix, else the browser's (`src/utils/language.ts`, same rule as the `/` redirect), and English without JS. The preview server renders only that language, from the URL or `Accept-Language`.
+
 ## 🧞 Commands
 
 | Command             | Action                               |
@@ -130,7 +132,7 @@ Infrastructure lives under **`terraform/`**. State is stored remotely in the `se
 
 | Area           | Resources                                                                                                                                                                                                       |
 | :------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Production** | Private S3 bucket, CloudFront distribution (Origin Access Control, managed caching policy, `PriceClass_100`), CloudFront Function for index rewrites.                                                           |
+| **Production** | Private S3 bucket, CloudFront distribution (Origin Access Control, managed caching policy, `PriceClass_100`, `/404.html` error page), CloudFront Function for index rewrites.                                   |
 | **Preview**    | Lambda function (zip, `nodejs24.x`, arm64, Lambda Web Adapter layer), Function URL, CloudFront distribution in front (no caching), IAM role, CloudWatch log group (14-day retention).                           |
 | **Webhook**    | `sensatempo-storyblok-webhook` Lambda (Node 24, arm64, 128 MB, max 2 concurrent), public Function URL, IAM role (logs only), CloudWatch log group (14-day retention).                                           |
 | **CI**         | GitHub OIDC provider and the `sensatempo-github-deploy` role. Only workflows on `main` can assume it; it can read `/sensatempo/storyblok/*`, sync the bucket, invalidate CloudFront and update the Lambda code. |

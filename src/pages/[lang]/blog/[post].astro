@@ -24,7 +24,8 @@ const post = AVAILABLE_LANGUAGES.includes(lang)
   : null;
 
 if (!post) {
-  return new Response(null, { status: 404 });
+  // Only reached on the preview server (every static path exists); status 404
+  return Astro.rewrite('/404');
 }
 
 const { content, publishedAt } = post;
