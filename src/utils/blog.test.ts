@@ -1,6 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
 import {
+  archivePath,
   archiveTree,
   blogStrings,
   fillTemplate,
@@ -162,4 +163,9 @@ test('fillTemplate replaces known placeholders', () => {
     fillTemplate('Archivo: {month} {year} {x}', { month: 'mayo', year: 2025 }),
     'Archivo: mayo 2025 {x}'
   );
+});
+
+test('archivePath pads the month', () => {
+  assert.equal(archivePath('es', 2025, 7), '/es/blog/archive/2025/07/');
+  assert.equal(archivePath('en', 2026, 12), '/en/blog/archive/2026/12/');
 });

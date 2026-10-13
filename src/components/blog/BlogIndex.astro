@@ -1,7 +1,8 @@
 ---
 import { storyblokEditable, type SbBlokData } from '@storyblok/astro';
-import type { BlogStrings } from '~/utils/blog';
 import type { PostSummary } from '~/utils/posts';
+import type { Blog } from '~/utils/stories';
+import BlogSidebar from './BlogSidebar.astro';
 import Paginator from './Paginator.astro';
 import PostCard from './PostCard.astro';
 
@@ -12,12 +13,25 @@ interface Props {
   page: number;
   totalPages: number;
   basePath: string;
-  strings: BlogStrings;
+  lang: string;
+  blog: Blog;
+  month?: { year: number; month: number };
   blok?: SbBlokData | null;
 }
 
-const { title, description, posts, page, totalPages, basePath, strings, blok } =
-  Astro.props;
+const {
+  title,
+  description,
+  posts,
+  page,
+  totalPages,
+  basePath,
+  lang,
+  blog,
+  month,
+  blok,
+} = Astro.props;
+const { strings } = blog;
 ---
 
 <div class="flex flex-col gap-16 lg:gap-20">
@@ -51,6 +65,6 @@ const { title, description, posts, page, totalPages, basePath, strings, blok } =
         strings={strings}
       />
     </div>
-    <slot name="sidebar" />
+    <BlogSidebar lang={lang} blog={blog} month={month} />
   </div>
 </div>

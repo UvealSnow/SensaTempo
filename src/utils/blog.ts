@@ -1,5 +1,6 @@
 // Pure (no `~` or astro imports) so `node --test` can run blog.test.ts directly.
 import dayjs from './dates.ts';
+import { BLOG_FOLDER } from './posts.ts';
 
 export const POSTS_PER_PAGE = 10;
 
@@ -185,3 +186,10 @@ export const fillTemplate = (
   template.replace(/\{(\w+)\}/g, (match, name: string) =>
     name in values ? String(values[name]) : match
   );
+
+export const archivePath = (
+  lang: string,
+  year: number,
+  month: number
+): string =>
+  `/${lang}/${BLOG_FOLDER}/archive/${year}/${String(month).padStart(2, '0')}/`;
