@@ -1,6 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
 import {
+  editorTranslationPath,
   linkHref,
   linkSlug,
   pagePath,
@@ -106,4 +107,16 @@ test('slugFromPath maps URLs back to story slugs', () => {
   assert.equal(slugFromPath('/en', LANGUAGES), 'home');
   assert.equal(slugFromPath('/en/about/', LANGUAGES), 'about');
   assert.equal(slugFromPath('/es/blog/luz', LANGUAGES), 'blog/luz');
+});
+
+test('editorTranslationPath fixes the Visual Editor URL of a translation', () => {
+  assert.equal(
+    editorTranslationPath('/es/en/blog/post/x', 'es', LANGUAGES),
+    '/en/blog/post/x'
+  );
+  assert.equal(editorTranslationPath('/es/en/', 'es', LANGUAGES), '/en/');
+  assert.equal(editorTranslationPath('/es/en', 'es', LANGUAGES), '/en');
+  assert.equal(editorTranslationPath('/es/blog/', 'es', LANGUAGES), null);
+  assert.equal(editorTranslationPath('/en/es/x', 'es', LANGUAGES), null);
+  assert.equal(editorTranslationPath('/es/es/x', 'es', LANGUAGES), null);
 });
