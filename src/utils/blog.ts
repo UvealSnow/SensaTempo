@@ -193,3 +193,19 @@ export const archivePath = (
   month: number
 ): string =>
   `/${lang}/${BLOG_FOLDER}/archive/${year}/${String(month).padStart(2, '0')}/`;
+
+export function parseArchiveParams(
+  year: string | undefined,
+  month: string | undefined
+): { year: number; month: number } | null {
+  if (!/^\d{4}$/.test(year ?? '') || !/^(0[1-9]|1[0-2])$/.test(month ?? '')) {
+    return null;
+  }
+  return { year: Number(year), month: Number(month) };
+}
+
+export const monthName = (lang: string, month: number): string =>
+  dayjs
+    .utc(Date.UTC(2000, month - 1, 1))
+    .locale(lang)
+    .format('MMMM');

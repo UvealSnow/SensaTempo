@@ -36,7 +36,7 @@ Pages are in `src/pages/` and use dynamic routing with the `[lang]` parameter. C
 | :------------------------------------- | :------------ | :------ |
 | `/{lang}/blog/`                        | Blog index    | ✅      |
 | `/{lang}/blog/{n}/`                    | Index page n  | ✅      |
-| `/{lang}/blog/archive/{YYYY}/{MM}/{n}` | Month archive | Planned |
+| `/{lang}/blog/archive/{YYYY}/{MM}/{n}` | Month archive | ✅      |
 | `/{lang}/blog/author/{slug}/`          | Author index  | Planned |
 | `/{lang}/blog/tag/{slug}/`             | Tag index     | Planned |
 | `/{lang}/blog/post/{slug}/`            | Post          | ✅      |
@@ -48,7 +48,9 @@ Pages are in `src/pages/` and use dynamic routing with the `[lang]` parameter. C
 - `blog_index` (the `blog/` start page): title, description, `featured` posts (sidebar), `quick_link_tags` and UI strings (built-in fallbacks in `src/utils/blog.ts`).
 - Posts reference authors, tags and featured posts by uuid; `src/utils/posts.ts` and `src/utils/blog.ts` join them in code (no `resolve_relations`). The `picture` block has `description` + `taken_at`.
 
-**Blog index** (`src/pages/[lang]/blog/[...page].astro`, `src/components/blog/`): post cards newest first, 10 per page. Featured posts are left out of the `/blog` cards (they only show in the sidebar). `/blog/1/` renders page 1 with a canonical to `/blog/`; a page past the end doesn't exist (404). The paginator is hidden with one page. The sidebar (`BlogSidebar`) shows on every index page: **Quick links** ("All posts" + up to 4 tags picked in `quick_link_tags`), **Featured posts** (the story's `featured` list, in the editor's order; scrolls past ~5) and the **Archive** (years → months with post counts in that language). On desktop it's sticky with sections open; on small screens it's below the cards with sections collapsed (`<details>`, so it works without JS). Card and picture images show their description and date taken over the image on hover or focus (always on touch screens).
+**Blog index** (`src/pages/[lang]/blog/[...page].astro`, `src/components/blog/`): post cards newest first, 10 per page. Featured posts are left out of the `/blog` cards (they only show in the sidebar). `/blog/1/` renders page 1 with a canonical to `/blog/`; a page past the end doesn't exist (404). The paginator is hidden with one page. **Month archives** (`src/pages/[lang]/blog/archive/[year]/[month]/[...page].astro`) exist for every month with posts in that language (UTC months, featured posts included), with the same pagination and canonical rules; title and description come from `archive_title` / `archive_description` (`{month}`, `{year}`).
+
+The sidebar (`BlogSidebar`) shows on every index page: **Quick links** ("All posts" + up to 4 tags picked in `quick_link_tags`), **Featured posts** (the story's `featured` list, in the editor's order; scrolls past ~5) and the **Archive** (years → months with post counts in that language). On desktop it's sticky with sections open; on small screens it's below the cards with sections collapsed (`<details>`, so it works without JS). Card and picture images show their description and date taken over the image on hover or focus (always on touch screens).
 
 **404 page:** `src/pages/404.astro`, text from the `layout/not-found` story (`NotFound`; built-in fallback strings if it's missing). Production builds one `404.html` with every language, which CloudFront serves for missing paths (S3 403/404 → 404); a blocking inline script shows the language from the URL prefix, else the browser's (`src/utils/language.ts`, same rule as the `/` redirect), and English without JS. The preview server renders only that language, from the URL or `Accept-Language`.
 

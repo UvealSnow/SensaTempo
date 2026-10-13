@@ -5,10 +5,12 @@ import {
   archiveTree,
   blogStrings,
   fillTemplate,
+  monthName,
   blogFeed,
   pageNumbers,
   pagePathOf,
   paginate,
+  parseArchiveParams,
   parsePage,
   pickByUuid,
   postsByAuthor,
@@ -168,4 +170,19 @@ test('fillTemplate replaces known placeholders', () => {
 test('archivePath pads the month', () => {
   assert.equal(archivePath('es', 2025, 7), '/es/blog/archive/2025/07/');
   assert.equal(archivePath('en', 2026, 12), '/en/blog/archive/2026/12/');
+});
+
+test('parseArchiveParams accepts only real months with a padded month', () => {
+  assert.deepEqual(parseArchiveParams('2025', '07'), { year: 2025, month: 7 });
+  assert.deepEqual(parseArchiveParams('2026', '12'), { year: 2026, month: 12 });
+  assert.equal(parseArchiveParams('2025', '13'), null);
+  assert.equal(parseArchiveParams('2025', '00'), null);
+  assert.equal(parseArchiveParams('2025', '7'), null);
+  assert.equal(parseArchiveParams('25', '07'), null);
+  assert.equal(parseArchiveParams(undefined, '07'), null);
+});
+
+test('monthName is localized', () => {
+  assert.equal(monthName('es', 10), 'octubre');
+  assert.equal(monthName('en', 10), 'October');
 });
