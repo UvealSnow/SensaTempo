@@ -15,7 +15,8 @@ export async function getStaticPaths() {
 
 const { lang = '' } = Astro.params;
 if (!AVAILABLE_LANGUAGES.includes(lang)) {
-  return new Response(null, { status: 404 });
+  // Only reached on the preview server (every static path exists); status 404
+  return Astro.rewrite('/404');
 }
 
 const story = await getStoryContent(Astro.locals, lang, HOME_SLUG);

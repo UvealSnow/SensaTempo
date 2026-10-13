@@ -30,7 +30,8 @@ const story = AVAILABLE_LANGUAGES.includes(lang)
   : null;
 
 if (!story) {
-  return new Response(null, { status: 404 });
+  // Only reached on the preview server (every static path exists); status 404
+  return Astro.rewrite('/404');
 }
 ---
 
