@@ -1,6 +1,6 @@
 import { defineCollection } from 'astro:content';
 import { storiesLoader } from './loaders/stories';
-import { BLOG_FOLDER, PAGE_RELATIONS } from './utils/posts';
+import { PAGE_RELATIONS, POSTS_FOLDER } from './utils/posts';
 
 const pages = defineCollection({
   loader: storiesLoader('pages', {
@@ -12,7 +12,7 @@ const pages = defineCollection({
 const posts = defineCollection({
   loader: storiesLoader('posts', {
     content_type: 'post',
-    starts_with: `${BLOG_FOLDER}/`,
+    starts_with: `${POSTS_FOLDER}/`,
     resolve_links: 'story',
   }),
 });

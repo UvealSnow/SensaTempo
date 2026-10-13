@@ -8,9 +8,9 @@ import {
 import { storyblokApi } from '@storyblok/astro/client';
 import { AVAILABLE_LANGUAGES, DEFAULT_LANGUAGE } from '~/consts';
 import {
-  BLOG_FOLDER,
   byDateDesc,
   PAGE_RELATIONS,
+  POSTS_FOLDER,
   postSummaries,
   type PostSummary,
 } from './posts';
@@ -107,13 +107,13 @@ export interface Post {
   publishedAt: string | null;
 }
 
-/** The post `blog/<slug>` in `lang`, or null if it doesn't exist. Same sources as getStoryContent. */
+/** The post `blog/post/<slug>` in `lang`, or null if it doesn't exist. Same sources as getStoryContent. */
 export async function getPost(
   locals: APIContext['locals'],
   lang: string,
   slug: string
 ): Promise<Post | null> {
-  const fullSlug = `${BLOG_FOLDER}/${slug}`;
+  const fullSlug = `${POSTS_FOLDER}/${slug}`;
 
   if (!isPreview) {
     const posts = await getCollection('posts');
@@ -151,7 +151,7 @@ export async function getPosts(lang: string): Promise<PostSummary[]> {
   } else {
     stories = await storyblokApi.getAll('cdn/stories', {
       content_type: POST_COMPONENT,
-      starts_with: `${BLOG_FOLDER}/`,
+      starts_with: `${POSTS_FOLDER}/`,
       version: 'draft',
       language: languageParam(lang),
       token: previewToken(),

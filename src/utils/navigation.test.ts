@@ -10,6 +10,11 @@ import {
 } from './navigation.ts';
 import { LANGUAGES } from './fixtures.ts';
 
+test('storySlug keeps nested folders', () => {
+  assert.equal(storySlug('blog/post/x', LANGUAGES), 'blog/post/x');
+  assert.equal(storySlug('en/blog/post/x', LANGUAGES), 'blog/post/x');
+});
+
 test('pagePath maps home to the language root', () => {
   assert.equal(pagePath('es', 'home'), '/es/');
   assert.equal(pagePath('en', 'about'), '/en/about/');

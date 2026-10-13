@@ -4,8 +4,9 @@ import dayjs from './dates.ts';
 import type { StoryblokAsset } from './images.ts';
 import { storySlug } from './navigation.ts';
 
-// Posts live in this Storyblok folder, whose start page is the blog page
+// The blog folder's start page is the blog page; posts live in its `post/` subfolder
 export const BLOG_FOLDER = 'blog';
+export const POSTS_FOLDER = `${BLOG_FOLDER}/post`;
 
 // Relations to resolve wherever pages are fetched: `post_list` blocks come back with their posts
 export const PAGE_RELATIONS = ['post_list.posts'];
@@ -24,11 +25,28 @@ export interface PostStory {
 }
 
 export interface PostSummary {
+  // The post's own slug, without the folder: `luz-de-vitral`
   slug: string;
   title: string;
   excerpt: string;
   cover?: StoryblokAsset;
   date: Date | null;
+}
+
+/** URL of the post `slug` in `lang`: `/es/blog/post/luz-de-vitral/`. */
+export const postPath = (lang: string, slug: string): string =>
+  `/${lang}/${POSTS_FOLDER}/${slug}/`;
+
+/** A post's own slug from its `full_slug` (`en/blog/post/x` → `x`), or null outside the posts folder. */
+export function postSlug(
+  fullSlug: string,
+  languages: readonly string[]
+): string | null {
+  const slug = storySlug(fullSlug, languages);
+  const prefix = `${POSTS_FOLDER}/`;
+  if (!slug?.startsWith(prefix)) return null;
+  const rest = slug.slice(prefix.length);
+  return rest && !rest.includes('/') ? rest : null;
 }
 
 /** Storyblok datetimes (`YYYY-MM-DD HH:mm`) and timestamps are UTC. */
@@ -55,7 +73,7 @@ export function postSummaries(
   return (entries ?? []).flatMap((entry) => {
     if (!entry || typeof entry !== 'object') return [];
     const story = entry as PostStory;
-    const slug = storySlug(story.full_slug ?? '', languages);
+    const slug = postSlug(story.full_slug ?? '', languages);
     const content = story.content;
     if (!slug || content?.component !== 'post' || !content.title) return [];
     return [

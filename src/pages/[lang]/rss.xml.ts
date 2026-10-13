@@ -1,7 +1,7 @@
 import rss from '@astrojs/rss';
 import type { APIRoute } from 'astro';
 import { AVAILABLE_LANGUAGES, SITE_DESCRIPTION, SITE_TITLE } from '~/consts';
-import { pagePath } from '~/utils/navigation';
+import { postPath } from '~/utils/posts';
 import { getPosts } from '~/utils/stories';
 
 // Static build only; the preview server renders every request
@@ -25,7 +25,7 @@ export const GET: APIRoute = async ({ params, site }) => {
       title: post.title,
       description: post.excerpt,
       pubDate: post.date ?? undefined,
-      link: pagePath(lang, post.slug),
+      link: postPath(lang, post.slug),
     })),
   });
 };
