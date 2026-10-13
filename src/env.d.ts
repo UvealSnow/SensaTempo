@@ -3,6 +3,7 @@ interface ImportMetaEnv {
   readonly PUBLIC_AVAILABLE_LANGUAGES: string;
   readonly PUBLIC_BUILD_TYPE?: 'static' | 'server';
   readonly PUBLIC_CF_ANALYTICS_TOKEN?: string;
+  readonly PUBLIC_TURNSTILE_SITE_KEY?: string;
 }
 
 interface ImportMeta {

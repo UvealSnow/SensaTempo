@@ -2,6 +2,7 @@
 // In GitHub Actions each broken link is also reported as a warning annotation.
 //
 // Usage: node scripts/check-links.mjs [dist]
+/* eslint-disable no-console -- CLI output */
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
