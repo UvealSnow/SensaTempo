@@ -7,7 +7,7 @@ Sensa Tempo is a minimal, fast, and SEO-friendly photography blog built with [As
 - **Astro 7**, **Tailwind 4**, **Vite 8** for fast builds and styling
 - **@storyblok/astro 10** for headless CMS integration
 - **@astrojs/node 11** for SSR
-- **pnpm 10**, **Node 24**
+- **pnpm 12**, **Node 24**
 - Static production builds or SSR preview builds (controlled via `PUBLIC_BUILD_TYPE` environment variable)
 
 ## 🚀 Project Structure
@@ -34,7 +34,7 @@ Pages are in `src/pages/` and use dynamic routing with the `[lang]` parameter. C
 
 | Command             | Action                               |
 | :------------------ | :----------------------------------- |
-| `pnpm install`      | Install dependencies with pnpm 10    |
+| `pnpm install`      | Install dependencies with pnpm 12    |
 | `pnpm dev`          | Start dev server at `localhost:4321` |
 | `pnpm build`        | Build production site to `./dist/`   |
 | `pnpm preview`      | Preview built site locally           |
@@ -43,6 +43,8 @@ Pages are in `src/pages/` and use dynamic routing with the `[lang]` parameter. C
 | `pnpm lint`         | Lint with ESLint                     |
 | `pnpm lint:fix`     | Fix auto-fixable lint issues         |
 | `pnpm test`         | Run unit tests (`node --test`)       |
+
+**Dependency release age:** pnpm 12 rejects package versions published less than 24 h ago (`minimumReleaseAge`). After a dependency release, wait a day before upgrading; for an urgent fix, temporarily add the package to `minimumReleaseAgeExclude` in `pnpm-workspace.yaml` and remove it afterwards. Build scripts only run for packages listed as `true` under `allowBuilds` there.
 
 ## 🛠 Development & Deployment
 
@@ -67,7 +69,7 @@ Everything runs on **AWS (us-east-1)** and is pay-per-use: nothing bills while t
 
 ### 📋 Prerequisites
 
-- **pnpm 10** and **Node 24**
+- **pnpm 12** (pinned via `packageManager` in `package.json`; `corepack enable` picks it up) and **Node 24**
 - **GNU Make**, **AWS CLI** and **Terraform ≥ 1.10** for infrastructure work
 - **Docker** (BuildKit) only for `make run-prod-preview`
 - A local `.env` file (see `.env.example`) containing:
