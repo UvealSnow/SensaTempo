@@ -133,6 +133,8 @@ Secrets live in **AWS SSM Parameter Store** as `SecureString`s (free standard ti
 | `/sensatempo/storyblok/webhook-secret`    | Publish webhook Lambda (signature or `?key=` check); the same value goes in Storyblok's webhook URL |
 | `/sensatempo/github/dispatch-token`       | Publish webhook Lambda, to call GitHub's `repository_dispatch` API                                  |
 | `/sensatempo/alerts/email`                | Alert recipient (`String`, not secret; kept out of this public repo)                                |
+| `/sensatempo/contact/recipient`           | Contact form recipient and sender (`String`); verified in SES by Terraform                          |
+| `/sensatempo/contact/turnstile-secret`    | Cloudflare Turnstile secret key, checked by the contact Lambda                                      |
 
 **Dispatch token:** a fine-grained GitHub PAT limited to this repository with only `Contents: read & write` (what `repository_dispatch` needs). Fine-grained PATs expire after at most 1 year: note the expiry date, then rotate by creating a new token, updating the parameter and running `pnpm tf:apply`. Until then publishes fail with 502 in Storyblok's webhook log.
 
@@ -149,6 +151,8 @@ After rotating the preview token, the basic auth values or the webhook parameter
 
 **GitHub repository variables** (not secret): `AWS_DEPLOY_ROLE_ARN`, `AWS_PROD_BUCKET`, `AWS_CF_DIST_ID` (from the Terraform outputs), `PUBLIC_DEFAULT_LANGUAGE`, `PUBLIC_AVAILABLE_LANGUAGES`, `PUBLIC_CF_ANALYTICS_TOKEN`.
 
+**Contact form:** pages post JSON to `/api/contact`, which both CloudFront distributions route to the `sensatempo-contact` Lambda (`terraform/contact/index.mjs`). It accepts only the allowed origins (`contact_allowed_origins` in `terraform/variables.tf`), drops honeypot submissions, validates the fields, verifies the [Cloudflare Turnstile](https://developers.cloudflare.com/turnstile/) token and sends the message with SES to `/sensatempo/contact/recipient` (Reply-To = the visitor). It never answers 403/404 (prod CloudFront turns those into the 404 page). **Changing the recipient:** `aws ssm put-parameter --type String --overwrite --name /sensatempo/contact/recipient --value <email>`, `pnpm tf:apply`, then click the verification link SES emails to that address. SES is in the sandbox (verified addresses only, 200 emails/day), which is enough while the recipient is also the sender.
+
 **Analytics:** [Cloudflare Web Analytics](https://developers.cloudflare.com/web-analytics/) (cookieless page views, referrers, countries, Core Web Vitals; no consent banner, no custom events). `src/components/layout/Analytics.astro` adds the beacon to production builds only, when `PUBLIC_CF_ANALYTICS_TOKEN` is set; the preview and `pnpm dev` never load it.
 
 ---
@@ -157,12 +161,13 @@ After rotating the preview token, the basic auth values or the webhook parameter
 
 Infrastructure lives under **`terraform/`**. State is stored remotely in the `sensatempo-tfstate-221135164152` S3 bucket (versioned, S3-native locking). That bucket was created once by hand, as were the SSM parameters above.
 
-| Area           | Resources                                                                                                                                                                                                       |
-| :------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Production** | Private S3 bucket, CloudFront distribution (Origin Access Control, managed caching policy, `PriceClass_100`, `/404.html` error page), CloudFront Function for index rewrites.                                   |
-| **Preview**    | Lambda function (zip, `nodejs24.x`, arm64, Lambda Web Adapter layer), Function URL, CloudFront distribution in front (no caching), IAM role, CloudWatch log group (14-day retention).                           |
-| **Webhook**    | `sensatempo-storyblok-webhook` Lambda (Node 24, arm64, 128 MB, max 2 concurrent), public Function URL, IAM role (logs only), CloudWatch log group (14-day retention).                                           |
-| **CI**         | GitHub OIDC provider and the `sensatempo-github-deploy` role. Only workflows on `main` can assume it; it can read `/sensatempo/storyblok/*`, sync the bucket, invalidate CloudFront and update the Lambda code. |
+| Area           | Resources                                                                                                                                                                                                                          |
+| :------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Production** | Private S3 bucket, CloudFront distribution (Origin Access Control, managed caching policy, `PriceClass_100`, `/404.html` error page), CloudFront Function for index rewrites.                                                      |
+| **Preview**    | Lambda function (zip, `nodejs24.x`, arm64, Lambda Web Adapter layer), Function URL, CloudFront distribution in front (no caching), IAM role, CloudWatch log group (14-day retention).                                              |
+| **Webhook**    | `sensatempo-storyblok-webhook` Lambda (Node 24, arm64, 128 MB, max 2 concurrent), public Function URL, IAM role (logs only), CloudWatch log group (14-day retention).                                                              |
+| **Contact**    | `sensatempo-contact` Lambda (Node 24, arm64, 128 MB, max 2 concurrent) behind `/api/contact` on both distributions, SES email identity for the recipient, IAM role (logs + `ses:SendEmail` on that identity), log group (14 days). |
+| **CI**         | GitHub OIDC provider and the `sensatempo-github-deploy` role. Only workflows on `main` can assume it; it can read `/sensatempo/storyblok/*`, sync the bucket, invalidate CloudFront and update the Lambda code.                    |
 
 ```bash
 pnpm tf:init
@@ -175,6 +180,8 @@ pnpm tf:apply
 - `sensatempo-webhook-too-many-rebuilds`: > 30 webhook-triggered rebuilds in 1 hour
 - `sensatempo-webhook-unauthorized`: > 50 rejected (401) webhook calls in 5 minutes
 - `sensatempo-webhook-failed`: any failed dispatch to GitHub (usually an expired dispatch token)
+- `sensatempo-contact-failed`: SES refused a contact message (recipient not verified, sandbox limit)
+- `sensatempo-contact-too-many`: > 20 contact messages in 1 hour
 - Budget `sensatempo-monthly`: forecast or actual account spend over $5/month
 
 **Outputs:** `cloudfront_domain`, `cloudfront_distribution_id`, `prod_bucket`, `preview_url`, `preview_lambda_url`, `github_deploy_role_arn`, `storyblok_webhook_url`.
