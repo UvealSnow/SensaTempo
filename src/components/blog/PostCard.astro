@@ -1,0 +1,96 @@
+---
+import ArrowRight from '~/assets/icons/arrow-right.svg';
+import Picture from '~/components/Picture.astro';
+import FormattedDate from '~/components/layout/FormattedDate.astro';
+import type { BlogStrings } from '~/utils/blog';
+import { responsiveImage } from '~/utils/images';
+import { currentLang } from '~/utils/page';
+import {
+  AUTHORS_FOLDER,
+  postPath,
+  TAGS_FOLDER,
+  type PostSummary,
+} from '~/utils/posts';
+
+interface Props {
+  post: PostSummary;
+  strings: BlogStrings;
+  eager?: boolean;
+}
+
+const { post, strings, eager = false } = Astro.props;
+const lang = currentLang(Astro);
+const cover = responsiveImage(post.cover, {
+  spans: { md: '12/12', lg: '8/12' },
+});
+const authorHref =
+  post.author && `/${lang}/${AUTHORS_FOLDER}/${post.author.slug}/`;
+const tagHref = (slug: string) => `/${lang}/${TAGS_FOLDER}/${slug}/`;
+---
+
+<!-- The title link covers the card; author and tag links sit above it (no nested <a>) -->
+<article class="details-group relative flex flex-col overflow-hidden rounded-[4px] border border-line bg-white">
+  {cover && (
+    <Picture
+      image={cover}
+      description={post.coverDescription}
+      takenAt={post.coverTakenAt}
+      eager={eager}
+      inGroup
+    />
+  )}
+  <div class="flex flex-col gap-6 p-6 md:p-10">
+    {(post.author || post.date) && (
+      <div class="font-body text-light-gray flex items-center justify-between gap-4 text-base">
+        {post.author ? (
+          <p>
+            {strings.by_label}{' '}
+            <a
+              href={authorHref}
+              class="text-dark-gray focus-visible:outline-dark-gray relative z-10 rounded-sm hover:text-black focus-visible:outline-2 focus-visible:outline-offset-2"
+            >
+              {post.author.name}
+            </a>
+          </p>
+        ) : (
+          <span />
+        )}
+        {post.date && <FormattedDate date={post.date} format="ll" />}
+      </div>
+    )}
+    <h2 class="font-display text-dark-gray text-2xl leading-tight md:text-[32px]">
+      <a
+        href={postPath(lang, post.slug)}
+        class="after:absolute after:inset-0 after:rounded-[4px] focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-dark-gray"
+      >
+        {post.title}
+      </a>
+    </h2>
+    {post.excerpt && (
+      <p class="font-body text-light-gray text-lg leading-[30px]">
+        {post.excerpt}
+      </p>
+    )}
+    {post.tags.length > 0 && (
+      <ul class="flex flex-wrap gap-3">
+        {post.tags.map((tag) => (
+          <li>
+            <a
+              href={tagHref(tag.slug)}
+              class="font-body text-dark-gray bg-chip hover:bg-line focus-visible:outline-dark-gray relative z-10 block cursor-pointer rounded-full px-3 py-1.5 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+            >
+              {tag.name}
+            </a>
+          </li>
+        ))}
+      </ul>
+    )}
+    <span
+      class="font-body text-dark-gray flex items-center gap-2 pt-2 text-base font-bold underline"
+      aria-hidden="true"
+    >
+      {strings.read_more_label}
+      <ArrowRight width={16} height={16} />
+    </span>
+  </div>
+</article>

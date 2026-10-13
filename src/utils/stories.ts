@@ -8,12 +8,18 @@ import {
 import { storyblokApi } from '@storyblok/astro/client';
 import { AVAILABLE_LANGUAGES, DEFAULT_LANGUAGE } from '~/consts';
 import {
+  AUTHORS_FOLDER,
+  BLOG_FOLDER,
   byDateDesc,
   PAGE_RELATIONS,
   POSTS_FOLDER,
   postSummaries,
+  refSummaries,
+  TAGS_FOLDER,
   type PostSummary,
+  type Ref,
 } from './posts';
+import { blogStrings, pickByUuid, type BlogStrings } from './blog';
 import { isPreviewMode } from './storyblok';
 
 export const isPreview = isPreviewMode(
@@ -32,6 +38,7 @@ type LayoutStory = typeof NAVBAR | typeof FOOTER | typeof NOT_FOUND;
 
 const PAGE_COMPONENT = 'page';
 const POST_COMPONENT = 'post';
+const BLOG_INDEX_COMPONENT = 'blog_index';
 interface StoryParams {
   resolve_links?: 'story';
   resolve_relations?: string[];
@@ -43,9 +50,10 @@ interface StoryParams {
  * navbar must not replace the page body, and vice versa.
  */
 async function getPayloadStory(
-  locals: APIContext['locals'],
+  locals: APIContext['locals'] | undefined,
   component: string
 ): Promise<ISbStoryData | null> {
+  if (!locals) return null;
   const { story } = await getPayload({ locals });
   return story?.content?.component === component ? story : null;
 }
@@ -136,28 +144,98 @@ export async function getPost(
     : null;
 }
 
-/** Every post in `lang`, newest first (for feeds; the blog page lists the editor's choice). */
-export async function getPosts(lang: string): Promise<PostSummary[]> {
-  let stories: unknown[];
+type StoryCollection = 'posts' | 'authors' | 'tags';
+
+/** Collection entries shaped like API stories; the preview fetches drafts instead. */
+async function storiesOf(
+  collection: StoryCollection,
+  lang: string,
+  component: string,
+  folder: string
+): Promise<unknown[]> {
   if (!isPreview) {
-    const posts = await getCollection('posts');
-    stories = posts
+    const entries = await getCollection(collection);
+    return entries
       .filter(({ data }) => data.lang === lang)
       .map(({ data }) => ({
+        uuid: data.uuid,
         full_slug: data.slug,
         first_published_at: data.publishedAt?.toISOString(),
         content: data.content,
       }));
-  } else {
-    stories = await storyblokApi.getAll('cdn/stories', {
-      content_type: POST_COMPONENT,
-      starts_with: `${POSTS_FOLDER}/`,
-      version: 'draft',
-      language: languageParam(lang),
-      token: previewToken(),
-    });
   }
-  return postSummaries(stories, AVAILABLE_LANGUAGES).sort(byDateDesc);
+  return storyblokApi.getAll('cdn/stories', {
+    content_type: component,
+    starts_with: `${folder}/`,
+    version: 'draft',
+    language: languageParam(lang),
+    token: previewToken(),
+  });
+}
+
+export async function getAuthors(lang: string): Promise<Ref[]> {
+  const stories = await storiesOf('authors', lang, 'author', AUTHORS_FOLDER);
+  return refSummaries(stories, AUTHORS_FOLDER, AVAILABLE_LANGUAGES);
+}
+
+export async function getTags(lang: string): Promise<Ref[]> {
+  const stories = await storiesOf('tags', lang, 'tag', TAGS_FOLDER);
+  return refSummaries(stories, TAGS_FOLDER, AVAILABLE_LANGUAGES);
+}
+
+export async function getPosts(lang: string): Promise<PostSummary[]> {
+  const [stories, authors, tags] = await Promise.all([
+    storiesOf('posts', lang, POST_COMPONENT, POSTS_FOLDER),
+    getAuthors(lang),
+    getTags(lang),
+  ]);
+  return postSummaries(stories, AVAILABLE_LANGUAGES, { authors, tags }).sort(
+    byDateDesc
+  );
+}
+
+export async function getBlogIndex(
+  locals: APIContext['locals'] | undefined,
+  lang: string
+): Promise<SbBlokData | null> {
+  if (!isPreview) {
+    const stories = await getCollection('blogIndex');
+    const story = stories.find(({ data }) => data.lang === lang);
+    return story ? (story.data.content as SbBlokData) : null;
+  }
+
+  const story =
+    (await getPayloadStory(locals, BLOG_INDEX_COMPONENT)) ??
+    (await fetchDraft(`${BLOG_FOLDER}/`, lang));
+  return story?.content?.component === BLOG_INDEX_COMPONENT
+    ? story.content
+    : null;
+}
+
+export interface Blog {
+  blok: SbBlokData | null;
+  strings: BlogStrings;
+  posts: PostSummary[];
+  featured: PostSummary[];
+  tags: Ref[];
+}
+
+export async function getBlog(
+  locals: APIContext['locals'] | undefined,
+  lang: string
+): Promise<Blog> {
+  const [blok, posts, tags] = await Promise.all([
+    getBlogIndex(locals, lang),
+    getPosts(lang),
+    getTags(lang),
+  ]);
+  return {
+    blok,
+    strings: blogStrings(blok, lang),
+    posts,
+    featured: pickByUuid(blok?.featured as unknown[] | undefined, posts),
+    tags,
+  };
 }
 
 /**

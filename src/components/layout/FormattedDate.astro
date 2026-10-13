@@ -4,14 +4,15 @@ import { currentLang } from '~/utils/page';
 
 interface Props {
   date: Date;
+  format?: string;
   class?: string;
 }
 
-const { date, class: className } = Astro.props;
+const { date, format = 'LL', class: className } = Astro.props;
 // UTC: Storyblok dates are UTC days, whatever the build machine's zone
 const day = dayjs.utc(date).locale(currentLang(Astro));
 ---
 
 <time datetime={day.toISOString()} class={className}>
-  {day.format('LL')}
+  {day.format(format)}
 </time>

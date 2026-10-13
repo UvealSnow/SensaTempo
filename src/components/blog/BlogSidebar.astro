@@ -1,0 +1,176 @@
+---
+import ChevronRight from '~/assets/icons/chevron-right.svg';
+import FormattedDate from '~/components/layout/FormattedDate.astro';
+import { archivePath, archiveTree, monthName, pickByUuid } from '~/utils/blog';
+import { BLOG_FOLDER, postPath, TAGS_FOLDER } from '~/utils/posts';
+import type { Blog } from '~/utils/stories';
+
+interface Props {
+  lang: string;
+  blog: Blog;
+  month?: { year: number; month: number };
+}
+
+const { lang, blog, month: current } = Astro.props;
+const { strings } = blog;
+const path = Astro.url.pathname;
+const allPostsHref = `/${lang}/${BLOG_FOLDER}/`;
+
+const quickLinks = [
+  {
+    label: strings.all_posts_label,
+    href: allPostsHref,
+    current: new RegExp(`^${allPostsHref}(\\d+/)?$`).test(path),
+  },
+  ...pickByUuid(blog.blok?.quick_link_tags as unknown[] | undefined, blog.tags)
+    .slice(0, 4)
+    .map((tag) => {
+      const href = `/${lang}/${TAGS_FOLDER}/${tag.slug}/`;
+      return { label: tag.name, href, current: path.startsWith(href) };
+    }),
+];
+
+const archive = archiveTree(blog.posts);
+const openYear = current?.year ?? archive[0]?.year;
+const monthLabel = (month: number) => {
+  const name = monthName(lang, month);
+  return name.charAt(0).toUpperCase() + name.slice(1);
+};
+
+const section = 'group/section flex flex-col gap-6';
+const summary =
+  'font-display text-dark-gray flex cursor-pointer list-none items-center justify-between gap-4 rounded-sm text-2xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-dark-gray [&::-webkit-details-marker]:hidden';
+const chevron =
+  'text-dark-gray shrink-0 rotate-90 transition-transform motion-reduce:transition-none';
+---
+
+<aside
+  class="flex flex-col gap-12 lg:sticky lg:top-8 lg:max-h-[calc(100vh-4rem)] lg:self-start lg:overflow-y-auto lg:pr-2"
+  data-blog-sidebar
+>
+  <details open class={section} data-sidebar-section>
+    <summary class={summary}>
+      <h2>{strings.quick_links_label}</h2>
+      <ChevronRight
+        width={16}
+        height={16}
+        class={`${chevron} group-open/section:-rotate-90`}
+      />
+    </summary>
+    <ul class="flex flex-col gap-4">
+      {quickLinks.map(({ label, href, current }) => (
+        <li>
+          <a
+            href={href}
+            aria-current={current ? 'page' : undefined}
+            class="font-body text-dark-gray aria-[current=page]:font-bold flex items-center gap-3 rounded-sm text-base hover:text-black hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-dark-gray"
+          >
+            <ChevronRight width={16} height={16} class="shrink-0" />
+            {label}
+          </a>
+        </li>
+      ))}
+    </ul>
+  </details>
+
+  {blog.featured.length > 0 && (
+    <details open class={section} data-sidebar-section>
+      <summary class={summary}>
+        <h2>{strings.featured_label}</h2>
+        <ChevronRight
+          width={16}
+          height={16}
+          class={`${chevron} group-open/section:-rotate-90`}
+        />
+      </summary>
+      <ul class="flex max-h-[340px] flex-col gap-4 overflow-y-auto">
+        {blog.featured.map((post) => {
+          const href = postPath(lang, post.slug);
+          return (
+            <li>
+              <a
+                href={href}
+                aria-current={path === href ? 'page' : undefined}
+                class="font-body hover:bg-chip aria-[current=page]:bg-chip flex items-center justify-between gap-4 rounded-[4px] p-4 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-dark-gray"
+              >
+                <span class="text-dark-gray min-w-0 text-base">
+                  {post.title}
+                </span>
+                {post.date && (
+                  <FormattedDate
+                    date={post.date}
+                    format={lang === 'es' ? 'D MMM' : 'MMM D'}
+                    class="text-light-gray shrink-0 text-sm"
+                  />
+                )}
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+    </details>
+  )}
+
+  {archive.length > 0 && (
+    <details open class={section} data-sidebar-section>
+      <summary class={summary}>
+        <h2>{strings.archive_label}</h2>
+        <ChevronRight
+          width={16}
+          height={16}
+          class={`${chevron} group-open/section:-rotate-90`}
+        />
+      </summary>
+      <ul class="flex flex-col gap-4">
+        {archive.map(({ year, months }) => (
+          <li>
+            <details
+              open={year === openYear}
+              class="group/year flex flex-col gap-3"
+            >
+              <summary class="font-body text-dark-gray flex cursor-pointer list-none items-center justify-between rounded-sm text-base font-bold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-dark-gray [&::-webkit-details-marker]:hidden">
+                {year}
+                <ChevronRight
+                  width={16}
+                  height={16}
+                  class={`${chevron} group-open/year:-rotate-90`}
+                />
+              </summary>
+              <ul class="flex flex-col gap-2 pl-4">
+                {months.map(({ month, count }) => {
+                  const isCurrent =
+                    current?.year === year && current.month === month;
+                  return (
+                    <li>
+                      <a
+                        href={archivePath(lang, year, month)}
+                        aria-current={isCurrent ? 'page' : undefined}
+                        class="font-body text-light-gray aria-[current=page]:text-dark-gray aria-[current=page]:font-bold flex items-center gap-3 rounded-sm text-sm hover:text-dark-gray focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-dark-gray"
+                      >
+                        <span class="flex-1">{monthLabel(month)}</span>
+                        <span>{count}</span>
+                        <span class="text-base" aria-hidden="true">
+                          ›
+                        </span>
+                      </a>
+                    </li>
+                  );
+                })}
+              </ul>
+            </details>
+          </li>
+        ))}
+      </ul>
+    </details>
+  )}
+</aside>
+
+<!-- Sections start collapsed on small screens. `open` can't depend on the viewport in CSS, so this
+     closes them before they're painted; without JS they stay open -->
+<script is:inline>
+  if (!matchMedia('(min-width: 1024px)').matches) {
+    document
+      .querySelectorAll('[data-blog-sidebar] [data-sidebar-section]')
+      .forEach((section) => section.removeAttribute('open'));
+  }
+</script>

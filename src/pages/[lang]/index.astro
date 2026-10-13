@@ -30,13 +30,14 @@ const story = await getStoryContent(Astro.locals, lang, HOME_SLUG);
     <div class="grid grid-cols-12 gap-4">
       <Picture
         src="https://placehold.co/600x400"
-        caption="Something nice"
+        description="Something nice"
         vertical="center"
         size={{ sm: '6/12' }}
       />
       <Picture
         src="https://placehold.co/600x800"
-        caption="Another nice photo - 27.03.26"
+        description="Another nice photo"
+        takenAt={new Date(Date.UTC(2026, 2, 27))}
         size={{ sm: '6/12' }}
       />
     </div>

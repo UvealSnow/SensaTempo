@@ -6,6 +6,7 @@ import {
   postPath,
   postSlug,
   postSummaries,
+  refSummaries,
 } from './posts.ts';
 import { LANGUAGES } from './fixtures.ts';
 
@@ -71,4 +72,63 @@ test('postPath and postSlug map posts to /{lang}/blog/post/{slug}/', () => {
   assert.equal(postSlug('blog/x', LANGUAGES), null);
   assert.equal(postSlug('blog/post/', LANGUAGES), null);
   assert.equal(postSlug('blog/post/a/b', LANGUAGES), null);
+});
+
+test('postSummaries joins the author and tags and prefers published_at', () => {
+  const authors = [{ uuid: 'a1', slug: 'ana', name: 'Ana' }];
+  const tags = [
+    { uuid: 't1', slug: 'luz', name: 'Luz' },
+    { uuid: 't2', slug: 'calle', name: 'Calle' },
+  ];
+  const [summary, unknownAuthor] = postSummaries(
+    [
+      {
+        uuid: 'p1',
+        full_slug: 'blog/post/x',
+        content: {
+          component: 'post',
+          title: 'X',
+          published_at: '2025-05-01 00:00',
+          date: '2020-01-01 00:00',
+          cover_description: 'Arcos',
+          cover_taken_at: '2025-04-30 00:00',
+          author: 'a1',
+          tags: ['t2', 'gone', 't1'],
+        },
+      },
+      {
+        uuid: 'p2',
+        full_slug: 'blog/post/y',
+        content: { component: 'post', title: 'Y', author: 'gone' },
+      },
+    ],
+    LANGUAGES,
+    { authors, tags }
+  );
+  assert.equal(summary.uuid, 'p1');
+  assert.equal(summary.date?.toISOString(), '2025-05-01T00:00:00.000Z');
+  assert.equal(summary.author?.slug, 'ana');
+  assert.deepEqual(
+    summary.tags.map(({ slug }) => slug),
+    ['calle', 'luz']
+  );
+  assert.equal(summary.coverDescription, 'Arcos');
+  assert.equal(summary.coverTakenAt?.toISOString(), '2025-04-30T00:00:00.000Z');
+  assert.equal(unknownAuthor.author, undefined);
+  assert.deepEqual(unknownAuthor.tags, []);
+  assert.equal(unknownAuthor.coverTakenAt, null);
+});
+
+test('refSummaries reads authors and tags in their folder', () => {
+  const refs = refSummaries(
+    [
+      { uuid: 't1', full_slug: 'en/blog/tag/luz', content: { name: 'Light' } },
+      { uuid: 't2', full_slug: 'blog/tag/sin-nombre', content: {} },
+      { uuid: 't3', full_slug: 'blog/post/x', content: { name: 'X' } },
+      { full_slug: 'blog/tag/no-uuid', content: { name: 'N' } },
+    ],
+    'blog/tag',
+    LANGUAGES
+  );
+  assert.deepEqual(refs, [{ uuid: 't1', slug: 'luz', name: 'Light' }]);
 });

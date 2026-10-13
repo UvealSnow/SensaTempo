@@ -1,0 +1,70 @@
+---
+import { storyblokEditable, type SbBlokData } from '@storyblok/astro';
+import type { PostSummary } from '~/utils/posts';
+import type { Blog } from '~/utils/stories';
+import BlogSidebar from './BlogSidebar.astro';
+import Paginator from './Paginator.astro';
+import PostCard from './PostCard.astro';
+
+interface Props {
+  title: string;
+  description?: string;
+  posts: PostSummary[];
+  page: number;
+  totalPages: number;
+  basePath: string;
+  lang: string;
+  blog: Blog;
+  month?: { year: number; month: number };
+  blok?: SbBlokData | null;
+}
+
+const {
+  title,
+  description,
+  posts,
+  page,
+  totalPages,
+  basePath,
+  lang,
+  blog,
+  month,
+  blok,
+} = Astro.props;
+const { strings } = blog;
+---
+
+<div class="flex flex-col gap-16 lg:gap-20">
+  <header
+    class="flex flex-col gap-6"
+    {...(blok ? storyblokEditable(blok) : {})}
+  >
+    <h1 class="font-display text-dark-gray text-4xl leading-tight md:text-[40px]">
+      {title}
+    </h1>
+    {description && (
+      <p class="font-body text-light-gray max-w-[600px] text-xl leading-8">
+        {description}
+      </p>
+    )}
+  </header>
+
+  <div class="grid grid-cols-1 gap-16 lg:grid-cols-[1fr_320px]">
+    <div class="min-w-0">
+      <ul class="flex flex-col gap-12">
+        {posts.map((post, i) => (
+          <li>
+            <PostCard post={post} strings={strings} eager={i === 0} />
+          </li>
+        ))}
+      </ul>
+      <Paginator
+        page={page}
+        totalPages={totalPages}
+        basePath={basePath}
+        strings={strings}
+      />
+    </div>
+    <BlogSidebar lang={lang} blog={blog} month={month} />
+  </div>
+</div>
