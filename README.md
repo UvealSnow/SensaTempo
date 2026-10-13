@@ -41,6 +41,13 @@ Pages are in `src/pages/` and use dynamic routing with the `[lang]` parameter. C
 | `/{lang}/blog/tag/{slug}/`             | Tag index     | Planned |
 | `/{lang}/blog/post/{slug}/`            | Post          | ✅      |
 
+**Blog content model** (Storyblok, `src/content.config.ts`):
+
+- `post` (`blog/post/`): `title`, `excerpt` (the card brief), `cover` + `cover_description` / `cover_taken_at` (shown over the image), `published_at` (order and archive month; empty = first publish), `author`, `tags`, `body`.
+- `author` (`blog/author/`): `name`, `bio`, `photo`, `socials` (`social_link`: `icon` + `url`). `tag` (`blog/tag/`): `name`, `description`.
+- `blog_index` (the `blog/` start page, planned): title, description, `featured` posts (sidebar), `quick_link_tags` and UI strings.
+- Posts reference authors, tags and featured posts by uuid; `src/utils/posts.ts` and `src/utils/blog.ts` join them in code (no `resolve_relations`). The `picture` block has `description` + `taken_at`.
+
 **404 page:** `src/pages/404.astro`, text from the `layout/not-found` story (`NotFound`; built-in fallback strings if it's missing). Production builds one `404.html` with every language, which CloudFront serves for missing paths (S3 403/404 → 404); a blocking inline script shows the language from the URL prefix, else the browser's (`src/utils/language.ts`, same rule as the `/` redirect), and English without JS. The preview server renders only that language, from the URL or `Accept-Language`.
 
 ## 🧞 Commands

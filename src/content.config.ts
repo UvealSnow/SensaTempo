@@ -1,6 +1,12 @@
 import { defineCollection } from 'astro:content';
 import { storiesLoader } from './loaders/stories';
-import { PAGE_RELATIONS, POSTS_FOLDER } from './utils/posts';
+import {
+  AUTHORS_FOLDER,
+  BLOG_FOLDER,
+  PAGE_RELATIONS,
+  POSTS_FOLDER,
+  TAGS_FOLDER,
+} from './utils/posts';
 
 const pages = defineCollection({
   loader: storiesLoader('pages', {
@@ -17,6 +23,28 @@ const posts = defineCollection({
   }),
 });
 
+const authors = defineCollection({
+  loader: storiesLoader('authors', {
+    content_type: 'author',
+    starts_with: `${AUTHORS_FOLDER}/`,
+  }),
+});
+
+const tags = defineCollection({
+  loader: storiesLoader('tags', {
+    content_type: 'tag',
+    starts_with: `${TAGS_FOLDER}/`,
+  }),
+});
+
+// The blog folder's start page: index title, featured posts, quick links and UI strings
+const blogIndex = defineCollection({
+  loader: storiesLoader('blog-index', {
+    content_type: 'blog_index',
+    starts_with: `${BLOG_FOLDER}/`,
+  }),
+});
+
 // Navbar, footer…: one story each under layout/, looked up by component (see getLayoutStory)
 const layout = defineCollection({
   loader: storiesLoader('layout', {
@@ -29,5 +57,8 @@ const layout = defineCollection({
 export const collections = {
   pages,
   posts,
+  authors,
+  tags,
+  blogIndex,
   layout,
 };

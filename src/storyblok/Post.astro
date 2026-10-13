@@ -10,6 +10,8 @@ interface Props {
   blok: SbBlokData & {
     title?: string;
     cover?: StoryblokAsset;
+    published_at?: string;
+    // Replaced by `published_at`; read until the field is deleted
     date?: string;
     body?: SbBlokData[];
   };
@@ -18,7 +20,7 @@ interface Props {
 
 const { blok, publishedAt } = Astro.props;
 const cover = responsiveImage(blok.cover);
-const date = postDate(blok.date, publishedAt);
+const date = postDate(blok.published_at || blok.date, publishedAt);
 ---
 
 <article
