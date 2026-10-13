@@ -17,6 +17,8 @@ export interface ResponsiveImage {
   height: number;
   placeholder: string;
   alt: string;
+  // Readable file name, the last-resort alt when the asset's alt (and the picture's description) are empty
+  fileAlt: string;
 }
 
 // Column spans per breakpoint, as `n/12` (see utils/grid.ts); phones are always full width
@@ -115,7 +117,8 @@ export function responsiveImage(
     width: largest,
     height: heightFor(largest),
     placeholder: url(PLACEHOLDER_WIDTH, 30),
-    alt: asset.alt ?? '',
+    alt: asset.alt?.trim() ?? '',
+    fileAlt: altFromFilename(asset.filename),
   };
 }
 
@@ -133,4 +136,19 @@ export function pictureDetails(
     : '';
   const text = [description?.trim(), date].filter(Boolean).join(' – ');
   return text || null;
+}
+
+/** `…/f/1/3200x1978/abc/mercado-de-noche_2.jpg` → `mercado de noche 2`. */
+export function altFromFilename(filename: string): string {
+  const name = filename.split('/').pop() ?? '';
+  let decoded = name;
+  try {
+    decoded = decodeURIComponent(name);
+  } catch {
+    // keep the raw name
+  }
+  return decoded
+    .replace(/\.[a-z0-9]+$/i, '')
+    .replace(/[-_]+/g, ' ')
+    .trim();
 }

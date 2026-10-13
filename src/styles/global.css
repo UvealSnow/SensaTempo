@@ -37,8 +37,9 @@
   --color-line: #e5e5e5;
 }
 
-/* Picture details overlay (components/Picture.astro): hidden until its group is hovered or focused,
-   always visible where there's no hover (touch) */
+/* Picture details overlay (components/Picture.astro): always visible, except inside a card
+   (`.details-group`) on devices with hover, where hovering or focusing the card reveals it. Content
+   pictures have nothing to focus, so hiding theirs would lock out keyboard users */
 @layer components {
   .picture__details,
   .picture__details-text {

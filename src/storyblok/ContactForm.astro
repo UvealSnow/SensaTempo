@@ -19,6 +19,30 @@ const strings = contactStrings(blok, lang);
 const { size, start } = blokPlacement(blok);
 const siteKey = turnstileSiteKey(import.meta.env);
 
+const fields = [
+  {
+    name: 'name',
+    label: strings.name_label,
+    error: strings.name_error,
+    maxlength: 100,
+    autocomplete: 'name',
+  },
+  {
+    name: 'email',
+    label: strings.email_label,
+    error: strings.email_error,
+    maxlength: 254,
+    autocomplete: 'email',
+    type: 'email',
+  },
+  {
+    name: 'message',
+    label: strings.message_label,
+    error: strings.message_error,
+    maxlength: 5000,
+  },
+];
+
 const label = 'font-body text-dark-gray text-lg';
 const input =
   'font-body w-full rounded-[4px] border border-line bg-white px-4 py-3 text-lg text-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-dark-gray aria-[invalid=true]:border-red-700';
@@ -35,46 +59,40 @@ const input =
     data-lang={lang}
     data-strings={JSON.stringify(strings)}
   >
-    <div class="flex flex-col gap-2">
-      <label for="contact-name" class={label}>
-        {strings.name_label}
-      </label>
-      <input
-        id="contact-name"
-        name="name"
-        required
-        maxlength="100"
-        autocomplete="name"
-        class={input}
-      />
-    </div>
-    <div class="flex flex-col gap-2">
-      <label for="contact-email" class={label}>
-        {strings.email_label}
-      </label>
-      <input
-        id="contact-email"
-        name="email"
-        type="email"
-        required
-        maxlength="254"
-        autocomplete="email"
-        class={input}
-      />
-    </div>
-    <div class="flex flex-col gap-2">
-      <label for="contact-message" class={label}>
-        {strings.message_label}
-      </label>
-      <textarea
-        id="contact-message"
-        name="message"
-        required
-        maxlength="5000"
-        rows="6"
-        class={`${input} resize-y`}
-      ></textarea>
-    </div>
+    <p class="font-body text-light-gray text-lg">{strings.required_note}</p>
+
+    {fields.map(({ name, label: text, error, ...attrs }) => (
+      <div class="flex flex-col gap-2">
+        <label for={`contact-${name}`} class={label}>
+          {text}
+        </label>
+        {name === 'message' ? (
+          <textarea
+            id={`contact-${name}`}
+            name={name}
+            required
+            rows="6"
+            class={`${input} resize-y`}
+            {...attrs}
+          />
+        ) : (
+          <input
+            id={`contact-${name}`}
+            name={name}
+            required
+            class={input}
+            {...attrs}
+          />
+        )}
+        <p
+          id={`contact-${name}-error`}
+          class="font-body hidden text-base text-red-700"
+          data-error-for={name}
+        >
+          {error}
+        </p>
+      </div>
+    ))}
 
     <!-- Honeypot: hidden from people and assistive tech, filled by bots -->
     <div class="absolute -left-[9999px]" aria-hidden="true">
@@ -83,9 +101,12 @@ const input =
       </label>
     </div>
 
-    <!-- Only shows a challenge when Cloudflare isn't sure; adds the `token` field -->
+    <!-- Only shows a challenge when Cloudflare isn't sure; adds the `token` field. Collapsed (the
+         negative margin cancels the form's gap) until a challenge needs the visitor -->
     <div
-      class="cf-turnstile"
+      class="cf-turnstile -mt-6 h-0 overflow-hidden data-[challenge]:mt-0 data-[challenge]:h-auto"
+      data-before-interactive-callback="contactTurnstileChallenge"
+      data-after-interactive-callback="contactTurnstileChallengeDone"
       data-sitekey={siteKey}
       data-language={lang}
       data-appearance="interaction-only"
@@ -123,6 +144,18 @@ const input =
   </p>
 </section>
 
+<script is:inline>
+  // Turnstile calls these by name when a visible challenge starts and ends
+  window.contactTurnstileChallenge = () =>
+    document
+      .querySelectorAll('.cf-turnstile')
+      .forEach((widget) => widget.setAttribute('data-challenge', ''));
+  window.contactTurnstileChallengeDone = () =>
+    document
+      .querySelectorAll('.cf-turnstile')
+      .forEach((widget) => widget.removeAttribute('data-challenge'));
+</script>
+
 <script
   is:inline
   src="https://challenges.cloudflare.com/turnstile/v0/api.js"
@@ -159,10 +192,15 @@ const input =
       status.dataset.state = 'error';
       status.textContent = message;
       for (const name of FIELDS) {
-        field(name)?.setAttribute(
-          'aria-invalid',
-          String(invalid.includes(name))
+        const isInvalid = invalid.includes(name);
+        const input = field(name);
+        const error = form.querySelector<HTMLElement>(
+          `[data-error-for="${name}"]`
         );
+        input?.setAttribute('aria-invalid', String(isInvalid));
+        if (isInvalid) input?.setAttribute('aria-describedby', error?.id ?? '');
+        else input?.removeAttribute('aria-describedby');
+        error?.classList.toggle('hidden', !isInvalid);
       }
       field(invalid[0] ?? '')?.focus();
     };
@@ -176,7 +214,12 @@ const input =
     };
 
     form.addEventListener('input', (event) => {
-      (event.target as HTMLElement).removeAttribute('aria-invalid');
+      const input = event.target as HTMLElement;
+      input.removeAttribute('aria-invalid');
+      input.removeAttribute('aria-describedby');
+      form
+        .querySelector(`[data-error-for="${input.getAttribute('name')}"]`)
+        ?.classList.add('hidden');
     });
 
     form.addEventListener('submit', async (event) => {

@@ -13,8 +13,6 @@ import {
 interface Props extends Omit<HTMLAttributes<'figure'>, 'class'> {
   description?: string | null;
   takenAt?: Date | null;
-  // An ancestor `.details-group` (e.g. a card) reveals the details instead of the image
-  inGroup?: boolean;
   size?: FlexSize;
   start?: FlexStart;
   vertical?: VerticalAlign;
@@ -28,7 +26,6 @@ interface Props extends Omit<HTMLAttributes<'figure'>, 'class'> {
 const {
   description,
   takenAt,
-  inGroup = false,
   size,
   start,
   vertical,
@@ -48,7 +45,7 @@ const sizeClass =
 ---
 
 <figure
-  class={`relative picture ${inGroup ? '' : 'details-group'} ${sizeClass} ${className ?? ''}`.trim()}
+  class={`relative picture ${sizeClass} ${className ?? ''}`.trim()}
   {...attrs}
 >
   <div
@@ -68,7 +65,7 @@ const sizeClass =
       sizes={image?.sizes}
       width={image?.width}
       height={image?.height}
-      alt={image?.alt || description || ''}
+      alt={image?.alt || description || image?.fileAlt || ''}
       loading={eager ? 'eager' : 'lazy'}
       fetchpriority={eager ? 'high' : undefined}
       decoding="async"
@@ -78,7 +75,7 @@ const sizeClass =
   </div>
   {details && (
     <figcaption class="picture__details pointer-events-none absolute inset-0 flex items-end justify-end bg-linear-150 from-transparent from-25% to-black/60 to-75% p-4 md:p-8">
-      <span class="picture__details-text font-body text-right text-lg leading-tight text-white">
+      <span class="picture__details-text font-body text-right text-lg leading-tight text-white [text-shadow:0_1px_3px_rgb(0_0_0/0.8)]">
         {details}
       </span>
     </figcaption>
