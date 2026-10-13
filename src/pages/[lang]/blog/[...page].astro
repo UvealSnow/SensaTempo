@@ -1,0 +1,65 @@
+---
+import BlogIndex from '~/components/blog/BlogIndex.astro';
+import { AVAILABLE_LANGUAGES } from '~/consts';
+import Layout from '~/layouts/Layout.astro';
+import { blogFeed, paginate, parsePage } from '~/utils/blog';
+import { BLOG_FOLDER } from '~/utils/posts';
+import { getBlog } from '~/utils/stories';
+
+// Static build only; the preview server renders every request
+export async function getStaticPaths() {
+  const paths = [];
+  for (const lang of AVAILABLE_LANGUAGES) {
+    const { blok, posts } = await getBlog(undefined, lang);
+    const feed = blogFeed(posts, blok?.featured as unknown[] | undefined);
+    const { totalPages } = paginate(feed, 1)!;
+    paths.push({ params: { lang, page: undefined } });
+    for (let page = 1; page <= totalPages; page++) {
+      paths.push({ params: { lang, page: String(page) } });
+    }
+  }
+  return paths;
+}
+
+const { lang = '' } = Astro.params;
+const pageNumber = parsePage(Astro.params.page);
+const blog =
+  AVAILABLE_LANGUAGES.includes(lang) && pageNumber
+    ? await getBlog(Astro.locals, lang)
+    : null;
+const feed = blog
+  ? paginate(
+      blogFeed(blog.posts, blog.blok?.featured as unknown[] | undefined),
+      pageNumber!
+    )
+  : null;
+
+if (!blog || !feed) {
+  // Only reached on the preview server (every static path exists); status 404
+  return Astro.rewrite('/404');
+}
+
+const { blok, strings } = blog;
+const basePath = `/${lang}/${BLOG_FOLDER}/`;
+const title =
+  feed.page > 1
+    ? `${strings.title} – ${strings.page_label} ${feed.page}`
+    : strings.title;
+---
+
+<Layout
+  title={title}
+  description={strings.description || undefined}
+  canonical={Astro.params.page === '1' ? basePath : undefined}
+>
+  <BlogIndex
+    title={strings.title}
+    description={strings.description}
+    posts={feed.items}
+    page={feed.page}
+    totalPages={feed.totalPages}
+    basePath={basePath}
+    strings={strings}
+    blok={blok}
+  />
+</Layout>

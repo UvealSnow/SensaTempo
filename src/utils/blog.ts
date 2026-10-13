@@ -121,3 +121,67 @@ export function blogFeed<T extends { uuid: string }>(
   const featured = new Set(featuredUuids ?? []);
   return posts.filter(({ uuid }) => !featured.has(uuid));
 }
+
+const FALLBACK_STRINGS = {
+  es: {
+    title: 'Blog',
+    description: '',
+    quick_links_label: 'Enlaces rápidos',
+    featured_label: 'Destacados',
+    archive_label: 'Archivo',
+    all_posts_label: 'Todas las entradas',
+    by_label: 'Por',
+    read_more_label: 'Leer artículo completo',
+    previous_label: 'Anterior',
+    next_label: 'Siguiente',
+    page_label: 'Página',
+    pagination_label: 'Paginación',
+    archive_title: 'Archivo: {month} {year}',
+    archive_description: 'Entradas publicadas en {month} de {year}.',
+  },
+  en: {
+    title: 'Blog',
+    description: '',
+    quick_links_label: 'Quick links',
+    featured_label: 'Featured posts',
+    archive_label: 'Archive',
+    all_posts_label: 'All posts',
+    by_label: 'By',
+    read_more_label: 'Read full article',
+    previous_label: 'Previous',
+    next_label: 'Next',
+    page_label: 'Page',
+    pagination_label: 'Pagination',
+    archive_title: 'Archive: {month} {year}',
+    archive_description: 'Posts published in {month} {year}.',
+  },
+};
+
+export type BlogStrings = typeof FALLBACK_STRINGS.en;
+
+export function blogStrings(
+  blok: Record<string, unknown> | null | undefined,
+  lang: string
+): BlogStrings {
+  const fallback =
+    FALLBACK_STRINGS[lang as keyof typeof FALLBACK_STRINGS] ??
+    FALLBACK_STRINGS.en;
+  const keys = Object.keys(fallback) as (keyof BlogStrings)[];
+  return Object.fromEntries(
+    keys.map((key) => {
+      const value = blok?.[key];
+      return [
+        key,
+        typeof value === 'string' && value.trim() ? value : fallback[key],
+      ];
+    })
+  ) as BlogStrings;
+}
+
+export const fillTemplate = (
+  template: string,
+  values: Record<string, string | number>
+): string =>
+  template.replace(/\{(\w+)\}/g, (match, name: string) =>
+    name in values ? String(values[name]) : match
+  );
