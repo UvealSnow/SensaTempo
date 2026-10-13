@@ -32,6 +32,32 @@
   --color-off-white: #f8f8f8;
   --color-light-gray: #777777;
   --color-dark-gray: #444444;
+  --color-chip: #f0f0f0;
+  --color-line: #e5e5e5;
+}
+
+/* Picture details overlay (components/Picture.astro): hidden until its group is hovered or focused,
+   always visible where there's no hover (touch) */
+@layer components {
+  .picture__details,
+  .picture__details-text {
+    transition:
+      opacity 200ms ease-out,
+      translate 200ms ease-out;
+  }
+  @media (hover: hover) {
+    .details-group:not(:hover, :focus-within) .picture__details {
+      opacity: 0;
+    }
+    .details-group:not(:hover, :focus-within) .picture__details-text {
+      translate: 0 8px;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .picture__details-text {
+      translate: none !important;
+    }
+  }
 }
 
 /* Storyblok rich text (storyblok/Text.astro): a blank line between blocks, like the design */

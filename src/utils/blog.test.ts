@@ -2,6 +2,8 @@ import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
 import {
   archiveTree,
+  blogStrings,
+  fillTemplate,
   blogFeed,
   pageNumbers,
   pagePathOf,
@@ -145,4 +147,19 @@ test('blogFeed leaves out featured posts and keeps the order', () => {
     ['1', '3']
   );
   assert.equal(blogFeed(posts, undefined).length, 3);
+});
+
+test('blogStrings falls back per field and per language', () => {
+  const strings = blogStrings({ title: 'Diario', by_label: '  ' }, 'es');
+  assert.equal(strings.title, 'Diario');
+  assert.equal(strings.by_label, 'Por');
+  assert.equal(blogStrings(null, 'en').featured_label, 'Featured posts');
+  assert.equal(blogStrings(null, 'fr').all_posts_label, 'All posts');
+});
+
+test('fillTemplate replaces known placeholders', () => {
+  assert.equal(
+    fillTemplate('Archivo: {month} {year} {x}', { month: 'mayo', year: 2025 }),
+    'Archivo: mayo 2025 {x}'
+  );
 });

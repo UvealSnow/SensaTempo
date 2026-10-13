@@ -1,0 +1,86 @@
+---
+import ChevronLeft from '~/assets/icons/chevron-left.svg';
+import ChevronRight from '~/assets/icons/chevron-right.svg';
+import { pageNumbers, pagePathOf, type BlogStrings } from '~/utils/blog';
+
+interface Props {
+  page: number;
+  totalPages: number;
+  // Page 1's URL, e.g. `/es/blog/`; page n is `${basePath}n/`
+  basePath: string;
+  strings: BlogStrings;
+}
+
+const { page, totalPages, basePath, strings } = Astro.props;
+const href = (n: number) => pagePathOf(basePath, n);
+const circle =
+  'font-body flex size-10 items-center justify-center rounded-full text-base';
+const link = `${circle} border border-line text-dark-gray hover:bg-chip focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-dark-gray`;
+---
+
+{totalPages > 1 && (
+  <nav aria-label={strings.pagination_label} class="flex justify-center pt-8">
+    <ul class="flex flex-wrap items-center justify-center gap-4">
+      <li>
+        {page > 1 ? (
+          <a
+            href={href(page - 1)}
+            rel="prev"
+            aria-label={strings.previous_label}
+            class={link}
+          >
+            <ChevronLeft width={16} height={16} />
+          </a>
+        ) : (
+          <span
+            aria-disabled="true"
+            class={`${circle} border-line text-light-gray/50 border`}
+          >
+            <ChevronLeft width={16} height={16} />
+          </span>
+        )}
+      </li>
+      {pageNumbers(page, totalPages).map((n) => (
+        <li>
+          {n === null ? (
+            <span class={`${circle} text-light-gray`} aria-hidden="true">
+              …
+            </span>
+          ) : n === page ? (
+            <span
+              aria-current="page"
+              class={`${circle} bg-dark-gray text-white`}
+            >
+              <span class="sr-only">{strings.page_label} </span>
+              {n}
+            </span>
+          ) : (
+            <a href={href(n)} class={link}>
+              <span class="sr-only">{strings.page_label} </span>
+              {n}
+            </a>
+          )}
+        </li>
+      ))}
+      <li>
+        {page < totalPages ? (
+          <a
+            href={href(page + 1)}
+            rel="next"
+            aria-label={strings.next_label}
+            class={link}
+          >
+            <ChevronRight width={16} height={16} />
+          </a>
+        ) : (
+          <span
+            aria-disabled="true"
+            class={`${circle} border-line text-light-gray/50 border`}
+          >
+            <ChevronRight width={16} height={16} />
+          </span>
+        )}
+      </li>
+    </ul>
+  </nav>
+)}

@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import {
   assetDimensions,
   imageUrl,
+  pictureDetails,
   responsiveImage,
   sizesFor,
 } from './images.ts';
@@ -73,4 +74,12 @@ test('responsiveImage is null for empty or foreign assets', () => {
     responsiveImage({ filename: 'https://example.com/x.jpg' }),
     null
   );
+});
+
+test('pictureDetails joins the description and the UTC date taken', () => {
+  const date = new Date('2025-07-16T00:00:00Z');
+  assert.equal(pictureDetails('Arcos', date), 'Arcos – 16.07.2025');
+  assert.equal(pictureDetails('Arcos', null), 'Arcos');
+  assert.equal(pictureDetails('  ', date), '16.07.2025');
+  assert.equal(pictureDetails(undefined, undefined), null);
 });
