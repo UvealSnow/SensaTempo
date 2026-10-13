@@ -30,14 +30,16 @@
   --font-display: Molle, cursive;
   --font-body: Zain, sans-serif;
   --color-off-white: #f8f8f8;
-  --color-light-gray: #777777;
+  /* ≥ 4.5:1 on off-white, white and chip (WCAG AA body text) */
+  --color-light-gray: #6b6b6b;
   --color-dark-gray: #444444;
   --color-chip: #f0f0f0;
   --color-line: #e5e5e5;
 }
 
-/* Picture details overlay (components/Picture.astro): hidden until its group is hovered or focused,
-   always visible where there's no hover (touch) */
+/* Picture details overlay (components/Picture.astro): always visible, except inside a card
+   (`.details-group`) on devices with hover, where hovering or focusing the card reveals it. Content
+   pictures have nothing to focus, so hiding theirs would lock out keyboard users */
 @layer components {
   .picture__details,
   .picture__details-text {

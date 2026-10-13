@@ -112,36 +112,38 @@ const pickScript = `(function () {
   </head>
 
   <body class="bg-off-white min-h-screen flex flex-col">
-    {sections.map(({ lang, title, text, linkLabel, logo }) => (
-      <section
-        data-lang={lang}
-        lang={lang}
-        class="flex flex-1 flex-col items-center justify-center gap-6 px-4 py-16 text-center"
-      >
-        <a href={pagePath(lang, HOME_SLUG)}>
-          {logo?.filename ? (
-            <img
-              src={logo.filename}
-              alt={logo.alt || SITE_TITLE}
-              class="h-[62px] w-auto"
-            />
-          ) : (
-            <span class="font-display text-dark-gray text-4xl">
-              {SITE_TITLE}
-            </span>
-          )}
-        </a>
-        <h1 class="font-display text-dark-gray text-5xl md:text-6xl">
-          {title}
-        </h1>
-        <p class="font-body text-light-gray max-w-prose text-2xl">{text}</p>
-        <a
-          href={pagePath(lang, HOME_SLUG)}
-          class="font-body text-2xl text-gray-700 underline hover:text-gray-900"
+    <main class="flex flex-1 flex-col">
+      {sections.map(({ lang, title, text, linkLabel, logo }) => (
+        <section
+          data-lang={lang}
+          lang={lang}
+          class="flex flex-1 flex-col items-center justify-center gap-6 px-4 py-16 text-center"
         >
-          {linkLabel}
-        </a>
-      </section>
-    ))}
+          <a href={pagePath(lang, HOME_SLUG)}>
+            {logo?.filename ? (
+              <img
+                src={logo.filename}
+                alt={logo.alt || SITE_TITLE}
+                class="h-[62px] w-auto"
+              />
+            ) : (
+              <span class="font-display text-dark-gray text-4xl">
+                {SITE_TITLE}
+              </span>
+            )}
+          </a>
+          <h1 class="font-display text-dark-gray text-5xl md:text-6xl">
+            {title}
+          </h1>
+          <p class="font-body text-light-gray max-w-prose text-2xl">{text}</p>
+          <a
+            href={pagePath(lang, HOME_SLUG)}
+            class="font-body text-2xl text-gray-700 underline hover:text-gray-900"
+          >
+            {linkLabel}
+          </a>
+        </section>
+      ))}
+    </main>
   </body>
 </html>

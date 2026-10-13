@@ -5,6 +5,7 @@ import { AVAILABLE_LANGUAGES } from '~/consts';
 import Layout from '~/layouts/Layout.astro';
 import { imageUrl } from '~/utils/images';
 import { HOME_SLUG } from '~/utils/navigation';
+import { pageTitle } from '~/utils/headings';
 import { getStoryContent } from '~/utils/stories';
 
 // Static build only; the preview server renders every request
@@ -43,7 +44,7 @@ const image = cover?.filename
 ---
 
 <Layout
-  title={(story.title as string | undefined) || undefined}
+  title={pageTitle(story)}
   description={(story.excerpt as string | undefined) || undefined}
   image={image}
 >

@@ -22,6 +22,10 @@ const FALLBACK_STRINGS = {
     captcha_message:
       'No pudimos verificar que no eres un robot. Inténtalo de nuevo.',
     noscript_message: 'Activa JavaScript para enviar el formulario.',
+    required_note: 'Todos los campos son obligatorios.',
+    name_error: 'Escribe tu nombre.',
+    email_error: 'Escribe un correo válido, como nombre@ejemplo.com.',
+    message_error: 'Escribe tu mensaje.',
   },
   en: {
     name_label: 'Name',
@@ -36,6 +40,10 @@ const FALLBACK_STRINGS = {
     invalid_message: 'Please check the highlighted fields.',
     captcha_message: "We couldn't verify you're not a robot. Please try again.",
     noscript_message: 'Turn on JavaScript to send the form.',
+    required_note: 'All fields are required.',
+    name_error: 'Enter your name.',
+    email_error: 'Enter a valid email, like name@example.com.',
+    message_error: 'Enter your message.',
   },
 };
 

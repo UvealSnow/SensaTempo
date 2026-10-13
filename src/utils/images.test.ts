@@ -1,6 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
 import {
+  altFromFilename,
   assetDimensions,
   imageUrl,
   pictureDetails,
@@ -82,4 +83,18 @@ test('pictureDetails joins the description and the UTC date taken', () => {
   assert.equal(pictureDetails('Arcos', null), 'Arcos');
   assert.equal(pictureDetails('  ', date), '16.07.2025');
   assert.equal(pictureDetails(undefined, undefined), null);
+});
+
+test('altFromFilename turns the file name into words', () => {
+  assert.equal(
+    altFromFilename(
+      'https://a.storyblok.com/f/1/3200x1978/abc/mercado-de-noche_2.jpg'
+    ),
+    'mercado de noche 2'
+  );
+  assert.equal(
+    altFromFilename('//a.storyblok.com/f/1/600x600/abc/Plaza%20Mayor.webp'),
+    'Plaza Mayor'
+  );
+  assert.equal(altFromFilename('bad%name.png'), 'bad%name');
 });

@@ -10,6 +10,7 @@ import {
   type LinkBlok,
 } from '~/utils/navigation';
 import { currentLang, currentSlug } from '~/utils/page';
+import { uiStrings } from '~/utils/ui';
 
 interface Props {
   blok: SbBlokData | null;
@@ -18,6 +19,7 @@ interface Props {
 const { blok } = Astro.props;
 const lang = currentLang(Astro);
 const slug = currentSlug(Astro);
+const strings = uiStrings(lang);
 
 const logo = blok?.logo as { filename?: string; alt?: string } | undefined;
 
@@ -28,6 +30,12 @@ const links = resolveLinks(
   AVAILABLE_LANGUAGES
 );
 const languages = AVAILABLE_LANGUAGES.filter((other) => other !== lang);
+// The link shows "EN"; screen readers would spell it out, so its name is the language's own ("English")
+const languageName = (code: string) => {
+  const name =
+    new Intl.DisplayNames([code], { type: 'language' }).of(code) ?? code;
+  return name.charAt(0).toUpperCase() + name.slice(1);
+};
 ---
 
 <header
@@ -38,6 +46,7 @@ const languages = AVAILABLE_LANGUAGES.filter((other) => other !== lang);
     <a
       href={pagePath(lang, HOME_SLUG)}
       aria-label={logo?.filename ? undefined : SITE_TITLE}
+      class="block rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-dark-gray"
     >
       {logo?.filename ? (
         <img
@@ -52,17 +61,20 @@ const languages = AVAILABLE_LANGUAGES.filter((other) => other !== lang);
 
     <button
       type="button"
-      class="cursor-pointer md:hidden"
+      class="cursor-pointer md:hidden rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-dark-gray"
       data-navbar-toggle
-      aria-label="Toggle navigation menu"
+      aria-label={strings.menu}
       aria-expanded="false"
+      aria-controls="site-nav"
     >
-      <Menu data-navbar-icon-open class="block" />
-      <Close data-navbar-icon-close class="hidden" />
+      <Menu data-navbar-icon-open class="block" aria-hidden="true" />
+      <Close data-navbar-icon-close class="hidden" aria-hidden="true" />
     </button>
   </div>
 
   <nav
+    id="site-nav"
+    aria-label={strings.main_nav}
     data-navbar-links
     class="font-body bg-off-white absolute top-0 left-0 z-40 hidden h-screen w-screen flex-col items-center justify-center gap-8 text-4xl md:relative md:top-auto md:left-auto md:z-auto md:flex md:h-auto md:w-full md:flex-row md:justify-between md:gap-4 md:pt-8 md:text-2xl lg:justify-end lg:gap-8 lg:pt-0"
   >
@@ -70,7 +82,7 @@ const languages = AVAILABLE_LANGUAGES.filter((other) => other !== lang);
       <a
         href={href}
         aria-current={isActive ? 'page' : undefined}
-        class="text-gray-700 hover:text-gray-900 aria-[current=page]:text-gray-900 aria-[current=page]:underline md:w-24 md:text-center"
+        class="text-gray-700 hover:text-gray-900 aria-[current=page]:text-gray-900 aria-[current=page]:underline md:w-24 md:text-center rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-dark-gray"
         {...storyblokEditable(link)}
       >
         {label}
@@ -82,7 +94,8 @@ const languages = AVAILABLE_LANGUAGES.filter((other) => other !== lang);
         href={pagePath(other, slug)}
         hreflang={other}
         lang={other}
-        class="text-gray-700 hover:text-gray-900 md:text-center"
+        aria-label={languageName(other)}
+        class="text-gray-700 hover:text-gray-900 md:text-center rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-dark-gray"
       >
         {other.toUpperCase()}
       </a>

@@ -52,7 +52,7 @@ Pages are in `src/pages/` and use dynamic routing with the `[lang]` parameter. C
 
 **Author and tag pages** (`src/pages/[lang]/blog/author/[author]/`, `…/tag/[tag]/`) list that author's or tag's posts (featured included) with the same pagination; the header comes from the `author` story (name, bio, photo, social links) or the `tag` story (name, description). Every author and tag gets a page, even without posts (`empty_label` message).
 
-The sidebar (`BlogSidebar`) shows on every index page: **Quick links** ("All posts" + up to 4 tags picked in `quick_link_tags`), **Featured posts** (the story's `featured` list, in the editor's order; scrolls past ~5) and the **Archive** (years → months with post counts in that language). On desktop it's sticky with sections open; on small screens it's below the cards with sections collapsed (`<details>`, so it works without JS). Card and picture images show their description and date taken over the image on hover or focus (always on touch screens).
+The sidebar (`BlogSidebar`) shows on every index page: **Quick links** ("All posts" + up to 4 tags picked in `quick_link_tags`), **Featured posts** (the story's `featured` list, in the editor's order; scrolls past ~5) and the **Archive** (years → months with post counts in that language). On desktop it's sticky with sections open; on small screens it's below the cards with sections collapsed (`<details>`, so it works without JS). Pictures show their description and date taken over the image; on cards (devices with hover) only while the card is hovered or focused.
 
 **About and other pages** (`src/pages/[lang]/[slug].astro`): `page` stories. A page with a `title` gets the post header (`cover`, `cover_description`, `cover_taken_at`, title; `excerpt` is the meta description), so `about` is edited like a post; pages without one (home) are just their blocks.
 
@@ -61,6 +61,22 @@ The sidebar (`BlogSidebar`) shows on every index page: **Quick links** ("All pos
 **Contact page:** the `contact` story (`page`) holds a `text` block (the editable header) and a `contact_form` block (`src/storyblok/ContactForm.astro`): name, email and message, a hidden honeypot and an invisible Cloudflare Turnstile check (`appearance: interaction-only`). It posts JSON to `/api/contact` (see Contact form below) and shows the result inline. Labels and messages are translatable block fields with built-in fallbacks (`src/utils/contact.ts`); the form's width uses the grid fields like other blocks.
 
 **404 page:** `src/pages/404.astro`, text from the `layout/not-found` story (`NotFound`; built-in fallback strings if it's missing). Production builds one `404.html` with every language, which CloudFront serves for missing paths (S3 403/404 → 404); a blocking inline script shows the language from the URL prefix, else the browser's (`src/utils/language.ts`, same rule as the `/` redirect), and English without JS. The preview server renders only that language, from the URL or `Accept-Language`.
+
+## ♿ Accessibility
+
+Target: **WCAG 2.2 AA** (audit and plan in the vault, `Plans/Accessibility/`).
+
+- **Colors:** text tokens pass 4.5:1 on `off-white`, white and `chip` (`light-gray` is `#6b6b6b`); don't use lighter grays for text.
+- **Focus:** every interactive element shows a 2 px `dark-gray` outline on keyboard focus (`focus-visible:outline-2 … outline-dark-gray`).
+- **Language links** show the code ("EN") and are named in their own language ("English"), with `lang` and `hreflang`.
+- **Links** open in the same tab.
+- **Skip link** ("Saltar al contenido") is the first focusable element and targets `<main id="main">`.
+- **Mobile menu:** labelled button (`aria-expanded`, `aria-controls`), focus moves to the first link, `main` and the footer become `inert` while it's open, Escape closes it and returns focus.
+- **Titles and headings:** every page has one `<h1>`. A `page` story gets it from its `title` (or a `text` block with level H1); `<title>` uses `title`, else the first text block heading. The home page adds a visually hidden `<h1>` when its story has none.
+- **Pictures:** details (description, date taken) are always visible on content pictures; cards reveal theirs on hover or focus. The text has a shadow for legibility over any photo.
+- **Alt text** comes from the Storyblok asset's **Alt** field (Assets → the image → Alt). Empty: the picture's description, then a readable file name (`mercado-de-noche.jpg` → "mercado de noche"). Editors: describe what the photo shows ("Stained glass windows lit by the late sun"), not "photo of…"; name files descriptively, since that's the fallback.
+- **Contact form:** "All fields are required" note, `required` fields, and per-field error messages linked with `aria-describedby` (not just a red border); the status line is a live region. The Turnstile box takes no space unless a challenge needs the visitor.
+- Site-wide UI texts without a Storyblok owner live in `src/utils/ui.ts` (es/en).
 
 ## 🧞 Commands
 
