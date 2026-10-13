@@ -4,7 +4,8 @@ import Layout from '~/layouts/Layout.astro';
 
 import Picture from '~/components/Picture.astro';
 
-import { AVAILABLE_LANGUAGES } from '~/consts';
+import { AVAILABLE_LANGUAGES, SITE_TITLE } from '~/consts';
+import { hasHeadingOne } from '~/utils/headings';
 import { HOME_SLUG } from '~/utils/navigation';
 import { getStoryContent } from '~/utils/stories';
 
@@ -23,6 +24,8 @@ const story = await getStoryContent(Astro.locals, lang, HOME_SLUG);
 ---
 
 <Layout>
+  <!-- The home page shows photos only; screen readers still get a page heading -->
+  {!hasHeadingOne(story) && <h1 class="sr-only">{SITE_TITLE}</h1>}
   {story ? (
     <StoryblokComponent blok={story} />
   ) : (

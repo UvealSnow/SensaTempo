@@ -72,6 +72,7 @@ Target: **WCAG 2.2 AA** (audit and plan in the vault, `Plans/Accessibility/`).
 - **Links** open in the same tab.
 - **Skip link** ("Saltar al contenido") is the first focusable element and targets `<main id="main">`.
 - **Mobile menu:** labelled button (`aria-expanded`, `aria-controls`), focus moves to the first link, `main` and the footer become `inert` while it's open, Escape closes it and returns focus.
+- **Titles and headings:** every page has one `<h1>`. A `page` story gets it from its `title` (or a `text` block with level H1); `<title>` uses `title`, else the first text block heading. The home page adds a visually hidden `<h1>` when its story has none.
 - Site-wide UI texts without a Storyblok owner live in `src/utils/ui.ts` (es/en).
 
 ## 🧞 Commands
