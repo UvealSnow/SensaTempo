@@ -1,0 +1,44 @@
+---
+import Picture from '~/components/Picture.astro';
+import FormattedDate from '~/components/layout/FormattedDate.astro';
+import { responsiveImage, type StoryblokAsset } from '~/utils/images';
+import { parseStoryblokDate } from '~/utils/posts';
+
+// Cover + title of a post, project or page with a `title`; children of the 12-column grid
+interface Props {
+  title?: string;
+  cover?: StoryblokAsset;
+  coverDescription?: string;
+  coverTakenAt?: string;
+  date?: Date | null;
+  // Shown under the title when there's no date (a project's year)
+  meta?: string;
+}
+
+const { title, cover, coverDescription, coverTakenAt, date, meta } =
+  Astro.props;
+const image = responsiveImage(cover);
+---
+
+{image && (
+  <Picture
+    image={image}
+    description={coverDescription}
+    takenAt={parseStoryblokDate(coverTakenAt)}
+    eager
+  />
+)}
+
+<header class="col-span-12 lg:col-span-10 lg:col-start-2">
+  <h1 class="font-display text-dark-gray text-4xl leading-tight md:text-[40px]">
+    {title}
+  </h1>
+  {date ? (
+    <FormattedDate
+      date={date}
+      class="font-body text-light-gray mt-2 block text-lg"
+    />
+  ) : (
+    meta && <p class="font-body text-light-gray mt-2 text-lg">{meta}</p>
+  )}
+</header>

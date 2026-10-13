@@ -1,10 +1,9 @@
 ---
 import { storyblokEditable, type SbBlokData } from '@storyblok/astro';
 import StoryblokComponent from '@storyblok/astro/StoryblokComponent.astro';
-import Picture from '~/components/Picture.astro';
-import FormattedDate from '~/components/layout/FormattedDate.astro';
-import { responsiveImage, type StoryblokAsset } from '~/utils/images';
-import { parseStoryblokDate, postDate } from '~/utils/posts';
+import ArticleHeader from '~/components/ArticleHeader.astro';
+import type { StoryblokAsset } from '~/utils/images';
+import { postDate } from '~/utils/posts';
 
 interface Props {
   blok: SbBlokData & {
@@ -21,7 +20,6 @@ interface Props {
 }
 
 const { blok, publishedAt } = Astro.props;
-const cover = responsiveImage(blok.cover);
 const date = postDate(blok.published_at || blok.date, publishedAt);
 ---
 
@@ -29,26 +27,13 @@ const date = postDate(blok.published_at || blok.date, publishedAt);
   class="grid grid-cols-12 gap-x-4 gap-y-16 lg:gap-y-24"
   {...storyblokEditable(blok)}
 >
-  {cover && (
-    <Picture
-      image={cover}
-      description={blok.cover_description}
-      takenAt={parseStoryblokDate(blok.cover_taken_at)}
-      eager
-    />
-  )}
-
-  <header class="col-span-12 lg:col-span-10 lg:col-start-2">
-    <h1 class="font-display text-dark-gray text-4xl leading-tight md:text-[40px]">
-      {blok.title}
-    </h1>
-    {date && (
-      <FormattedDate
-        date={date}
-        class="font-body text-light-gray mt-2 block text-lg"
-      />
-    )}
-  </header>
+  <ArticleHeader
+    title={blok.title}
+    cover={blok.cover}
+    coverDescription={blok.cover_description}
+    coverTakenAt={blok.cover_taken_at}
+    date={date}
+  />
 
   {blok.body?.map((child) => (
     <StoryblokComponent blok={child} />

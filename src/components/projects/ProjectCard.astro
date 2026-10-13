@@ -1,0 +1,61 @@
+---
+import ArrowRight from '~/assets/icons/arrow-right.svg';
+import Picture from '~/components/Picture.astro';
+import { responsiveImage } from '~/utils/images';
+import { currentLang } from '~/utils/page';
+import {
+  projectPath,
+  type ProjectsStrings,
+  type ProjectSummary,
+} from '~/utils/projects';
+
+interface Props {
+  project: ProjectSummary;
+  strings: ProjectsStrings;
+  eager?: boolean;
+}
+
+const { project, strings, eager = false } = Astro.props;
+const lang = currentLang(Astro);
+const cover = responsiveImage(project.cover, {
+  spans: { md: '6/12', lg: '6/12' },
+});
+---
+
+<!-- Same card as the blog's PostCard: the title link covers the card -->
+<article class="details-group relative flex h-full flex-col overflow-hidden rounded-[4px] border border-line bg-white">
+  {cover && (
+    <Picture
+      image={cover}
+      description={project.coverDescription}
+      takenAt={project.coverTakenAt}
+      eager={eager}
+      inGroup
+    />
+  )}
+  <div class="flex flex-1 flex-col gap-6 p-6 md:p-10">
+    {project.year && (
+      <p class="font-body text-light-gray text-base">{project.year}</p>
+    )}
+    <h2 class="font-display text-dark-gray text-2xl leading-tight md:text-[32px]">
+      <a
+        href={projectPath(lang, project.slug)}
+        class="after:absolute after:inset-0 after:rounded-[4px] focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-dark-gray"
+      >
+        {project.title}
+      </a>
+    </h2>
+    {project.excerpt && (
+      <p class="font-body text-light-gray text-lg leading-[30px]">
+        {project.excerpt}
+      </p>
+    )}
+    <span
+      class="font-body text-dark-gray mt-auto flex items-center gap-2 pt-2 text-base font-bold underline"
+      aria-hidden="true"
+    >
+      {strings.read_more_label}
+      <ArrowRight width={16} height={16} />
+    </span>
+  </div>
+</article>
