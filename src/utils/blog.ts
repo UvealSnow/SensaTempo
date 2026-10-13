@@ -137,6 +137,7 @@ const FALLBACK_STRINGS = {
     next_label: 'Siguiente',
     page_label: 'Página',
     pagination_label: 'Paginación',
+    empty_label: 'Todavía no hay entradas.',
     archive_title: 'Archivo: {month} {year}',
     archive_description: 'Entradas publicadas en {month} de {year}.',
   },
@@ -153,6 +154,7 @@ const FALLBACK_STRINGS = {
     next_label: 'Next',
     page_label: 'Page',
     pagination_label: 'Pagination',
+    empty_label: 'No posts yet.',
     archive_title: 'Archive: {month} {year}',
     archive_description: 'Posts published in {month} {year}.',
   },
@@ -209,3 +211,57 @@ export const monthName = (lang: string, month: number): string =>
     .utc(Date.UTC(2000, month - 1, 1))
     .locale(lang)
     .format('MMMM');
+
+export const SOCIAL_ICONS = [
+  'instagram',
+  'facebook',
+  'x',
+  'tiktok',
+  'youtube',
+  'website',
+  'email',
+] as const;
+export type SocialIcon = (typeof SOCIAL_ICONS)[number] | 'link';
+
+export interface SocialLink {
+  icon: SocialIcon;
+  href: string;
+  label: string;
+}
+
+const SOCIAL_NAMES: Partial<Record<SocialIcon, string>> = {
+  instagram: 'Instagram',
+  facebook: 'Facebook',
+  x: 'X',
+  tiktok: 'TikTok',
+  youtube: 'YouTube',
+};
+
+const hostname = (href: string): string | null => {
+  try {
+    return new URL(href).hostname.replace(/^www\./, '') || null;
+  } catch {
+    return null;
+  }
+};
+
+/** An author's `social_link` blocks as links; blocks without an http(s) URL (or an address, for email) are dropped, unknown icons become `link`. */
+export function socialLinks(
+  bloks: readonly { icon?: string; url?: string }[] | undefined
+): SocialLink[] {
+  return (bloks ?? []).flatMap<SocialLink>(({ icon: name, url }) => {
+    const value = url?.trim();
+    if (!value) return [];
+    const icon: SocialIcon = SOCIAL_ICONS.includes(name as never)
+      ? (name as SocialIcon)
+      : 'link';
+    if (icon === 'email') {
+      const address = value.replace(/^mailto:/, '');
+      return [{ icon, href: `mailto:${address}`, label: address }];
+    }
+    const href = /^[a-z][a-z\d+.-]*:/i.test(value) ? value : `https://${value}`;
+    if (!/^https?:/i.test(href)) return [];
+    const label = SOCIAL_NAMES[icon] ?? hostname(href) ?? value;
+    return [{ icon, href, label }];
+  });
+}

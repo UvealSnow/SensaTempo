@@ -20,6 +20,7 @@ import {
   type Ref,
 } from './posts';
 import { blogStrings, pickByUuid, type BlogStrings } from './blog';
+import { storySlug } from './navigation';
 import { isPreviewMode } from './storyblok';
 
 export const isPreview = isPreviewMode(
@@ -181,6 +182,41 @@ export async function getAuthors(lang: string): Promise<Ref[]> {
 export async function getTags(lang: string): Promise<Ref[]> {
   const stories = await storiesOf('tags', lang, 'tag', TAGS_FOLDER);
   return refSummaries(stories, TAGS_FOLDER, AVAILABLE_LANGUAGES);
+}
+
+const REF_STORIES = {
+  author: { collection: 'authors', folder: AUTHORS_FOLDER },
+  tag: { collection: 'tags', folder: TAGS_FOLDER },
+} as const;
+
+/** The author or tag story `slug` in `lang`, or null if it doesn't exist. */
+export async function getRefStory(
+  locals: APIContext['locals'],
+  lang: string,
+  component: keyof typeof REF_STORIES,
+  slug: string
+): Promise<{ uuid: string; content: SbBlokData } | null> {
+  const { collection, folder } = REF_STORIES[component];
+  const fullSlug = `${folder}/${slug}`;
+
+  if (!isPreview) {
+    const entries = await getCollection(collection);
+    const entry = entries.find(
+      ({ data }) => data.lang === lang && data.slug === fullSlug
+    );
+    return entry
+      ? { uuid: entry.data.uuid, content: entry.data.content as SbBlokData }
+      : null;
+  }
+
+  const payload = await getPayloadStory(locals, component);
+  const story =
+    payload && storySlug(payload.full_slug, AVAILABLE_LANGUAGES) === fullSlug
+      ? payload
+      : await fetchDraft(fullSlug, lang);
+  return story?.content?.component === component
+    ? { uuid: story.uuid, content: story.content }
+    : null;
 }
 
 export async function getPosts(lang: string): Promise<PostSummary[]> {

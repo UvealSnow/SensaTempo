@@ -1,0 +1,70 @@
+---
+import { getCollection } from 'astro:content';
+import BlogIndex from '~/components/blog/BlogIndex.astro';
+import { AVAILABLE_LANGUAGES } from '~/consts';
+import Layout from '~/layouts/Layout.astro';
+import { paginate, parsePage, postsByTag } from '~/utils/blog';
+import { TAGS_FOLDER } from '~/utils/posts';
+import { getBlog, getRefStory } from '~/utils/stories';
+
+// Static build only; the preview server renders every request
+export async function getStaticPaths() {
+  const tags = await getCollection('tags');
+  const paths = [];
+  for (const lang of AVAILABLE_LANGUAGES) {
+    const { posts } = await getBlog(undefined, lang);
+    for (const { data } of tags.filter((entry) => entry.data.lang === lang)) {
+      const tag = data.slug.slice(TAGS_FOLDER.length + 1);
+      const { totalPages } = paginate(postsByTag(posts, data.uuid), 1)!;
+      paths.push({ params: { lang, tag, page: undefined } });
+      for (let page = 1; page <= totalPages; page++) {
+        paths.push({ params: { lang, tag, page: String(page) } });
+      }
+    }
+  }
+  return paths;
+}
+
+const { lang = '', tag: slug = '' } = Astro.params;
+const pageNumber = parsePage(Astro.params.page);
+const valid = AVAILABLE_LANGUAGES.includes(lang) && pageNumber !== null;
+const [tag, blog] = valid
+  ? await Promise.all([
+      getRefStory(Astro.locals, lang, 'tag', slug),
+      getBlog(Astro.locals, lang),
+    ])
+  : [null, null];
+const feed =
+  tag && blog ? paginate(postsByTag(blog.posts, tag.uuid), pageNumber!) : null;
+
+if (!tag || !blog || !feed) {
+  // Only reached on the preview server (every static path exists); status 404
+  return Astro.rewrite('/404');
+}
+
+const { content } = tag;
+const { strings } = blog;
+const name = (content.name as string | undefined) || slug;
+const description = (content.description as string | undefined) || undefined;
+const basePath = `/${lang}/${TAGS_FOLDER}/${slug}/`;
+const title =
+  feed.page > 1 ? `${name} – ${strings.page_label} ${feed.page}` : name;
+---
+
+<Layout
+  title={title}
+  description={description}
+  canonical={Astro.params.page === '1' ? basePath : undefined}
+>
+  <BlogIndex
+    title={name}
+    description={description}
+    posts={feed.items}
+    page={feed.page}
+    totalPages={feed.totalPages}
+    basePath={basePath}
+    lang={lang}
+    blog={blog}
+    blok={content}
+  />
+</Layout>
