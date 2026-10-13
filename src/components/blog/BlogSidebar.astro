@@ -1,8 +1,7 @@
 ---
 import ChevronRight from '~/assets/icons/chevron-right.svg';
 import FormattedDate from '~/components/layout/FormattedDate.astro';
-import { archivePath, archiveTree, pickByUuid } from '~/utils/blog';
-import dayjs from '~/utils/dates';
+import { archivePath, archiveTree, monthName, pickByUuid } from '~/utils/blog';
 import { BLOG_FOLDER, postPath, TAGS_FOLDER } from '~/utils/posts';
 import type { Blog } from '~/utils/stories';
 
@@ -33,11 +32,8 @@ const quickLinks = [
 
 const archive = archiveTree(blog.posts);
 const openYear = current?.year ?? archive[0]?.year;
-const monthName = (month: number) => {
-  const name = dayjs
-    .utc(Date.UTC(2000, month - 1, 1))
-    .locale(lang)
-    .format('MMMM');
+const monthLabel = (month: number) => {
+  const name = monthName(lang, month);
   return name.charAt(0).toUpperCase() + name.slice(1);
 };
 
@@ -151,7 +147,7 @@ const chevron =
                         aria-current={isCurrent ? 'page' : undefined}
                         class="font-body text-light-gray aria-[current=page]:text-dark-gray aria-[current=page]:font-bold flex items-center gap-3 rounded-sm text-sm hover:text-dark-gray focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-dark-gray"
                       >
-                        <span class="flex-1">{monthName(month)}</span>
+                        <span class="flex-1">{monthLabel(month)}</span>
                         <span>{count}</span>
                         <span class="text-base" aria-hidden="true">
                           ›

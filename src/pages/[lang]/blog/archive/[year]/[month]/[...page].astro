@@ -1,0 +1,81 @@
+---
+import BlogIndex from '~/components/blog/BlogIndex.astro';
+import { AVAILABLE_LANGUAGES } from '~/consts';
+import Layout from '~/layouts/Layout.astro';
+import {
+  archivePath,
+  archiveTree,
+  fillTemplate,
+  monthName,
+  paginate,
+  parseArchiveParams,
+  parsePage,
+  postsInMonth,
+} from '~/utils/blog';
+import { getBlog } from '~/utils/stories';
+
+// Static build only; the preview server renders every request
+export async function getStaticPaths() {
+  const paths = [];
+  for (const lang of AVAILABLE_LANGUAGES) {
+    const { posts } = await getBlog(undefined, lang);
+    for (const { year, months } of archiveTree(posts)) {
+      for (const { month, count } of months) {
+        const params = {
+          lang,
+          year: String(year),
+          month: String(month).padStart(2, '0'),
+        };
+        paths.push({ params: { ...params, page: undefined } });
+        const { totalPages } = paginate(Array(count), 1)!;
+        for (let page = 1; page <= totalPages; page++) {
+          paths.push({ params: { ...params, page: String(page) } });
+        }
+      }
+    }
+  }
+  return paths;
+}
+
+const { lang = '' } = Astro.params;
+const month = parseArchiveParams(Astro.params.year, Astro.params.month);
+const pageNumber = parsePage(Astro.params.page);
+const blog =
+  AVAILABLE_LANGUAGES.includes(lang) && month && pageNumber
+    ? await getBlog(Astro.locals, lang)
+    : null;
+const posts =
+  blog && month ? postsInMonth(blog.posts, month.year, month.month) : [];
+const feed = posts.length ? paginate(posts, pageNumber!) : null;
+
+if (!blog || !month || !feed) {
+  // Only reached on the preview server (every static path exists); status 404
+  return Astro.rewrite('/404');
+}
+
+const { strings } = blog;
+const basePath = archivePath(lang, month.year, month.month);
+const values = { month: monthName(lang, month.month), year: month.year };
+const heading = fillTemplate(strings.archive_title, values);
+const description = fillTemplate(strings.archive_description, values);
+const title =
+  feed.page > 1 ? `${heading} – ${strings.page_label} ${feed.page}` : heading;
+---
+
+<Layout
+  title={title}
+  description={description}
+  canonical={Astro.params.page === '1' ? basePath : undefined}
+>
+  <BlogIndex
+    title={heading}
+    description={description}
+    posts={feed.items}
+    page={feed.page}
+    totalPages={feed.totalPages}
+    basePath={basePath}
+    lang={lang}
+    blog={blog}
+    month={month}
+  />
+</Layout>
