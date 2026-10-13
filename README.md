@@ -70,6 +70,9 @@ Target: **WCAG 2.2 AA** (audit and plan in the vault, `Plans/Accessibility/`).
 - **Focus:** every interactive element shows a 2 px `dark-gray` outline on keyboard focus (`focus-visible:outline-2 … outline-dark-gray`).
 - **Language links** show the code ("EN") and are named in their own language ("English"), with `lang` and `hreflang`.
 - **Links** open in the same tab.
+- **Skip link** ("Saltar al contenido") is the first focusable element and targets `<main id="main">`.
+- **Mobile menu:** labelled button (`aria-expanded`, `aria-controls`), focus moves to the first link, `main` and the footer become `inert` while it's open, Escape closes it and returns focus.
+- Site-wide UI texts without a Storyblok owner live in `src/utils/ui.ts` (es/en).
 
 ## 🧞 Commands
 

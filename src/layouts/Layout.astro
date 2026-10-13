@@ -8,6 +8,7 @@ import { AVAILABLE_LANGUAGES, X_DEFAULT_LANGUAGE } from '~/consts';
 import { pagePath } from '~/utils/navigation';
 import { currentLang, currentSlug } from '~/utils/page';
 import { FOOTER, getLayoutStory, NAVBAR } from '~/utils/stories';
+import { uiStrings } from '~/utils/ui';
 
 import '../styles/global.css';
 
@@ -21,6 +22,7 @@ interface Props {
 
 const lang = currentLang(Astro);
 const slug = currentSlug(Astro);
+const strings = uiStrings(lang);
 const [navbar, footer] = await Promise.all([
   getLayoutStory(Astro.locals, lang, NAVBAR),
   getLayoutStory(Astro.locals, lang, FOOTER),
@@ -56,9 +58,19 @@ const [navbar, footer] = await Promise.all([
   </head>
 
   <body class="bg-off-white min-h-screen flex flex-col">
+    <a
+      href="#main"
+      class="font-body bg-dark-gray sr-only z-[60] rounded-sm px-4 py-2 text-lg text-white focus:not-sr-only focus:fixed focus:top-4 focus:left-4"
+    >
+      {strings.skip_link}
+    </a>
     <NavBar blok={navbar} />
 
-    <main class="pb-8 px-4 container mx-auto md:px-8 xl:px-0">
+    <main
+      id="main"
+      tabindex="-1"
+      class="pb-8 px-4 container mx-auto outline-none md:px-8 xl:px-0"
+    >
       <slot />
     </main>
 
@@ -77,26 +89,36 @@ const [navbar, footer] = await Promise.all([
       const closeIcon = document.querySelector<HTMLElement>(
         '[data-navbar-icon-close]'
       );
+      // The open menu covers the page, so everything behind it leaves the tab order
+      const behind = document.querySelectorAll<HTMLElement>('main, footer');
 
       if (!actionButton || !links || !openIcon || !closeIcon) return;
 
-      const setMenuState = (isOpen: boolean) => {
-        openIcon.classList.toggle('hidden', isOpen);
-        closeIcon.classList.toggle('hidden', !isOpen);
-        links.classList.toggle('hidden', !isOpen);
-        links.classList.toggle('flex', isOpen);
-        actionButton.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-        document.body.classList.toggle('overflow-hidden', isOpen);
+      const isOpen = () =>
+        actionButton.getAttribute('aria-expanded') === 'true';
+      const setMenuState = (open: boolean) => {
+        openIcon.classList.toggle('hidden', open);
+        closeIcon.classList.toggle('hidden', !open);
+        links.classList.toggle('hidden', !open);
+        links.classList.toggle('flex', open);
+        actionButton.setAttribute('aria-expanded', open ? 'true' : 'false');
+        document.body.classList.toggle('overflow-hidden', open);
+        behind.forEach((element) => (element.inert = open));
       };
 
       actionButton.addEventListener('click', () => {
-        const isExpanded =
-          actionButton.getAttribute('aria-expanded') === 'true';
-        setMenuState(!isExpanded);
+        setMenuState(!isOpen());
+        if (isOpen()) links.querySelector<HTMLElement>('a')?.focus();
+      });
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key !== 'Escape' || !isOpen()) return;
+        setMenuState(false);
+        actionButton.focus();
       });
 
       window.addEventListener('resize', () => {
-        if (window.innerWidth >= 768) setMenuState(false);
+        if (window.innerWidth >= 768 && isOpen()) setMenuState(false);
       });
     });
   </script>
