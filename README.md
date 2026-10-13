@@ -30,6 +30,17 @@ Sensa Tempo is a minimal, fast, and SEO-friendly photography blog built with [As
 
 Pages are in `src/pages/` and use dynamic routing with the `[lang]` parameter. Content is fetched from Storyblok via loaders in `src/loaders/`.
 
+**Blog:** posts are `post` stories in the Storyblok `blog/post/` folder; `postPath` (`src/utils/posts.ts`) builds every post link.
+
+| URL                                    | Page          | Status  |
+| :------------------------------------- | :------------ | :------ |
+| `/{lang}/blog/`                        | Blog page     | ✅      |
+| `/{lang}/blog/{n}/`                    | Index page n  | Planned |
+| `/{lang}/blog/archive/{YYYY}/{MM}/{n}` | Month archive | Planned |
+| `/{lang}/blog/author/{slug}/`          | Author index  | Planned |
+| `/{lang}/blog/tag/{slug}/`             | Tag index     | Planned |
+| `/{lang}/blog/post/{slug}/`            | Post          | ✅      |
+
 **404 page:** `src/pages/404.astro`, text from the `layout/not-found` story (`NotFound`; built-in fallback strings if it's missing). Production builds one `404.html` with every language, which CloudFront serves for missing paths (S3 403/404 → 404); a blocking inline script shows the language from the URL prefix, else the browser's (`src/utils/language.ts`, same rule as the `/` redirect), and English without JS. The preview server renders only that language, from the URL or `Accept-Language`.
 
 ## 🧞 Commands

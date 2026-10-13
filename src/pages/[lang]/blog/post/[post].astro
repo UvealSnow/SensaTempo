@@ -4,17 +4,15 @@ import { AVAILABLE_LANGUAGES } from '~/consts';
 import Layout from '~/layouts/Layout.astro';
 import Post from '~/storyblok/Post.astro';
 import { imageUrl } from '~/utils/images';
-import { BLOG_FOLDER } from '~/utils/posts';
+import { postSlug } from '~/utils/posts';
 import { getPost } from '~/utils/stories';
 
 // Static build only; the preview server renders every request
 export async function getStaticPaths() {
   const posts = await getCollection('posts');
   return posts.flatMap(({ data }) => {
-    const post = data.slug.slice(`${BLOG_FOLDER}/`.length);
-    return post && !post.includes('/')
-      ? [{ params: { lang: data.lang, post } }]
-      : [];
+    const post = postSlug(data.slug, AVAILABLE_LANGUAGES);
+    return post ? [{ params: { lang: data.lang, post } }] : [];
   });
 }
 
