@@ -28,6 +28,12 @@ const links = resolveLinks(
   AVAILABLE_LANGUAGES
 );
 const languages = AVAILABLE_LANGUAGES.filter((other) => other !== lang);
+// The link shows "EN"; screen readers would spell it out, so its name is the language's own ("English")
+const languageName = (code: string) => {
+  const name =
+    new Intl.DisplayNames([code], { type: 'language' }).of(code) ?? code;
+  return name.charAt(0).toUpperCase() + name.slice(1);
+};
 ---
 
 <header
@@ -38,6 +44,7 @@ const languages = AVAILABLE_LANGUAGES.filter((other) => other !== lang);
     <a
       href={pagePath(lang, HOME_SLUG)}
       aria-label={logo?.filename ? undefined : SITE_TITLE}
+      class="block rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-dark-gray"
     >
       {logo?.filename ? (
         <img
@@ -52,7 +59,7 @@ const languages = AVAILABLE_LANGUAGES.filter((other) => other !== lang);
 
     <button
       type="button"
-      class="cursor-pointer md:hidden"
+      class="cursor-pointer md:hidden rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-dark-gray"
       data-navbar-toggle
       aria-label="Toggle navigation menu"
       aria-expanded="false"
@@ -70,7 +77,7 @@ const languages = AVAILABLE_LANGUAGES.filter((other) => other !== lang);
       <a
         href={href}
         aria-current={isActive ? 'page' : undefined}
-        class="text-gray-700 hover:text-gray-900 aria-[current=page]:text-gray-900 aria-[current=page]:underline md:w-24 md:text-center"
+        class="text-gray-700 hover:text-gray-900 aria-[current=page]:text-gray-900 aria-[current=page]:underline md:w-24 md:text-center rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-dark-gray"
         {...storyblokEditable(link)}
       >
         {label}
@@ -82,7 +89,8 @@ const languages = AVAILABLE_LANGUAGES.filter((other) => other !== lang);
         href={pagePath(other, slug)}
         hreflang={other}
         lang={other}
-        class="text-gray-700 hover:text-gray-900 md:text-center"
+        aria-label={languageName(other)}
+        class="text-gray-700 hover:text-gray-900 md:text-center rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-dark-gray"
       >
         {other.toUpperCase()}
       </a>

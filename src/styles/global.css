@@ -30,7 +30,8 @@
   --font-display: Molle, cursive;
   --font-body: Zain, sans-serif;
   --color-off-white: #f8f8f8;
-  --color-light-gray: #777777;
+  /* ≥ 4.5:1 on off-white, white and chip (WCAG AA body text) */
+  --color-light-gray: #6b6b6b;
   --color-dark-gray: #444444;
   --color-chip: #f0f0f0;
   --color-line: #e5e5e5;

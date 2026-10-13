@@ -62,6 +62,15 @@ The sidebar (`BlogSidebar`) shows on every index page: **Quick links** ("All pos
 
 **404 page:** `src/pages/404.astro`, text from the `layout/not-found` story (`NotFound`; built-in fallback strings if it's missing). Production builds one `404.html` with every language, which CloudFront serves for missing paths (S3 403/404 → 404); a blocking inline script shows the language from the URL prefix, else the browser's (`src/utils/language.ts`, same rule as the `/` redirect), and English without JS. The preview server renders only that language, from the URL or `Accept-Language`.
 
+## ♿ Accessibility
+
+Target: **WCAG 2.2 AA** (audit and plan in the vault, `Plans/Accessibility/`).
+
+- **Colors:** text tokens pass 4.5:1 on `off-white`, white and `chip` (`light-gray` is `#6b6b6b`); don't use lighter grays for text.
+- **Focus:** every interactive element shows a 2 px `dark-gray` outline on keyboard focus (`focus-visible:outline-2 … outline-dark-gray`).
+- **Language links** show the code ("EN") and are named in their own language ("English"), with `lang` and `hreflang`.
+- **Links** open in the same tab.
+
 ## 🧞 Commands
 
 | Command             | Action                               |

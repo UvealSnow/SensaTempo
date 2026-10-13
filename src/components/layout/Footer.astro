@@ -20,7 +20,6 @@ const creditHref = linkHref(
   lang,
   AVAILABLE_LANGUAGES
 );
-const isExternal = /^https?:\/\//.test(creditHref ?? '');
 ---
 
 <footer
@@ -34,11 +33,7 @@ const isExternal = /^https?:\/\//.test(creditHref ?? '');
         <br />
         {creditLabel && `${creditLabel} `}
         {creditHref ? (
-          <a
-            class="underline"
-            href={creditHref}
-            {...(isExternal ? { target: '_blank', rel: 'noopener' } : {})}
-          >
+          <a class="underline" href={creditHref}>
             {creditName}
           </a>
         ) : (
