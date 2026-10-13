@@ -64,6 +64,7 @@ export default defineConfig({
         text: 'storyblok/Text',
         post_list: 'storyblok/PostList',
         teaser: 'storyblok/Teaser',
+        contact_form: 'storyblok/ContactForm',
       },
       apiOptions: {},
       // Visual Editor support on the preview server only; the static site never loads the bridge.

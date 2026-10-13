@@ -152,6 +152,28 @@ resource "aws_cloudfront_distribution" "prod_site" {
     origin_access_control_id = aws_cloudfront_origin_access_control.default.id
   }
 
+  origin {
+    domain_name = local.contact_origin_domain
+    origin_id   = "Lambda-Contact"
+
+    custom_origin_config {
+      http_port              = 80
+      https_port             = 443
+      origin_protocol_policy = "https-only"
+      origin_ssl_protocols   = ["TLSv1.2"]
+    }
+  }
+
+  ordered_cache_behavior {
+    path_pattern             = "/api/contact"
+    allowed_methods          = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
+    cached_methods           = ["GET", "HEAD"]
+    target_origin_id         = "Lambda-Contact"
+    cache_policy_id          = data.aws_cloudfront_cache_policy.caching_disabled.id
+    origin_request_policy_id = data.aws_cloudfront_origin_request_policy.all_viewer_except_host.id
+    viewer_protocol_policy   = "https-only"
+  }
+
   default_cache_behavior {
     allowed_methods        = ["GET", "HEAD"]
     cached_methods         = ["GET", "HEAD"]
@@ -352,6 +374,29 @@ resource "aws_cloudfront_distribution" "preview" {
       origin_protocol_policy = "https-only"
       origin_ssl_protocols   = ["TLSv1.2"]
     }
+  }
+
+  origin {
+    domain_name = local.contact_origin_domain
+    origin_id   = "Lambda-Contact"
+
+    custom_origin_config {
+      http_port              = 80
+      https_port             = 443
+      origin_protocol_policy = "https-only"
+      origin_ssl_protocols   = ["TLSv1.2"]
+    }
+  }
+
+  # Same endpoint as prod, so the preview's form really sends
+  ordered_cache_behavior {
+    path_pattern             = "/api/contact"
+    allowed_methods          = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
+    cached_methods           = ["GET", "HEAD"]
+    target_origin_id         = "Lambda-Contact"
+    cache_policy_id          = data.aws_cloudfront_cache_policy.caching_disabled.id
+    origin_request_policy_id = data.aws_cloudfront_origin_request_policy.all_viewer_except_host.id
+    viewer_protocol_policy   = "https-only"
   }
 
   default_cache_behavior {
@@ -651,6 +696,170 @@ resource "aws_budgets_budget" "sensatempo" {
     notification_type          = "ACTUAL"
     subscriber_email_addresses = [data.aws_ssm_parameter.alerts_email.value]
   }
+}
+
+# --- 6. CONTACT FORM: LAMBDA -> SES ---
+# The form posts to /api/contact on the site's own domain; both distributions route that path here.
+# Code: contact/index.mjs. SSM parameters, created by hand:
+#   /sensatempo/contact/recipient          String; gets the messages and is the verified sender.
+#                                          To change it: put-parameter, `pnpm tf:apply`, click the SES link
+#   /sensatempo/contact/turnstile-secret   Cloudflare Turnstile secret key
+
+locals {
+  contact_function_name = "sensatempo-contact"
+  contact_origin_domain = trimsuffix(trimprefix(aws_lambda_function_url.contact.function_url, "https://"), "/")
+}
+
+data "aws_ssm_parameter" "contact_recipient" {
+  name = "${local.ssm_prefix}/contact/recipient"
+}
+
+data "aws_ssm_parameter" "turnstile_secret" {
+  name = "${local.ssm_prefix}/contact/turnstile-secret"
+}
+
+# AWS emails a verification link; SES won't send from or (in the sandbox) to it until it's clicked
+resource "aws_sesv2_email_identity" "contact" {
+  email_identity = data.aws_ssm_parameter.contact_recipient.value
+}
+
+resource "aws_iam_role" "contact" {
+  name = "sensatempo-contact"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action    = "sts:AssumeRole"
+      Effect    = "Allow"
+      Principal = { Service = "lambda.amazonaws.com" }
+    }]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "contact_logs" {
+  role       = aws_iam_role.contact.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+resource "aws_iam_role_policy" "contact_send" {
+  name = "send-from-contact-identity"
+  role = aws_iam_role.contact.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = "ses:SendEmail"
+      Resource = aws_sesv2_email_identity.contact.arn
+    }]
+  })
+}
+
+resource "aws_cloudwatch_log_group" "contact" {
+  name              = "/aws/lambda/${local.contact_function_name}"
+  retention_in_days = 14
+}
+
+data "archive_file" "contact" {
+  type        = "zip"
+  source_file = "${path.module}/contact/index.mjs"
+  output_path = "${path.module}/.build/contact.zip"
+}
+
+resource "aws_lambda_function" "contact" {
+  function_name = local.contact_function_name
+  role          = aws_iam_role.contact.arn
+  runtime       = "nodejs24.x"
+  handler       = "index.handler"
+  architectures = ["arm64"]
+
+  filename         = data.archive_file.contact.output_path
+  source_code_hash = data.archive_file.contact.output_base64sha256
+
+  timeout                        = 10
+  memory_size                    = 128
+  reserved_concurrent_executions = 2
+
+  environment {
+    variables = {
+      CONTACT_RECIPIENT = data.aws_ssm_parameter.contact_recipient.value
+      TURNSTILE_SECRET  = data.aws_ssm_parameter.turnstile_secret.value
+      ALLOWED_ORIGINS   = join(",", var.contact_allowed_origins)
+    }
+  }
+
+  depends_on = [
+    aws_cloudwatch_log_group.contact,
+    aws_iam_role_policy_attachment.contact_logs,
+  ]
+}
+
+# Public, like the webhook: CloudFront forwards visitors' requests unsigned. The handler checks the
+# Origin header and a Turnstile token before sending anything.
+resource "aws_lambda_function_url" "contact" {
+  function_name      = aws_lambda_function.contact.function_name
+  authorization_type = "NONE"
+}
+
+resource "aws_lambda_permission" "contact_function_url_public" {
+  statement_id           = "AllowPublicFunctionUrlInvoke"
+  action                 = "lambda:InvokeFunctionUrl"
+  function_name          = aws_lambda_function.contact.function_name
+  principal              = "*"
+  function_url_auth_type = "NONE"
+
+  depends_on = [aws_lambda_function_url.contact]
+}
+
+locals {
+  # Matched against the handler's log lines (terraform/contact/index.mjs)
+  contact_metrics = {
+    sent    = "\"sent\""
+    failed  = "\"send failed\""
+    captcha = "\"captcha failed\""
+  }
+}
+
+resource "aws_cloudwatch_log_metric_filter" "contact" {
+  for_each       = local.contact_metrics
+  name           = "contact-${each.key}"
+  log_group_name = aws_cloudwatch_log_group.contact.name
+  pattern        = each.value
+
+  metric_transformation {
+    name          = "Contact${title(each.key)}"
+    namespace     = "SensaTempo"
+    value         = "1"
+    default_value = "0"
+  }
+}
+
+# Usually an unverified or changed recipient (SES rejects it), or the sandbox's 200/day limit
+resource "aws_cloudwatch_metric_alarm" "contact_failed" {
+  alarm_name          = "sensatempo-contact-failed"
+  alarm_description   = "The contact form couldn't send a message through SES. Check that /sensatempo/contact/recipient is verified in SES."
+  namespace           = "SensaTempo"
+  metric_name         = aws_cloudwatch_log_metric_filter.contact["failed"].metric_transformation[0].name
+  statistic           = "Sum"
+  period              = 300
+  evaluation_periods  = 1
+  threshold           = 1
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  treat_missing_data  = "notBreaching"
+  alarm_actions       = [aws_sns_topic.alerts.arn]
+}
+
+# Spam that got past Turnstile
+resource "aws_cloudwatch_metric_alarm" "contact_too_many" {
+  alarm_name          = "sensatempo-contact-too-many"
+  alarm_description   = "More than 20 contact messages sent in 1 hour."
+  namespace           = "SensaTempo"
+  metric_name         = aws_cloudwatch_log_metric_filter.contact["sent"].metric_transformation[0].name
+  statistic           = "Sum"
+  period              = 3600
+  evaluation_periods  = 1
+  threshold           = 20
+  comparison_operator = "GreaterThanThreshold"
+  treat_missing_data  = "notBreaching"
+  alarm_actions       = [aws_sns_topic.alerts.arn]
 }
 
 # --- OUTPUTS ---
