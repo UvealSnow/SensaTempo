@@ -61,6 +61,7 @@ export function storiesLoader(name: string, params: ISbStoriesParams): Loader {
             const result = await parseData({
               id,
               data: {
+                uuid: story.uuid,
                 lang: story.lang === 'default' ? DEFAULT_LANGUAGE : story.lang,
                 slug:
                   storySlug(story.full_slug, AVAILABLE_LANGUAGES) ?? story.slug,
@@ -93,6 +94,7 @@ export function storiesLoader(name: string, params: ISbStoriesParams): Loader {
       }
     },
     schema: z.object({
+      uuid: z.string(),
       lang: z.string(),
       slug: z.string(),
       createdAt: z.date(),
