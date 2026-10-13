@@ -144,10 +144,7 @@ export async function getPost(
 
 type StoryCollection = 'posts' | 'authors' | 'tags';
 
-/**
- * Every story of a collection in `lang`, shaped like API stories. The preview fetches drafts of
- * `component` under `folder` instead.
- */
+/** Collection entries shaped like API stories; the preview fetches drafts instead. */
 async function storiesOf(
   collection: StoryCollection,
   lang: string,
@@ -174,19 +171,16 @@ async function storiesOf(
   });
 }
 
-/** Every author in `lang` (`blog/author/`). */
 export async function getAuthors(lang: string): Promise<Ref[]> {
   const stories = await storiesOf('authors', lang, 'author', AUTHORS_FOLDER);
   return refSummaries(stories, AUTHORS_FOLDER, AVAILABLE_LANGUAGES);
 }
 
-/** Every tag in `lang` (`blog/tag/`). */
 export async function getTags(lang: string): Promise<Ref[]> {
   const stories = await storiesOf('tags', lang, 'tag', TAGS_FOLDER);
   return refSummaries(stories, TAGS_FOLDER, AVAILABLE_LANGUAGES);
 }
 
-/** Every post in `lang`, newest first, with its author and tags. */
 export async function getPosts(lang: string): Promise<PostSummary[]> {
   const [stories, authors, tags] = await Promise.all([
     storiesOf('posts', lang, POST_COMPONENT, POSTS_FOLDER),
@@ -198,10 +192,6 @@ export async function getPosts(lang: string): Promise<PostSummary[]> {
   );
 }
 
-/**
- * The blog folder's start page (`blog_index`) in `lang`, or null while it's missing or another type.
- * Same sources as getStoryContent.
- */
 export async function getBlogIndex(
   locals: APIContext['locals'],
   lang: string

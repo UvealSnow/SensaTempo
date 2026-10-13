@@ -37,7 +37,6 @@ const tags = defineCollection({
   }),
 });
 
-// The blog folder's start page: index title, featured posts, quick links and UI strings
 const blogIndex = defineCollection({
   loader: storiesLoader('blog-index', {
     content_type: 'blog_index',
