@@ -123,10 +123,6 @@ export function responsiveImage(
 const normalizeUrl = (url: string) =>
   url.startsWith('//') ? `https:${url}` : url;
 
-/**
- * Text of a picture's details overlay: `description – DD.MM.YYYY` (UTC), either part alone, or null
- * when both are empty.
- */
 export function pictureDetails(
   description?: string | null,
   takenAt?: Date | null

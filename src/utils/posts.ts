@@ -4,14 +4,12 @@ import dayjs from './dates.ts';
 import type { StoryblokAsset } from './images.ts';
 import { storySlug } from './navigation.ts';
 
-// The blog folder's start page is the blog page; posts live in its `post/` subfolder
 export const BLOG_FOLDER = 'blog';
 export const POSTS_FOLDER = `${BLOG_FOLDER}/post`;
 
 // Relations to resolve wherever pages are fetched: `post_list` blocks come back with their posts
 export const PAGE_RELATIONS = ['post_list.posts'];
 
-// Authors and tags live in these folders; posts reference them by uuid
 export const AUTHORS_FOLDER = `${BLOG_FOLDER}/author`;
 export const TAGS_FOLDER = `${BLOG_FOLDER}/tag`;
 
@@ -35,7 +33,6 @@ export interface PostStory {
   };
 }
 
-/** An author or a tag, as posts link to it. */
 export interface Ref {
   uuid: string;
   slug: string;
@@ -44,7 +41,6 @@ export interface Ref {
 
 export interface PostSummary {
   uuid: string;
-  // The post's own slug, without the folder: `luz-de-vitral`
   slug: string;
   title: string;
   excerpt: string;
@@ -56,11 +52,9 @@ export interface PostSummary {
   tags: Ref[];
 }
 
-/** URL of the post `slug` in `lang`: `/es/blog/post/luz-de-vitral/`. */
 export const postPath = (lang: string, slug: string): string =>
   `/${lang}/${POSTS_FOLDER}/${slug}/`;
 
-/** A post's own slug from its `full_slug` (`en/blog/post/x` → `x`), or null outside the posts folder. */
 export function postSlug(
   fullSlug: string,
   languages: readonly string[]
@@ -78,14 +72,13 @@ export function parseStoryblokDate(value?: string | null): Date | null {
   return date?.isValid() ? date.toDate() : null;
 }
 
-/** The post's date: the editor's publishing date, else its first publish. */
+/** The editor's publishing date, else the first publish. */
 export const postDate = (
   date?: string | null,
   firstPublishedAt?: string | null
 ): Date | null =>
   parseStoryblokDate(date) ?? parseStoryblokDate(firstPublishedAt);
 
-/** Authors and tags the posts can link to, by uuid. */
 export interface PostRefs {
   authors?: readonly Ref[];
   tags?: readonly Ref[];
@@ -93,8 +86,7 @@ export interface PostRefs {
 
 /**
  * Summaries of `entries` in their given order. Entries that aren't resolved posts (unpublished or
- * deleted stories come back as bare uuids, or not at all) or have no title are skipped. The author
- * and tags are joined from `refs`; unknown or unpublished ones are left out.
+ * deleted stories come back as bare uuids, or not at all) or have no title are skipped.
  */
 export function postSummaries(
   entries: readonly unknown[] | undefined,
@@ -132,10 +124,6 @@ export function postSummaries(
   });
 }
 
-/**
- * Authors or tags (`folder`: `AUTHORS_FOLDER`, `TAGS_FOLDER`) from their stories; stories without a
- * name or outside the folder are skipped.
- */
 export function refSummaries(
   entries: readonly unknown[] | undefined,
   folder: string,

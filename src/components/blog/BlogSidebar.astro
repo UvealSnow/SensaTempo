@@ -9,7 +9,6 @@ import type { Blog } from '~/utils/stories';
 interface Props {
   lang: string;
   blog: Blog;
-  // The month archive being shown: highlighted, and its year open
   month?: { year: number; month: number };
 }
 
@@ -22,7 +21,6 @@ const quickLinks = [
   {
     label: strings.all_posts_label,
     href: allPostsHref,
-    // Every page of the main index counts as "All posts"
     current: new RegExp(`^${allPostsHref}(\\d+/)?$`).test(path),
   },
   ...pickByUuid(blog.blok?.quick_link_tags as unknown[] | undefined, blog.tags)
@@ -89,7 +87,6 @@ const chevron =
           class={`${chevron} group-open/section:-rotate-90`}
         />
       </summary>
-      <!-- No item limit: about 5 rows show, the rest scroll inside the box -->
       <ul class="flex max-h-[340px] flex-col gap-4 overflow-y-auto">
         {blog.featured.map((post) => {
           const href = postPath(lang, post.slug);

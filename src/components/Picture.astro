@@ -11,10 +11,9 @@ import {
 } from '~/utils/grid';
 
 interface Props extends Omit<HTMLAttributes<'figure'>, 'class'> {
-  // Details overlay: shown on hover or focus (always on touch screens), and the `alt` fallback
   description?: string | null;
   takenAt?: Date | null;
-  // Reveal the details when an ancestor `.details-group` is hovered (e.g. a card) instead of the image
+  // An ancestor `.details-group` (e.g. a card) reveals the details instead of the image
   inGroup?: boolean;
   size?: FlexSize;
   start?: FlexStart;
