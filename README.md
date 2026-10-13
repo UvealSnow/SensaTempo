@@ -54,6 +54,8 @@ Pages are in `src/pages/` and use dynamic routing with the `[lang]` parameter. C
 
 The sidebar (`BlogSidebar`) shows on every index page: **Quick links** ("All posts" + up to 4 tags picked in `quick_link_tags`), **Featured posts** (the story's `featured` list, in the editor's order; scrolls past ~5) and the **Archive** (years → months with post counts in that language). On desktop it's sticky with sections open; on small screens it's below the cards with sections collapsed (`<details>`, so it works without JS). Card and picture images show their description and date taken over the image on hover or focus (always on touch screens).
 
+**Contact page:** the `contact` story (`page`) holds a `text` block (the editable header) and a `contact_form` block (`src/storyblok/ContactForm.astro`): name, email and message, a hidden honeypot and an invisible Cloudflare Turnstile check (`appearance: interaction-only`). It posts JSON to `/api/contact` (see Contact form below) and shows the result inline. Labels and messages are translatable block fields with built-in fallbacks (`src/utils/contact.ts`); the form's width uses the grid fields like other blocks.
+
 **404 page:** `src/pages/404.astro`, text from the `layout/not-found` story (`NotFound`; built-in fallback strings if it's missing). Production builds one `404.html` with every language, which CloudFront serves for missing paths (S3 403/404 → 404); a blocking inline script shows the language from the URL prefix, else the browser's (`src/utils/language.ts`, same rule as the `/` redirect), and English without JS. The preview server renders only that language, from the URL or `Accept-Language`.
 
 ## 🧞 Commands
@@ -104,6 +106,7 @@ Everything runs on **AWS (us-east-1)** and is pay-per-use: nothing bills while t
   - `STORYBLOK_PREVIEW_TOKEN` (draft content, `pnpm dev` and the SSR preview)
   - `PUBLIC_DEFAULT_LANGUAGE` (default: es)
   - `PUBLIC_AVAILABLE_LANGUAGES` (default: es,en)
+  - `PUBLIC_TURNSTILE_SITE_KEY` (optional; empty uses Cloudflare's always-pass test key, which the real secret rejects)
 
 ---
 
@@ -149,7 +152,7 @@ After rotating the preview token, the basic auth values or the webhook parameter
 
 **Storyblok Visual Editor:** the preview loads the Storyblok bridge (static builds don't). The editor iframe can't answer the basic auth prompt, so `src/middleware.ts` also lets in requests carrying a valid `_storyblok_tk` (sha1 of `space_id:preview_token:timestamp`, at most 1 hour old) and swaps it for a signed 8-hour session cookie (`SameSite=None; Partitioned`), so links clicked inside the editor keep working. In Storyblok, set the preview URL to `<preview_url>/es/` (the CloudFront one: Function URLs reject the editor's `_storyblok_tk[...]` query keys, so a CloudFront Function percent-encodes them) and the `home` story's real path to `/`.
 
-**GitHub repository variables** (not secret): `AWS_DEPLOY_ROLE_ARN`, `AWS_PROD_BUCKET`, `AWS_CF_DIST_ID` (from the Terraform outputs), `PUBLIC_DEFAULT_LANGUAGE`, `PUBLIC_AVAILABLE_LANGUAGES`, `PUBLIC_CF_ANALYTICS_TOKEN`.
+**GitHub repository variables** (not secret): `AWS_DEPLOY_ROLE_ARN`, `AWS_PROD_BUCKET`, `AWS_CF_DIST_ID` (from the Terraform outputs), `PUBLIC_DEFAULT_LANGUAGE`, `PUBLIC_AVAILABLE_LANGUAGES`, `PUBLIC_CF_ANALYTICS_TOKEN`, `PUBLIC_TURNSTILE_SITE_KEY` (Turnstile site key, prod and preview builds).
 
 **Contact form:** pages post JSON to `/api/contact`, which both CloudFront distributions route to the `sensatempo-contact` Lambda (`terraform/contact/index.mjs`). It accepts only the allowed origins (`contact_allowed_origins` in `terraform/variables.tf`), drops honeypot submissions, validates the fields, verifies the [Cloudflare Turnstile](https://developers.cloudflare.com/turnstile/) token and sends the message with SES to `/sensatempo/contact/recipient` (Reply-To = the visitor). It never answers 403/404 (prod CloudFront turns those into the 404 page). **Changing the recipient:** `aws ssm put-parameter --type String --overwrite --name /sensatempo/contact/recipient --value <email>`, `pnpm tf:apply`, then click the verification link SES emails to that address. SES is in the sandbox (verified addresses only, 200 emails/day), which is enough while the recipient is also the sender.
 
