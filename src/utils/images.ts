@@ -122,3 +122,19 @@ export function responsiveImage(
 // Asset URLs may be protocol-relative (`//a.storyblok.com/...`)
 const normalizeUrl = (url: string) =>
   url.startsWith('//') ? `https:${url}` : url;
+
+/**
+ * Text of a picture's details overlay: `description – DD.MM.YYYY` (UTC), either part alone, or null
+ * when both are empty.
+ */
+export function pictureDetails(
+  description?: string | null,
+  takenAt?: Date | null
+): string | null {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const date = takenAt
+    ? `${pad(takenAt.getUTCDate())}.${pad(takenAt.getUTCMonth() + 1)}.${takenAt.getUTCFullYear()}`
+    : '';
+  const text = [description?.trim(), date].filter(Boolean).join(' – ');
+  return text || null;
+}

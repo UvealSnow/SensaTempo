@@ -19,6 +19,7 @@ import {
   type PostSummary,
   type Ref,
 } from './posts';
+import { blogStrings, pickByUuid, type BlogStrings } from './blog';
 import { isPreviewMode } from './storyblok';
 
 export const isPreview = isPreviewMode(
@@ -49,9 +50,10 @@ interface StoryParams {
  * navbar must not replace the page body, and vice versa.
  */
 async function getPayloadStory(
-  locals: APIContext['locals'],
+  locals: APIContext['locals'] | undefined,
   component: string
 ): Promise<ISbStoryData | null> {
+  if (!locals) return null;
   const { story } = await getPayload({ locals });
   return story?.content?.component === component ? story : null;
 }
@@ -203,7 +205,7 @@ export async function getPosts(lang: string): Promise<PostSummary[]> {
  * Same sources as getStoryContent.
  */
 export async function getBlogIndex(
-  locals: APIContext['locals'],
+  locals: APIContext['locals'] | undefined,
   lang: string
 ): Promise<SbBlokData | null> {
   if (!isPreview) {
@@ -218,6 +220,36 @@ export async function getBlogIndex(
   return story?.content?.component === BLOG_INDEX_COMPONENT
     ? story.content
     : null;
+}
+
+/** What every blog index page needs: the blog story, its texts, every post and the featured ones. */
+export interface Blog {
+  blok: SbBlokData | null;
+  strings: BlogStrings;
+  // Every post, newest first
+  posts: PostSummary[];
+  // The editor's featured posts, in their order (sidebar only)
+  featured: PostSummary[];
+  tags: Ref[];
+}
+
+/** `locals` carries Visual Editor payloads; static paths have none. */
+export async function getBlog(
+  locals: APIContext['locals'] | undefined,
+  lang: string
+): Promise<Blog> {
+  const [blok, posts, tags] = await Promise.all([
+    getBlogIndex(locals, lang),
+    getPosts(lang),
+    getTags(lang),
+  ]);
+  return {
+    blok,
+    strings: blogStrings(blok, lang),
+    posts,
+    featured: pickByUuid(blok?.featured as unknown[] | undefined, posts),
+    tags,
+  };
 }
 
 /**

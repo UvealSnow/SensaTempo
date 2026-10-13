@@ -2,6 +2,7 @@
 import { storyblokEditable, type SbBlokData } from '@storyblok/astro';
 import Picture from '~/components/Picture.astro';
 import { blokPlacement, type GridBlok } from '~/utils/grid';
+import { parseStoryblokDate } from '~/utils/posts';
 import {
   responsiveImage,
   type Ratio,
@@ -10,7 +11,14 @@ import {
 
 interface Props {
   blok: SbBlokData &
-    GridBlok & { image?: StoryblokAsset; caption?: string; ratio?: Ratio };
+    GridBlok & {
+      image?: StoryblokAsset;
+      description?: string;
+      taken_at?: string;
+      // Replaced by `description`; read until the field is deleted
+      caption?: string;
+      ratio?: Ratio;
+    };
 }
 
 const { blok } = Astro.props;
@@ -24,7 +32,8 @@ const image = responsiveImage(blok.image, {
 {image && (
   <Picture
     image={image}
-    caption={blok.caption}
+    description={blok.description || blok.caption}
+    takenAt={parseStoryblokDate(blok.taken_at)}
     {...placement}
     {...storyblokEditable(blok)}
   />
