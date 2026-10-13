@@ -59,6 +59,7 @@ export default defineConfig({
       components: {
         page: 'storyblok/Page',
         post: 'storyblok/Post',
+        project: 'storyblok/Project',
         picture: 'storyblok/Picture',
         text: 'storyblok/Text',
         post_list: 'storyblok/PostList',

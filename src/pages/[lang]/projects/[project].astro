@@ -1,0 +1,43 @@
+---
+import { getCollection } from 'astro:content';
+import { AVAILABLE_LANGUAGES } from '~/consts';
+import Layout from '~/layouts/Layout.astro';
+import Project from '~/storyblok/Project.astro';
+import { imageUrl } from '~/utils/images';
+import { projectSlug } from '~/utils/projects';
+import { getProject } from '~/utils/stories';
+
+// Static build only; the preview server renders every request
+export async function getStaticPaths() {
+  const projects = await getCollection('projects');
+  return projects.flatMap(({ data }) => {
+    const project = projectSlug(data.slug, AVAILABLE_LANGUAGES);
+    return project ? [{ params: { lang: data.lang, project } }] : [];
+  });
+}
+
+const { lang = '', project: slug = '' } = Astro.params;
+const content = AVAILABLE_LANGUAGES.includes(lang)
+  ? await getProject(Astro.locals, lang, slug)
+  : null;
+
+if (!content) {
+  // Only reached on the preview server (every static path exists); status 404
+  return Astro.rewrite('/404');
+}
+
+const cover = content.cover as { filename?: string } | undefined;
+// Social preview; JPEG because not every network reads WebP
+const image = cover?.filename
+  ? imageUrl(cover.filename, 1200, 630, { format: 'jpeg' })
+  : undefined;
+---
+
+<Layout
+  title={content.title as string | undefined}
+  description={content.excerpt as string | undefined}
+  image={image}
+  type="article"
+>
+  <Project blok={content} />
+</Layout>

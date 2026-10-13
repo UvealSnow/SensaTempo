@@ -1,6 +1,18 @@
 ---
 import { storyblokEditable, type SbBlokData } from '@storyblok/astro';
 import StoryblokComponent from '@storyblok/astro/StoryblokComponent.astro';
+import ArticleHeader from '~/components/ArticleHeader.astro';
+import type { StoryblokAsset } from '~/utils/images';
+
+interface Props {
+  blok: SbBlokData & {
+    title?: string;
+    cover?: StoryblokAsset;
+    cover_description?: string;
+    cover_taken_at?: string;
+    body?: SbBlokData[];
+  };
+}
 
 // div, not main: Layout already wraps the page in <main>. Blocks place themselves on the 12-column grid
 const { blok } = Astro.props;
@@ -10,7 +22,16 @@ const { blok } = Astro.props;
   class="grid grid-cols-12 gap-x-4 gap-y-16 lg:gap-y-24"
   {...storyblokEditable(blok)}
 >
-  {blok.body?.map((blok: SbBlokData) => (
-    <StoryblokComponent blok={blok} />
+  {blok.title && (
+    <ArticleHeader
+      title={blok.title}
+      cover={blok.cover}
+      coverDescription={blok.cover_description}
+      coverTakenAt={blok.cover_taken_at}
+    />
+  )}
+
+  {blok.body?.map((child) => (
+    <StoryblokComponent blok={child} />
   ))}
 </div>

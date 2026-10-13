@@ -7,6 +7,7 @@ import {
   POSTS_FOLDER,
   TAGS_FOLDER,
 } from './utils/posts';
+import { PROJECTS_FOLDER } from './utils/projects';
 
 const pages = defineCollection({
   loader: storiesLoader('pages', {
@@ -44,6 +45,20 @@ const blogIndex = defineCollection({
   }),
 });
 
+const projects = defineCollection({
+  loader: storiesLoader('projects', {
+    content_type: 'project',
+    starts_with: `${PROJECTS_FOLDER}/`,
+  }),
+});
+
+const projectsIndex = defineCollection({
+  loader: storiesLoader('projects-index', {
+    content_type: 'projects_index',
+    starts_with: `${PROJECTS_FOLDER}/`,
+  }),
+});
+
 // Navbar, footer…: one story each under layout/, looked up by component (see getLayoutStory)
 const layout = defineCollection({
   loader: storiesLoader('layout', {
@@ -59,5 +74,7 @@ export const collections = {
   authors,
   tags,
   blogIndex,
+  projects,
+  projectsIndex,
   layout,
 };

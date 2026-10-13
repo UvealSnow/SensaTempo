@@ -20,6 +20,14 @@ import {
   type Ref,
 } from './posts';
 import { blogStrings, pickByUuid, type BlogStrings } from './blog';
+import {
+  byYearDesc,
+  PROJECTS_FOLDER,
+  projectsStrings,
+  projectSummaries,
+  type ProjectsStrings,
+  type ProjectSummary,
+} from './projects';
 import { storySlug } from './navigation';
 import { isPreviewMode } from './storyblok';
 
@@ -40,6 +48,8 @@ type LayoutStory = typeof NAVBAR | typeof FOOTER | typeof NOT_FOUND;
 const PAGE_COMPONENT = 'page';
 const POST_COMPONENT = 'post';
 const BLOG_INDEX_COMPONENT = 'blog_index';
+const PROJECT_COMPONENT = 'project';
+const PROJECTS_INDEX_COMPONENT = 'projects_index';
 interface StoryParams {
   resolve_links?: 'story';
   resolve_relations?: string[];
@@ -145,7 +155,7 @@ export async function getPost(
     : null;
 }
 
-type StoryCollection = 'posts' | 'authors' | 'tags';
+type StoryCollection = 'posts' | 'authors' | 'tags' | 'projects';
 
 /** Collection entries shaped like API stories; the preview fetches drafts instead. */
 async function storiesOf(
@@ -297,4 +307,64 @@ export async function getLayoutStory(
     (await getPayloadStory(locals, component)) ??
     (await fetchDraft(slug, lang, { resolve_links: 'story' }));
   return story?.content ?? null;
+}
+
+/** The project `projects/<slug>` in `lang`, or null if it doesn't exist. Same sources as getStoryContent. */
+export async function getProject(
+  locals: APIContext['locals'],
+  lang: string,
+  slug: string
+): Promise<SbBlokData | null> {
+  const fullSlug = `${PROJECTS_FOLDER}/${slug}`;
+
+  if (!isPreview) {
+    const projects = await getCollection('projects');
+    const project = projects.find(
+      ({ data }) => data.lang === lang && data.slug === fullSlug
+    );
+    return project ? (project.data.content as SbBlokData) : null;
+  }
+
+  const story =
+    (await getPayloadStory(locals, PROJECT_COMPONENT)) ??
+    (await fetchDraft(fullSlug, lang));
+  return story?.content?.component === PROJECT_COMPONENT ? story.content : null;
+}
+
+export async function getProjects(lang: string): Promise<ProjectSummary[]> {
+  const stories = await storiesOf(
+    'projects',
+    lang,
+    PROJECT_COMPONENT,
+    PROJECTS_FOLDER
+  );
+  return projectSummaries(stories, AVAILABLE_LANGUAGES).sort(byYearDesc);
+}
+
+export interface Projects {
+  blok: SbBlokData | null;
+  strings: ProjectsStrings;
+  projects: ProjectSummary[];
+}
+
+export async function getProjectsIndex(
+  locals: APIContext['locals'] | undefined,
+  lang: string
+): Promise<Projects> {
+  const loadBlok = async (): Promise<SbBlokData | null> => {
+    if (!isPreview) {
+      const stories = await getCollection('projectsIndex');
+      const story = stories.find(({ data }) => data.lang === lang);
+      return story ? (story.data.content as SbBlokData) : null;
+    }
+    const story =
+      (await getPayloadStory(locals, PROJECTS_INDEX_COMPONENT)) ??
+      (await fetchDraft(`${PROJECTS_FOLDER}/`, lang));
+    return story?.content?.component === PROJECTS_INDEX_COMPONENT
+      ? story.content
+      : null;
+  };
+
+  const [blok, projects] = await Promise.all([loadBlok(), getProjects(lang)]);
+  return { blok, strings: projectsStrings(blok, lang), projects };
 }
