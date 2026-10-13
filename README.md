@@ -32,14 +32,14 @@ Pages are in `src/pages/` and use dynamic routing with the `[lang]` parameter. C
 
 **Blog:** posts are `post` stories in the Storyblok `blog/post/` folder; `postPath` (`src/utils/posts.ts`) builds every post link.
 
-| URL                                    | Page          | Status  |
-| :------------------------------------- | :------------ | :------ |
-| `/{lang}/blog/`                        | Blog index    | ✅      |
-| `/{lang}/blog/{n}/`                    | Index page n  | ✅      |
-| `/{lang}/blog/archive/{YYYY}/{MM}/{n}` | Month archive | ✅      |
-| `/{lang}/blog/author/{slug}/`          | Author index  | Planned |
-| `/{lang}/blog/tag/{slug}/`             | Tag index     | Planned |
-| `/{lang}/blog/post/{slug}/`            | Post          | ✅      |
+| URL                                    | Page          | Status |
+| :------------------------------------- | :------------ | :----- |
+| `/{lang}/blog/`                        | Blog index    | ✅     |
+| `/{lang}/blog/{n}/`                    | Index page n  | ✅     |
+| `/{lang}/blog/archive/{YYYY}/{MM}/{n}` | Month archive | ✅     |
+| `/{lang}/blog/author/{slug}/{n}`       | Author index  | ✅     |
+| `/{lang}/blog/tag/{slug}/{n}`          | Tag index     | ✅     |
+| `/{lang}/blog/post/{slug}/`            | Post          | ✅     |
 
 **Blog content model** (Storyblok, `src/content.config.ts`):
 
@@ -49,6 +49,8 @@ Pages are in `src/pages/` and use dynamic routing with the `[lang]` parameter. C
 - Posts reference authors, tags and featured posts by uuid; `src/utils/posts.ts` and `src/utils/blog.ts` join them in code (no `resolve_relations`). The `picture` block has `description` + `taken_at`.
 
 **Blog index** (`src/pages/[lang]/blog/[...page].astro`, `src/components/blog/`): post cards newest first, 10 per page. Featured posts are left out of the `/blog` cards (they only show in the sidebar). `/blog/1/` renders page 1 with a canonical to `/blog/`; a page past the end doesn't exist (404). The paginator is hidden with one page. **Month archives** (`src/pages/[lang]/blog/archive/[year]/[month]/[...page].astro`) exist for every month with posts in that language (UTC months, featured posts included), with the same pagination and canonical rules; title and description come from `archive_title` / `archive_description` (`{month}`, `{year}`).
+
+**Author and tag pages** (`src/pages/[lang]/blog/author/[author]/`, `…/tag/[tag]/`) list that author's or tag's posts (featured included) with the same pagination; the header comes from the `author` story (name, bio, photo, social links) or the `tag` story (name, description). Every author and tag gets a page, even without posts (`empty_label` message).
 
 The sidebar (`BlogSidebar`) shows on every index page: **Quick links** ("All posts" + up to 4 tags picked in `quick_link_tags`), **Featured posts** (the story's `featured` list, in the editor's order; scrolls past ~5) and the **Archive** (years → months with post counts in that language). On desktop it's sticky with sections open; on small screens it's below the cards with sections collapsed (`<details>`, so it works without JS). Card and picture images show their description and date taken over the image on hover or focus (always on touch screens).
 
@@ -67,6 +69,7 @@ The sidebar (`BlogSidebar`) shows on every index page: **Quick links** ("All pos
 | `pnpm lint`         | Lint with ESLint                     |
 | `pnpm lint:fix`     | Fix auto-fixable lint issues         |
 | `pnpm test`         | Run unit tests (`node --test`)       |
+| `pnpm check:links`  | Find broken internal links in `dist` |
 
 **Dependency release age:** pnpm 12 rejects package versions published less than 24 h ago (`minimumReleaseAge`). After a dependency release, wait a day before upgrading; for an urgent fix, temporarily add the package to `minimumReleaseAgeExclude` in `pnpm-workspace.yaml` and remove it afterwards. Build scripts only run for packages listed as `true` under `allowBuilds` there.
 
@@ -87,7 +90,7 @@ Everything runs on **AWS (us-east-1)** and is pay-per-use: nothing bills while t
 
 **Deploying any branch:** Actions → _Deploy branch_ → _Run workflow_. Keep "Use workflow from" on `main` (the AWS role only trusts `main`), enter the branch, tag or SHA in **ref** and pick **target** (`preview`, `production` or `both`). The deploy stays until the next one; any push to `main` redeploys `main`. Production publishes what it's serving at `/version.json`; to roll back, run it again with `ref=main`.
 
-**Publishing content rebuilds production:** a Storyblok webhook (story published, unpublished, deleted or moved; datasource entries saved or deleted) calls the `sensatempo-storyblok-webhook` Lambda (`terraform/webhook/index.mjs`). It requires the webhook secret, either as the `webhook-signature` header (HMAC-SHA1 of the body; paid Storyblok plans) or as `?key=<secret>` in the URL (the free plan has no secret field), and sends a `storyblok-publish` `repository_dispatch` to GitHub, which runs `prod-deploy.yaml` on `main` (~1–2 min). Bursts queue into at most one extra build. This replaces any branch deployed to production. `/version.json` shows the `trigger` (`push`, `dispatch` or `storyblok:<action> <full_slug>`). Storyblok setup: Settings → Webhooks, URL = Terraform output `storyblok_webhook_url` + `?key=<secret>` (secret = `/sensatempo/storyblok/webhook-secret`); on a paid plan put the secret in the secret field instead.
+**Publishing content rebuilds production:** a Storyblok webhook (story published, unpublished, deleted or moved; datasource entries saved or deleted) calls the `sensatempo-storyblok-webhook` Lambda (`terraform/webhook/index.mjs`). It requires the webhook secret, either as the `webhook-signature` header (HMAC-SHA1 of the body; paid Storyblok plans) or as `?key=<secret>` in the URL (the free plan has no secret field), and sends a `storyblok-publish` `repository_dispatch` to GitHub, which runs `prod-deploy.yaml` on `main` (~1–2 min). Bursts queue into at most one extra build. After the build, `pnpm check:links` reports broken internal links as warnings (it doesn't block the deploy). This replaces any branch deployed to production. `/version.json` shows the `trigger` (`push`, `dispatch` or `storyblok:<action> <full_slug>`). Storyblok setup: Settings → Webhooks, URL = Terraform output `storyblok_webhook_url` + `?key=<secret>` (secret = `/sensatempo/storyblok/webhook-secret`); on a paid plan put the secret in the secret field instead.
 
 ---
 

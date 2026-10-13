@@ -79,6 +79,12 @@ jobs:
           PUBLIC_BUILD_TYPE: static
           PUBLIC_CF_ANALYTICS_TOKEN: ${{ vars.PUBLIC_CF_ANALYTICS_TOKEN }}
 
+      # Reports broken internal links without blocking the deploy: a Storyblok publish shouldn't
+      # be held back by a link to an unpublished story
+      - name: Check internal links
+        continue-on-error: true
+        run: pnpm check:links
+
       # What prod is serving: https://<site>/version.json
       - name: Write version.json
         run: |

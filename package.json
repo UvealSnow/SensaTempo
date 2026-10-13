@@ -13,6 +13,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "node --test",
+    "check:links": "node scripts/check-links.mjs dist",
     "docker:prod:build": "make build-prod",
     "docker:prod:preview": "make run-prod-preview",
     "docker:cleanup": "make clean",

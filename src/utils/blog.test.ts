@@ -16,6 +16,7 @@ import {
   postsByAuthor,
   postsByTag,
   postsInMonth,
+  socialLinks,
 } from './blog.ts';
 
 const range = (n: number) => Array.from({ length: n }, (_, i) => i + 1);
@@ -185,4 +186,43 @@ test('parseArchiveParams accepts only real months with a padded month', () => {
 test('monthName is localized', () => {
   assert.equal(monthName('es', 10), 'octubre');
   assert.equal(monthName('en', 10), 'October');
+});
+
+test('socialLinks builds hrefs and accessible labels', () => {
+  assert.deepEqual(
+    socialLinks([
+      { icon: 'instagram', url: 'https://www.instagram.com/x' },
+      { icon: 'email', url: 'hola@sensatempo.com' },
+      { icon: 'email', url: 'mailto:a@b.co' },
+      { icon: 'website', url: 'www.sensatempo.com' },
+      { icon: 'mastodon', url: 'https://social.example/@x' },
+      { icon: 'x', url: '  ' },
+      { icon: 'youtube' },
+      { icon: 'website', url: 'javascript:alert(1)' },
+    ]),
+    [
+      {
+        icon: 'instagram',
+        href: 'https://www.instagram.com/x',
+        label: 'Instagram',
+      },
+      {
+        icon: 'email',
+        href: 'mailto:hola@sensatempo.com',
+        label: 'hola@sensatempo.com',
+      },
+      { icon: 'email', href: 'mailto:a@b.co', label: 'a@b.co' },
+      {
+        icon: 'website',
+        href: 'https://www.sensatempo.com',
+        label: 'sensatempo.com',
+      },
+      {
+        icon: 'link',
+        href: 'https://social.example/@x',
+        label: 'social.example',
+      },
+    ]
+  );
+  assert.deepEqual(socialLinks(undefined), []);
 });
