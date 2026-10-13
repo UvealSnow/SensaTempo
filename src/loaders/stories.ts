@@ -38,7 +38,7 @@ export function storiesLoader(name: string, params: ISbStoriesParams): Loader {
           throw new Error('Unable to init StoryBlok api');
         }
 
-        // Full reload every time, so deleted, moved or retyped stories don't linger in the local store
+        // Otherwise deleted or retyped stories linger in the local store between builds
         store.clear();
         for (let i = 0; i < AVAILABLE_LANGUAGES.length; i++) {
           const lang =

@@ -6,8 +6,7 @@ import { blogFeed, paginate, parsePage } from '~/utils/blog';
 import { BLOG_FOLDER } from '~/utils/posts';
 import { getBlog } from '~/utils/stories';
 
-// Static build only; the preview server renders every request.
-// `/blog/` and `/blog/1/` … `/blog/{n}/`; page 1 also exists as `/blog/1/`, canonical to `/blog/`
+// Static build only; the preview server renders every request
 export async function getStaticPaths() {
   const paths = [];
   for (const lang of AVAILABLE_LANGUAGES) {

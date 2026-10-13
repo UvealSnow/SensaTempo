@@ -15,7 +15,6 @@ import {
 interface Props {
   post: PostSummary;
   strings: BlogStrings;
-  // First card on the page only (LCP)
   eager?: boolean;
 }
 
@@ -29,7 +28,7 @@ const authorHref =
 const tagHref = (slug: string) => `/${lang}/${TAGS_FOLDER}/${slug}/`;
 ---
 
-<!-- One link (the title) covers the whole card; the author and tag links sit above it, so no <a> nests -->
+<!-- The title link covers the card; author and tag links sit above it (no nested <a>) -->
 <article class="details-group relative flex flex-col overflow-hidden rounded-[4px] border border-line bg-white">
   {cover && (
     <Picture

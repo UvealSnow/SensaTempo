@@ -1,5 +1,4 @@
-// Blog indexes: pagination, archive months and filtered feeds. Pure functions (no `~` or astro
-// imports) so `node --test` can run blog.test.ts directly.
+// Pure (no `~` or astro imports) so `node --test` can run blog.test.ts directly.
 import dayjs from './dates.ts';
 
 export const POSTS_PER_PAGE = 10;
@@ -10,10 +9,7 @@ export interface Paginated<T> {
   totalPages: number;
 }
 
-/**
- * Page `page` (1-based) of `items`, or null when it's out of range. With no items there's still one
- * (empty) page, so an index always renders.
- */
+/** Null when `page` is out of range; no items is still one (empty) page. */
 export function paginate<T>(
   items: readonly T[],
   page: number,
@@ -25,20 +21,15 @@ export function paginate<T>(
   return { items: items.slice(start, start + perPage), page, totalPages };
 }
 
-/** Page number from a `[...page]` route param: none → 1, `2` → 2; anything else (`0`, `01`, `x`) → null. */
 export function parsePage(param: string | undefined): number | null {
   if (param === undefined || param === '') return 1;
   return /^[1-9]\d*$/.test(param) ? Number(param) : null;
 }
 
-/** URL of page `page` of an index at `basePath` (`/es/blog/`): page 1 is the bare path. */
 export const pagePathOf = (basePath: string, page: number): string =>
   page <= 1 ? basePath : `${basePath}${page}/`;
 
-/**
- * Page numbers for the paginator, `null` for an ellipsis: the first and last pages, and the current
- * one with its neighbours. A gap of a single page shows that page instead of an ellipsis.
- */
+/** `null` marks an ellipsis; a one-page gap shows the page instead. */
 export function pageNumbers(current: number, total: number): (number | null)[] {
   const shown = new Set(
     [1, total, current - 1, current, current + 1].filter(
@@ -65,7 +56,6 @@ export interface ArchiveYear {
   months: { month: number; count: number }[];
 }
 
-/** Years and months (1–12, UTC) that have posts, with their post counts; newest first. */
 export function archiveTree(posts: readonly Dated[]): ArchiveYear[] {
   const counts = new Map<number, Map<number, number>>();
   for (const { date } of posts) {
@@ -85,7 +75,6 @@ export function archiveTree(posts: readonly Dated[]): ArchiveYear[] {
     }));
 }
 
-/** Posts dated in `month` (1–12) of `year`, UTC; keeps their order. */
 export function postsInMonth<T extends Dated>(
   posts: readonly T[],
   year: number,
@@ -114,7 +103,6 @@ export const postsByAuthor = <T extends WithRefs>(
   uuid: string
 ): T[] => posts.filter(({ author }) => author?.uuid === uuid);
 
-/** `items` with these uuids, in the uuids' order (the editor's); missing or unpublished ones are skipped. */
 export function pickByUuid<T extends { uuid: string }>(
   uuids: readonly unknown[] | undefined,
   items: readonly T[]
@@ -126,7 +114,6 @@ export function pickByUuid<T extends { uuid: string }>(
   });
 }
 
-/** The `/blog` card feed: every post except the featured ones (those only show in the sidebar). */
 export function blogFeed<T extends { uuid: string }>(
   posts: readonly T[],
   featuredUuids: readonly unknown[] | undefined
@@ -135,8 +122,6 @@ export function blogFeed<T extends { uuid: string }>(
   return posts.filter(({ uuid }) => !featured.has(uuid));
 }
 
-// Texts of the blog indexes: fields of the `blog_index` story, with these fallbacks while a field
-// (or the whole story) is missing
 const FALLBACK_STRINGS = {
   es: {
     title: 'Blog',
@@ -174,7 +159,6 @@ const FALLBACK_STRINGS = {
 
 export type BlogStrings = typeof FALLBACK_STRINGS.en;
 
-/** The blog texts in `lang`: each non-empty story field, else the built-in fallback. */
 export function blogStrings(
   blok: Record<string, unknown> | null | undefined,
   lang: string
@@ -194,7 +178,6 @@ export function blogStrings(
   ) as BlogStrings;
 }
 
-/** `template` with each `{name}` replaced by `values[name]`; unknown names are kept. */
 export const fillTemplate = (
   template: string,
   values: Record<string, string | number>
