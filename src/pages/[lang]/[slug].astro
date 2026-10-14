@@ -3,7 +3,7 @@ import { getCollection } from 'astro:content';
 import StoryblokComponent from '@storyblok/astro/StoryblokComponent.astro';
 import { AVAILABLE_LANGUAGES } from '~/consts';
 import Layout from '~/layouts/Layout.astro';
-import { imageUrl } from '~/utils/images';
+import type { StoryblokAsset } from '~/utils/images';
 import { HOME_SLUG } from '~/utils/navigation';
 import { pageTitle } from '~/utils/headings';
 import { getStoryContent } from '~/utils/stories';
@@ -35,18 +35,12 @@ if (!story) {
   // Only reached on the preview server (every static path exists); status 404
   return Astro.rewrite('/404');
 }
-
-const cover = story.cover as { filename?: string } | undefined;
-// Social preview; JPEG because not every network reads WebP
-const image = cover?.filename
-  ? imageUrl(cover.filename, 1200, 630, { format: 'jpeg' })
-  : undefined;
 ---
 
 <Layout
   title={pageTitle(story)}
   description={(story.excerpt as string | undefined) || undefined}
-  image={image}
+  image={story.cover as StoryblokAsset | undefined}
 >
   <StoryblokComponent blok={story} />
 </Layout>

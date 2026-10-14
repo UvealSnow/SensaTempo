@@ -66,6 +66,7 @@ The sidebar (`BlogSidebar`) shows on every index page: **Quick links** ("All pos
 
 - **Per deploy:** `PUBLIC_SITE_URL` sets the origin used by canonical URLs, `og:url`, hreflang and the sitemap. `PUBLIC_ALLOW_INDEXING=true` lets search engines index it; otherwise every page has `<meta name="robots" content="noindex">`. The preview is never indexed.
 - **`robots.txt`** (`src/pages/robots.txt.ts`) never blocks crawlers: link-preview bots (X, LinkedIn) obey it, and search engines must read the `noindex`. It lists the sitemap only when indexing is on.
+- **Metadata** (`src/components/Seo.astro`, rendered by `Layout` on every page): title, description, canonical, hreflang, Open Graph (site name, locale + alternates, 1200×630 JPEG share image with size and alt, article dates) and X card tags. Site name, default description, default share image and X handle come from the `layout/seo` story (`SeoDefaults`); each page's own title, excerpt and cover take precedence.
 - **Going live on a real domain:** set `PUBLIC_SITE_URL` to it, `PUBLIC_ALLOW_INDEXING=true`, and add it to `contact_allowed_origins` (Terraform).
 
 ## ♿ Accessibility

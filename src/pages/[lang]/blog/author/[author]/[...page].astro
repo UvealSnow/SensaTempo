@@ -59,6 +59,7 @@ const title =
 <Layout
   title={title}
   description={bio}
+  image={content.photo as StoryblokAsset | undefined}
   canonical={Astro.params.page === '1' ? basePath : undefined}
 >
   <BlogIndex

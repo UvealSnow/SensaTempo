@@ -2,26 +2,17 @@
 import Analytics from '~/components/layout/Analytics.astro';
 import NavBar from '~/components/layout/NavBar.astro';
 import Footer from '~/components/layout/Footer.astro';
-import BaseHead from '~/components/layout/BaseHead.astro';
+import Seo, { type SeoProps } from '~/components/Seo.astro';
 
-import { AVAILABLE_LANGUAGES, X_DEFAULT_LANGUAGE } from '~/consts';
-import { pagePath } from '~/utils/navigation';
-import { currentLang, currentSlug } from '~/utils/page';
+import { currentLang } from '~/utils/page';
 import { FOOTER, getLayoutStory, NAVBAR } from '~/utils/stories';
 import { uiStrings } from '~/utils/ui';
 
 import '../styles/global.css';
 
-interface Props {
-  title?: string;
-  description?: string;
-  image?: string;
-  type?: 'website' | 'article';
-  canonical?: string;
-}
+type Props = SeoProps;
 
 const lang = currentLang(Astro);
-const slug = currentSlug(Astro);
 const strings = uiStrings(lang);
 const [navbar, footer] = await Promise.all([
   getLayoutStory(Astro.locals, lang, NAVBAR),
@@ -34,7 +25,7 @@ const [navbar, footer] = await Promise.all([
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/x-icon" href="/favicon.svg" />
-    <BaseHead {...Astro.props} />
+    <Seo {...Astro.props} />
     <noscript>
       <style>
         .picture__image {
@@ -42,18 +33,6 @@ const [navbar, footer] = await Promise.all([
         }
       </style>
     </noscript>
-    {AVAILABLE_LANGUAGES.map((alternate) => (
-      <link
-        rel="alternate"
-        hreflang={alternate}
-        href={new URL(pagePath(alternate, slug), Astro.site)}
-      />
-    ))}
-    <link
-      rel="alternate"
-      hreflang="x-default"
-      href={new URL(pagePath(X_DEFAULT_LANGUAGE, slug), Astro.site)}
-    />
     <Analytics />
   </head>
 

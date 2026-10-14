@@ -1,0 +1,128 @@
+---
+import {
+  AVAILABLE_LANGUAGES,
+  SITE_DESCRIPTION,
+  SITE_TITLE,
+  X_DEFAULT_LANGUAGE,
+} from '~/consts';
+import type { StoryblokAsset } from '~/utils/images';
+import { pagePath } from '~/utils/navigation';
+import { currentLang, currentSlug } from '~/utils/page';
+import {
+  fullTitle,
+  jsonLd,
+  ogLocale,
+  seoDefaults,
+  shareImage,
+} from '~/utils/seo';
+import { allowIndexing } from '~/utils/site';
+import { getLayoutStory, SEO } from '~/utils/stories';
+
+export interface SeoProps {
+  title?: string;
+  description?: string;
+  // Share image; the `layout/seo` default image when empty
+  image?: StoryblokAsset | null;
+  type?: 'website' | 'article';
+  // Path of the canonical URL when it isn't this page's (e.g. `/es/blog/1/` → `/es/blog/`)
+  canonical?: string;
+  publishedTime?: Date | null;
+  modifiedTime?: Date | null;
+  author?: string;
+  noindex?: boolean;
+  // Structured data (schema.org) for this page
+  schema?: Record<string, unknown>;
+}
+
+const props: SeoProps = Astro.props;
+const lang = currentLang(Astro);
+const slug = currentSlug(Astro);
+const defaults = seoDefaults(await getLayoutStory(Astro.locals, lang, SEO), {
+  siteName: SITE_TITLE,
+  description: SITE_DESCRIPTION,
+});
+
+const title = fullTitle(props.title, defaults.siteName);
+const description = props.description?.trim() || defaults.description;
+const image = shareImage(props.image, defaults.image);
+const url = new URL(props.canonical ?? Astro.url.pathname, Astro.site).href;
+const noindex =
+  props.noindex || !allowIndexing(import.meta.env, import.meta.env.DEV);
+const alternate = (language: string) =>
+  new URL(pagePath(language, slug), Astro.site).href;
+const isArticle = props.type === 'article';
+---
+
+<title>{title}</title>
+<meta name="description" content={description} />
+{noindex && <meta name="robots" content="noindex" />}
+<link rel="canonical" href={url} />
+{AVAILABLE_LANGUAGES.map((language) => (
+  <link rel="alternate" hreflang={language} href={alternate(language)} />
+))}
+<link
+  rel="alternate"
+  hreflang="x-default"
+  href={alternate(X_DEFAULT_LANGUAGE)}
+/>
+<link rel="sitemap" href="/sitemap-index.xml" />
+<link
+  rel="alternate"
+  type="application/rss+xml"
+  title={defaults.siteName}
+  href={new URL(`/${lang}/rss.xml`, Astro.site)}
+/>
+
+<meta property="og:type" content={props.type ?? 'website'} />
+<meta property="og:site_name" content={defaults.siteName} />
+<meta property="og:url" content={url} />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:locale" content={ogLocale(lang)} />
+{AVAILABLE_LANGUAGES.filter((language) => language !== lang).map((language) => (
+  <meta property="og:locale:alternate" content={ogLocale(language)} />
+))}
+{image && (
+  <>
+    <meta property="og:image" content={image.url} />
+    <meta property="og:image:secure_url" content={image.url} />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:width" content={String(image.width)} />
+    <meta property="og:image:height" content={String(image.height)} />
+    {image.alt && <meta property="og:image:alt" content={image.alt} />}
+  </>
+)}
+{isArticle && props.publishedTime && (
+  <meta
+    property="article:published_time"
+    content={props.publishedTime.toISOString()}
+  />
+)}
+{isArticle && props.modifiedTime && (
+  <meta
+    property="article:modified_time"
+    content={props.modifiedTime.toISOString()}
+  />
+)}
+{isArticle && props.author && (
+  <meta property="article:author" content={props.author} />
+)}
+
+<meta name="twitter:card" content={image ? 'summary_large_image' : 'summary'} />
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={description} />
+{image && <meta name="twitter:image" content={image.url} />}
+{image?.alt && <meta name="twitter:image:alt" content={image.alt} />}
+{defaults.xHandle && <meta name="twitter:site" content={defaults.xHandle} />}
+
+{props.schema && (
+  <script
+    type="application/ld+json"
+    set:html={jsonLd({
+      '@context': 'https://schema.org',
+      inLanguage: lang,
+      url,
+      ...props.schema,
+    })}
+  />
+)}
