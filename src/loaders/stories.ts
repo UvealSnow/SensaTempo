@@ -14,6 +14,16 @@ const env = loadEnv('', process.cwd(), 'STORYBLOK');
 const isDev = import.meta.env.DEV;
 const isPreview = isPreviewMode(isDev, import.meta.env.PUBLIC_BUILD_TYPE);
 
+// One client for every collection: each client throttles itself, so separate ones together burst
+// past the CDN's limit (6 requests/s for 100-story pages) and fail the build with 429s
+let api: ReturnType<typeof storyblokInit>['storyblokApi'];
+const storyblokApi = () =>
+  (api ??= storyblokInit({
+    accessToken: storyblokToken(env, isPreview),
+    use: [apiPlugin],
+    apiOptions: { rateLimit: 5, retriesDelay: 1000 },
+  }).storyblokApi);
+
 /**
  * Every story matching `params` (e.g. `content_type: 'page'`), once per available language.
  * `name` labels the loader and its logs.
@@ -29,12 +39,8 @@ export function storiesLoader(name: string, params: ISbStoriesParams): Loader {
       generateDigest,
     }: LoaderContext): Promise<void> => {
       try {
-        const { storyblokApi } = storyblokInit({
-          accessToken: storyblokToken(env, isPreview),
-          use: [apiPlugin],
-        });
-
-        if (!storyblokApi) {
+        const client = storyblokApi();
+        if (!client) {
           throw new Error('Unable to init StoryBlok api');
         }
 
@@ -49,7 +55,7 @@ export function storiesLoader(name: string, params: ISbStoriesParams): Loader {
           logger.info(`Loading collection - ${AVAILABLE_LANGUAGES[i]} ${name}`);
           logger.info(`Collection last modified ${meta.get('lastModified')}`);
 
-          const data = await storyblokApi.getAll('cdn/stories', {
+          const data = await client.getAll('cdn/stories', {
             ...params,
             version: contentVersion(isPreview),
             per_page: 100,
