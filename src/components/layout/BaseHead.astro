@@ -1,6 +1,7 @@
 ---
 import { SITE_DESCRIPTION, SITE_TITLE } from '~/consts';
 import { currentLang } from '~/utils/page';
+import { allowIndexing } from '~/utils/site';
 
 interface Props {
   title?: string;
@@ -24,6 +25,9 @@ const lang = currentLang(Astro);
 ---
 
 <title>{fullTitle}</title>
+{!allowIndexing(import.meta.env, import.meta.env.DEV) && (
+  <meta name="robots" content="noindex" />
+)}
 <meta name="description" content={description} />
 <link rel="canonical" href={canonicalURL} />
 <link rel="sitemap" href="/sitemap-index.xml" />
