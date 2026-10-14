@@ -1,6 +1,14 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { fullTitle, jsonLd, ogLocale, seoDefaults, shareImage } from './seo.ts';
+import {
+  entrySeo,
+  fullTitle,
+  jsonLd,
+  ogLocale,
+  seoDefaults,
+  shareImage,
+  structuredData,
+} from './seo.ts';
 
 const asset = (name: string, extra = {}) => ({
   filename: `https://a.storyblok.com/f/1/3200x1978/abc/${name}.jpg`,
@@ -59,4 +67,81 @@ test('fullTitle, ogLocale and jsonLd', () => {
   assert.equal(ogLocale('es'), 'es_MX');
   assert.equal(ogLocale('fr'), 'fr');
   assert.equal(jsonLd({ name: '</script>' }), '{"name":"\\u003c/script>"}');
+});
+
+test('entrySeo prefers the seo block and falls back to the entry', () => {
+  const cover = asset('cover');
+  assert.deepEqual(entrySeo({ title: 'Post', excerpt: 'Resumen', cover }), {
+    title: 'Post',
+    description: 'Resumen',
+    image: cover,
+    noindex: false,
+  });
+  const share = asset('share');
+  assert.deepEqual(
+    entrySeo({
+      title: 'Post',
+      excerpt: 'Resumen',
+      cover,
+      seo: [
+        {
+          component: 'seo',
+          title: 'Título SEO',
+          description: ' ',
+          image: share,
+          noindex: true,
+        },
+      ],
+    }),
+    { title: 'Título SEO', description: 'Resumen', image: share, noindex: true }
+  );
+  assert.equal(
+    entrySeo({ description: 'Índice', seo: [{ image: { filename: '' } }] })
+      .description,
+    'Índice'
+  );
+  assert.deepEqual(entrySeo(null), {
+    title: undefined,
+    description: undefined,
+    image: undefined,
+    noindex: false,
+  });
+});
+
+test('structuredData builds WebSite, CollectionPage and BlogPosting', () => {
+  const ctx = {
+    url: 'https://a.com/es/x/',
+    siteUrl: 'https://a.com',
+    siteName: 'SensaTempo',
+    lang: 'es',
+    title: 'Luz',
+    description: 'Una tarde',
+  };
+  assert.deepEqual(structuredData({ ...ctx, type: 'WebSite' }), {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    url: 'https://a.com/es/x/',
+    inLanguage: 'es',
+    description: 'Una tarde',
+    name: 'SensaTempo',
+  });
+  assert.equal(structuredData({ ...ctx, type: 'CollectionPage' }).name, 'Luz');
+  const post = structuredData({
+    ...ctx,
+    type: 'BlogPosting',
+    image: 'https://img/x.jpg',
+    publishedTime: new Date('2026-07-16T00:00:00Z'),
+    author: { name: 'Ana', url: 'https://a.com/es/blog/author/ana/' },
+  });
+  assert.equal(post.headline, 'Luz');
+  assert.equal(post.datePublished, '2026-07-16T00:00:00.000Z');
+  assert.deepEqual(post.author, {
+    '@type': 'Person',
+    name: 'Ana',
+    url: 'https://a.com/es/blog/author/ana/',
+  });
+  assert.equal(
+    structuredData({ ...ctx, type: 'CreativeWork' }).image,
+    undefined
+  );
 });

@@ -65,3 +65,88 @@ export const fullTitle = (title: string | undefined, siteName: string) =>
 /** JSON-LD for a `<script type="application/ld+json">`: `<` escaped so content can't close the tag. */
 export const jsonLd = (data: unknown): string =>
   JSON.stringify(data).replace(/</g, '\\u003c');
+
+export interface EntrySeo {
+  title?: string;
+  description?: string;
+  image?: StoryblokAsset;
+  noindex: boolean;
+}
+
+/**
+ * A page, post or project's metadata: its `seo` block's fields where filled, else the entry's own
+ * title, excerpt (or description) and cover.
+ */
+export function entrySeo(
+  content: Record<string, unknown> | null | undefined
+): EntrySeo {
+  const seo = (Array.isArray(content?.seo) ? content.seo[0] : undefined) as
+    Record<string, unknown> | undefined;
+  const asset = (value: unknown) =>
+    (value as StoryblokAsset | undefined)?.filename
+      ? (value as StoryblokAsset)
+      : undefined;
+  return {
+    title: text(seo?.title) ?? text(content?.title),
+    description:
+      text(seo?.description) ??
+      text(content?.excerpt) ??
+      text(content?.description),
+    image: asset(seo?.image) ?? asset(content?.cover),
+    noindex: seo?.noindex === true,
+  };
+}
+
+export type SchemaType =
+  'WebSite' | 'CollectionPage' | 'BlogPosting' | 'CreativeWork';
+
+interface SchemaContext {
+  type: SchemaType;
+  url: string;
+  siteUrl: string;
+  siteName: string;
+  lang: string;
+  title: string;
+  description: string;
+  image?: string;
+  publishedTime?: Date | null;
+  author?: { name: string; url?: string };
+}
+
+/** schema.org JSON-LD for the page. */
+export function structuredData(ctx: SchemaContext): Record<string, unknown> {
+  const base = {
+    '@context': 'https://schema.org',
+    '@type': ctx.type,
+    url: ctx.url,
+    inLanguage: ctx.lang,
+    description: ctx.description,
+  };
+  if (ctx.type === 'WebSite') return { ...base, name: ctx.siteName };
+  const isPart = { '@type': 'WebSite', name: ctx.siteName, url: ctx.siteUrl };
+  if (ctx.type === 'CollectionPage')
+    return { ...base, name: ctx.title, isPartOf: isPart };
+  return {
+    ...base,
+    headline: ctx.title,
+    ...(ctx.image ? { image: ctx.image } : {}),
+    ...(ctx.publishedTime
+      ? { datePublished: ctx.publishedTime.toISOString() }
+      : {}),
+    ...(ctx.author
+      ? {
+          author: {
+            '@type': 'Person',
+            name: ctx.author.name,
+            ...(ctx.author.url ? { url: ctx.author.url } : {}),
+          },
+        }
+      : {}),
+    publisher: {
+      '@type': 'Organization',
+      name: ctx.siteName,
+      url: ctx.siteUrl,
+    },
+    isPartOf: isPart,
+  };
+}

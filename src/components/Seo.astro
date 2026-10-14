@@ -14,6 +14,8 @@ import {
   ogLocale,
   seoDefaults,
   shareImage,
+  structuredData,
+  type SchemaType,
 } from '~/utils/seo';
 import { allowIndexing } from '~/utils/site';
 import { getLayoutStory, SEO } from '~/utils/stories';
@@ -28,10 +30,10 @@ export interface SeoProps {
   canonical?: string;
   publishedTime?: Date | null;
   modifiedTime?: Date | null;
-  author?: string;
+  author?: { name: string; url?: string };
   noindex?: boolean;
-  // Structured data (schema.org) for this page
-  schema?: Record<string, unknown>;
+  // schema.org type of the page's JSON-LD; none when empty
+  schemaType?: SchemaType;
 }
 
 const props: SeoProps = Astro.props;
@@ -104,8 +106,8 @@ const isArticle = props.type === 'article';
     content={props.modifiedTime.toISOString()}
   />
 )}
-{isArticle && props.author && (
-  <meta property="article:author" content={props.author} />
+{isArticle && props.author?.url && (
+  <meta property="article:author" content={props.author.url} />
 )}
 
 <meta name="twitter:card" content={image ? 'summary_large_image' : 'summary'} />
@@ -115,14 +117,22 @@ const isArticle = props.type === 'article';
 {image?.alt && <meta name="twitter:image:alt" content={image.alt} />}
 {defaults.xHandle && <meta name="twitter:site" content={defaults.xHandle} />}
 
-{props.schema && (
+{props.schemaType && (
   <script
     type="application/ld+json"
-    set:html={jsonLd({
-      '@context': 'https://schema.org',
-      inLanguage: lang,
-      url,
-      ...props.schema,
-    })}
+    set:html={jsonLd(
+      structuredData({
+        type: props.schemaType,
+        url,
+        siteUrl: Astro.site?.origin ?? '',
+        siteName: defaults.siteName,
+        lang,
+        title: props.title?.trim() || defaults.siteName,
+        description,
+        image: image?.url,
+        publishedTime: props.publishedTime,
+        author: props.author,
+      })
+    )}
   />
 )}
