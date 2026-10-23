@@ -7,7 +7,7 @@ Sensa Tempo is a minimal, fast, and SEO-friendly photography blog built with [As
 - **Astro 7**, **Tailwind 4**, **Vite 8** for fast builds and styling
 - **@storyblok/astro 10** for headless CMS integration
 - **@astrojs/node 11** for SSR
-- **pnpm 12**, **Node 24**
+- **pnpm 12**, **Node 24** (`.nvmrc`, ≥ 24.22.1)
 - Static production builds or SSR preview builds (controlled via `PUBLIC_BUILD_TYPE` environment variable)
 
 ## 🚀 Project Structure
@@ -128,7 +128,7 @@ Everything runs on **AWS (us-east-1)** and is pay-per-use: nothing bills while t
 
 ### 📋 Prerequisites
 
-- **pnpm 12** (pinned via `packageManager` in `package.json`; `corepack enable` picks it up) and **Node 24**
+- **pnpm 12** (pinned via `packageManager` in `package.json`; `corepack enable` picks it up) and **Node 24.22.1+** (`.nvmrc`; `nvm use`). CI reads `.nvmrc`; the Lambdas use the AWS-managed `nodejs24.x` runtime
 - **GNU Make**, **AWS CLI** and **Terraform ≥ 1.10** for infrastructure work
 - **Docker** (BuildKit) only for `make run-prod-preview`
 - A local `.env` file (see `.env.example`) containing:
