@@ -6,6 +6,7 @@ import Picture from '~/components/Picture.astro';
 
 import { AVAILABLE_LANGUAGES, SITE_TITLE } from '~/consts';
 import { hasHeadingOne } from '~/utils/headings';
+import { entrySeo } from '~/utils/seo';
 import { HOME_SLUG } from '~/utils/navigation';
 import { getStoryContent } from '~/utils/stories';
 
@@ -21,9 +22,16 @@ if (!AVAILABLE_LANGUAGES.includes(lang)) {
 }
 
 const story = await getStoryContent(Astro.locals, lang, HOME_SLUG);
+const seo = entrySeo(story);
 ---
 
-<Layout>
+<Layout
+  title={seo.title}
+  description={seo.description}
+  image={seo.image}
+  noindex={seo.noindex}
+  schemaType="WebSite"
+>
   <!-- The home page shows photos only; screen readers still get a page heading -->
   {!hasHeadingOne(story) && <h1 class="sr-only">{SITE_TITLE}</h1>}
   {story ? (

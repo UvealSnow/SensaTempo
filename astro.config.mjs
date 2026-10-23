@@ -5,6 +5,7 @@ import { defineConfig, sessionDrivers } from 'astro/config';
 import node from '@astrojs/node';
 import { storyblok } from '@storyblok/astro';
 import { loadEnv } from 'vite';
+import { siteUrl } from './src/utils/site.ts';
 import { isPreviewMode, storyblokToken } from './src/utils/storyblok.ts';
 
 const env = loadEnv('', process.cwd(), ['STORYBLOK', 'PUBLIC_']);
@@ -28,7 +29,10 @@ const locales = (
 ).split(',');
 
 export default defineConfig({
-  site: 'https://sensatempo.com',
+  // Per deploy (PUBLIC_SITE_URL), so canonical URLs and link previews match the domain being served
+  site: siteUrl({
+    PUBLIC_SITE_URL: process.env.PUBLIC_SITE_URL || env.PUBLIC_SITE_URL,
+  }),
 
   // Only so components can read Astro.currentLocale; routing stays ours (src/pages/[lang]/ and
   // the CloudFront root redirect), hence "manual": no i18n middleware redirects or 404s

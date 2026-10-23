@@ -2,8 +2,8 @@
 import { getCollection } from 'astro:content';
 import { AVAILABLE_LANGUAGES } from '~/consts';
 import Layout from '~/layouts/Layout.astro';
+import { entrySeo } from '~/utils/seo';
 import Project from '~/storyblok/Project.astro';
-import { imageUrl } from '~/utils/images';
 import { projectSlug } from '~/utils/projects';
 import { getProject } from '~/utils/stories';
 
@@ -26,18 +26,16 @@ if (!content) {
   return Astro.rewrite('/404');
 }
 
-const cover = content.cover as { filename?: string } | undefined;
-// Social preview; JPEG because not every network reads WebP
-const image = cover?.filename
-  ? imageUrl(cover.filename, 1200, 630, { format: 'jpeg' })
-  : undefined;
+const seo = entrySeo(content);
 ---
 
 <Layout
-  title={content.title as string | undefined}
-  description={content.excerpt as string | undefined}
-  image={image}
+  title={seo.title}
+  description={seo.description}
+  image={seo.image}
+  noindex={seo.noindex}
   type="article"
+  schemaType="CreativeWork"
 >
   <Project blok={content} />
 </Layout>

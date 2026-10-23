@@ -2,6 +2,7 @@
 import BlogIndex from '~/components/blog/BlogIndex.astro';
 import { AVAILABLE_LANGUAGES } from '~/consts';
 import Layout from '~/layouts/Layout.astro';
+import { entrySeo } from '~/utils/seo';
 import { blogFeed, paginate, parsePage } from '~/utils/blog';
 import { BLOG_FOLDER } from '~/utils/posts';
 import { getBlog } from '~/utils/stories';
@@ -41,15 +42,20 @@ if (!blog || !feed) {
 
 const { blok, strings } = blog;
 const basePath = `/${lang}/${BLOG_FOLDER}/`;
+const seo = entrySeo(blok);
+const pageTitle = seo.title ?? strings.title;
 const title =
   feed.page > 1
-    ? `${strings.title} – ${strings.page_label} ${feed.page}`
-    : strings.title;
+    ? `${pageTitle} – ${strings.page_label} ${feed.page}`
+    : pageTitle;
 ---
 
 <Layout
   title={title}
-  description={strings.description || undefined}
+  description={seo.description}
+  image={seo.image}
+  noindex={seo.noindex}
+  schemaType="CollectionPage"
   canonical={Astro.params.page === '1' ? basePath : undefined}
 >
   <BlogIndex

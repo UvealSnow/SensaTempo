@@ -3,9 +3,9 @@ import { getCollection } from 'astro:content';
 import { AVAILABLE_LANGUAGES } from '~/consts';
 import Layout from '~/layouts/Layout.astro';
 import Post from '~/storyblok/Post.astro';
-import { imageUrl } from '~/utils/images';
-import { postSlug } from '~/utils/posts';
-import { getPost } from '~/utils/stories';
+import { AUTHORS_FOLDER, postDate, postSlug } from '~/utils/posts';
+import { entrySeo } from '~/utils/seo';
+import { getAuthors, getPost } from '~/utils/stories';
 
 // Static build only; the preview server renders every request
 export async function getStaticPaths() {
@@ -27,18 +27,30 @@ if (!post) {
 }
 
 const { content, publishedAt } = post;
-const cover = content.cover as { filename?: string } | undefined;
-// Social preview; JPEG because not every network reads WebP
-const image = cover?.filename
-  ? imageUrl(cover.filename, 1200, 630, { format: 'jpeg' })
-  : undefined;
+const seo = entrySeo(content);
+const author = (await getAuthors(lang)).find(
+  ({ uuid }) => uuid === content.author
+);
 ---
 
 <Layout
-  title={content.title as string | undefined}
-  description={content.excerpt as string | undefined}
-  image={image}
+  title={seo.title}
+  description={seo.description}
+  image={seo.image}
+  noindex={seo.noindex}
   type="article"
+  schemaType="BlogPosting"
+  author={
+    author && {
+      name: author.name,
+      url: new URL(`/${lang}/${AUTHORS_FOLDER}/${author.slug}/`, Astro.site)
+        .href,
+    }
+  }
+  publishedTime={postDate(
+    (content.published_at || content.date) as string | undefined,
+    publishedAt
+  )}
 >
   <Post blok={content} publishedAt={publishedAt} />
 </Layout>

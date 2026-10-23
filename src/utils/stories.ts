@@ -43,7 +43,9 @@ export const NOT_FOUND = {
   slug: 'layout/not-found',
   component: 'NotFound',
 } as const;
-type LayoutStory = typeof NAVBAR | typeof FOOTER | typeof NOT_FOUND;
+export const SEO = { slug: 'layout/seo', component: 'SeoDefaults' } as const;
+type LayoutStory =
+  typeof NAVBAR | typeof FOOTER | typeof NOT_FOUND | typeof SEO;
 
 const PAGE_COMPONENT = 'page';
 const POST_COMPONENT = 'post';
