@@ -20,7 +20,7 @@ const cardSpans = { md: '6/12', lg: '6/12' };
 
 <section class="col-span-12" {...storyblokEditable(blok)}>
   {blok.title && (
-    <h2 class="font-display text-dark-gray mb-12 text-3xl md:text-[32px]">
+    <h2 class="font-display text-fg mb-12 text-3xl md:text-[32px]">
       {blok.title}
     </h2>
   )}
@@ -32,17 +32,17 @@ const cardSpans = { md: '6/12', lg: '6/12' };
             image={responsiveImage(post.cover, { spans: cardSpans })}
             class="transition-opacity group-hover:opacity-90"
           />
-          <h3 class="font-display text-dark-gray mt-6 text-3xl leading-tight group-hover:underline">
+          <h3 class="font-display text-fg mt-6 text-3xl leading-tight group-hover:underline">
             {post.title}
           </h3>
           {post.date && (
             <FormattedDate
               date={post.date}
-              class="font-body text-light-gray mt-2 block text-lg"
+              class="font-body text-muted mt-2 block text-lg"
             />
           )}
           {post.excerpt && (
-            <p class="font-body mt-3 text-xl leading-[26px] text-black">
+            <p class="font-body mt-3 text-xl leading-[26px] text-fg-strong">
               {post.excerpt}
             </p>
           )}

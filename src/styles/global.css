@@ -29,12 +29,23 @@
 @theme {
   --font-display: Molle, cursive;
   --font-body: Zain, sans-serif;
-  --color-off-white: #f8f8f8;
-  /* ≥ 4.5:1 on off-white, white and chip (WCAG AA body text) */
-  --color-light-gray: #6b6b6b;
-  --color-dark-gray: #444444;
-  --color-chip: #f0f0f0;
+
+  /* Components use only these roles, so a theme swaps values, not class names */
+  --color-page: #f8f8f8;
+  --color-surface: #ffffff;
+  --color-subtle: #f0f0f0;
   --color-line: #e5e5e5;
+  --color-fg: #444444;
+  --color-fg-strong: #000000;
+  /* ≥ 4.5:1 on page, surface and subtle (WCAG AA body text) */
+  --color-muted: #6b6b6b;
+  --color-accent: #444444;
+  --color-accent-hover: #000000;
+  --color-on-accent: #ffffff;
+  --color-focus: #444444;
+  --color-danger: var(--color-red-700);
+
+  --radius-card: 4px;
 }
 
 /* Picture details overlay (components/Picture.astro): always visible, except inside a card
@@ -83,7 +94,7 @@
     padding-inline-start: 1.5rem;
   }
   .rich-text blockquote {
-    border-inline-start: 2px solid var(--color-light-gray);
+    border-inline-start: 2px solid var(--color-muted);
     padding-inline-start: 1rem;
     font-style: italic;
   }

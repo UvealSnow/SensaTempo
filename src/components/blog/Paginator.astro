@@ -14,7 +14,7 @@ const { page, totalPages, basePath, strings } = Astro.props;
 const href = (n: number) => pagePathOf(basePath, n);
 const circle =
   'font-body flex size-10 items-center justify-center rounded-full text-base';
-const link = `${circle} border border-line text-dark-gray hover:bg-chip focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-dark-gray`;
+const link = `${circle} border border-line text-fg hover:bg-subtle focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus`;
 ---
 
 {totalPages > 1 && (
@@ -33,7 +33,7 @@ const link = `${circle} border border-line text-dark-gray hover:bg-chip focus-vi
         ) : (
           <span
             aria-disabled="true"
-            class={`${circle} border-line text-light-gray/50 border`}
+            class={`${circle} border-line text-muted/50 border`}
           >
             <ChevronLeft width={16} height={16} />
           </span>
@@ -42,13 +42,13 @@ const link = `${circle} border border-line text-dark-gray hover:bg-chip focus-vi
       {pageNumbers(page, totalPages).map((n) => (
         <li>
           {n === null ? (
-            <span class={`${circle} text-light-gray`} aria-hidden="true">
+            <span class={`${circle} text-muted`} aria-hidden="true">
               …
             </span>
           ) : n === page ? (
             <span
               aria-current="page"
-              class={`${circle} bg-dark-gray text-white`}
+              class={`${circle} bg-accent text-on-accent`}
             >
               <span class="sr-only">{strings.page_label} </span>
               {n}
@@ -74,7 +74,7 @@ const link = `${circle} border border-line text-dark-gray hover:bg-chip focus-vi
         ) : (
           <span
             aria-disabled="true"
-            class={`${circle} border-line text-light-gray/50 border`}
+            class={`${circle} border-line text-muted/50 border`}
           >
             <ChevronRight width={16} height={16} />
           </span>

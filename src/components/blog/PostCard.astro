@@ -29,7 +29,7 @@ const tagHref = (slug: string) => `/${lang}/${TAGS_FOLDER}/${slug}/`;
 ---
 
 <!-- The title link covers the card; author and tag links sit above it (no nested <a>) -->
-<article class="details-group relative flex flex-col overflow-hidden rounded-[4px] border border-line bg-white">
+<article class="details-group relative flex flex-col overflow-hidden rounded-card border border-line bg-surface">
   {cover && (
     <Picture
       image={cover}
@@ -40,13 +40,13 @@ const tagHref = (slug: string) => `/${lang}/${TAGS_FOLDER}/${slug}/`;
   )}
   <div class="flex flex-col gap-6 p-6 md:p-10">
     {(post.author || post.date) && (
-      <div class="font-body text-light-gray flex items-center justify-between gap-4 text-base">
+      <div class="font-body text-muted flex items-center justify-between gap-4 text-base">
         {post.author ? (
           <p>
             {strings.by_label}{' '}
             <a
               href={authorHref}
-              class="text-dark-gray focus-visible:outline-dark-gray relative z-10 rounded-sm hover:text-black focus-visible:outline-2 focus-visible:outline-offset-2"
+              class="text-fg focus-visible:outline-focus relative z-10 rounded-sm hover:text-fg-strong focus-visible:outline-2 focus-visible:outline-offset-2"
             >
               {post.author.name}
             </a>
@@ -57,18 +57,16 @@ const tagHref = (slug: string) => `/${lang}/${TAGS_FOLDER}/${slug}/`;
         {post.date && <FormattedDate date={post.date} format="ll" />}
       </div>
     )}
-    <h2 class="font-display text-dark-gray text-2xl leading-tight md:text-[32px]">
+    <h2 class="font-display text-fg text-2xl leading-tight md:text-[32px]">
       <a
         href={postPath(lang, post.slug)}
-        class="after:absolute after:inset-0 after:rounded-[4px] focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-dark-gray"
+        class="after:absolute after:inset-0 after:rounded-card focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-focus"
       >
         {post.title}
       </a>
     </h2>
     {post.excerpt && (
-      <p class="font-body text-light-gray text-lg leading-[30px]">
-        {post.excerpt}
-      </p>
+      <p class="font-body text-muted text-lg leading-[30px]">{post.excerpt}</p>
     )}
     {post.tags.length > 0 && (
       <ul class="flex flex-wrap gap-3">
@@ -76,7 +74,7 @@ const tagHref = (slug: string) => `/${lang}/${TAGS_FOLDER}/${slug}/`;
           <li>
             <a
               href={tagHref(tag.slug)}
-              class="font-body text-dark-gray bg-chip hover:bg-line focus-visible:outline-dark-gray relative z-10 block cursor-pointer rounded-full px-3 py-1.5 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+              class="font-body text-fg bg-subtle hover:bg-line focus-visible:outline-focus relative z-10 block cursor-pointer rounded-full px-3 py-1.5 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
             >
               {tag.name}
             </a>
@@ -85,7 +83,7 @@ const tagHref = (slug: string) => `/${lang}/${TAGS_FOLDER}/${slug}/`;
       </ul>
     )}
     <span
-      class="font-body text-dark-gray flex items-center gap-2 pt-2 text-base font-bold underline"
+      class="font-body text-fg flex items-center gap-2 pt-2 text-base font-bold underline"
       aria-hidden="true"
     >
       {strings.read_more_label}
