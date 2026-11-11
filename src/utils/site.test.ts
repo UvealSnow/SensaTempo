@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { allowIndexing, robotsTxt, siteUrl } from './site.ts';
+import { allowIndexing, robotsTxt, siteUrl, themeName } from './site.ts';
 
 test('siteUrl normalizes to an origin and defaults to sensatempo.com', () => {
   assert.equal(
@@ -41,4 +41,11 @@ test('robotsTxt allows crawling and lists the sitemap only when indexing', () =>
     robotsTxt('https://a.com', true),
     'User-agent: *\nAllow: /\n\nSitemap: https://a.com/sitemap-index.xml\n'
   );
+});
+
+test('themeName defaults to sensatempo and rejects paths', () => {
+  assert.equal(themeName({}), 'sensatempo');
+  assert.equal(themeName({ PUBLIC_THEME: ' kevin ' }), 'kevin');
+  assert.throws(() => themeName({ PUBLIC_THEME: '../secrets' }));
+  assert.throws(() => themeName({ PUBLIC_THEME: 'Kevin' }));
 });

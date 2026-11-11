@@ -5,7 +5,8 @@ import { defineConfig, sessionDrivers } from 'astro/config';
 import node from '@astrojs/node';
 import { storyblok } from '@storyblok/astro';
 import { loadEnv } from 'vite';
-import { siteUrl } from './src/utils/site.ts';
+import { existsSync } from 'node:fs';
+import { siteUrl, themeName } from './src/utils/site.ts';
 import { isPreviewMode, storyblokToken } from './src/utils/storyblok.ts';
 
 const env = loadEnv('', process.cwd(), ['STORYBLOK', 'PUBLIC_']);
@@ -27,6 +28,16 @@ const locales = (
   env.PUBLIC_AVAILABLE_LANGUAGES ||
   defaultLocale
 ).split(',');
+
+const theme = themeName({
+  PUBLIC_THEME: process.env.PUBLIC_THEME || env.PUBLIC_THEME,
+});
+const themeDir = new URL(`./src/themes/${theme}`, import.meta.url).pathname;
+if (!existsSync(`${themeDir}/theme.css`)) {
+  throw new Error(
+    `PUBLIC_THEME "${theme}" has no src/themes/${theme}/theme.css`
+  );
+}
 
 export default defineConfig({
   // Per deploy (PUBLIC_SITE_URL), so canonical URLs and link previews match the domain being served
@@ -91,6 +102,7 @@ export default defineConfig({
     resolve: {
       alias: {
         '~': new URL('./src', import.meta.url).pathname,
+        '~theme': themeDir,
       },
     },
   },

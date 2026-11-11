@@ -6,6 +6,7 @@ interface ImportMetaEnv {
   readonly PUBLIC_TURNSTILE_SITE_KEY?: string;
   readonly PUBLIC_SITE_URL?: string;
   readonly PUBLIC_ALLOW_INDEXING?: string;
+  readonly PUBLIC_THEME?: string;
 }
 
 interface ImportMeta {

@@ -1,0 +1,55 @@
+/* SensaTempo: role tokens, fonts and layout. Values only; components use the roles */
+
+@font-face {
+  font-family: Molle;
+  src: url('./fonts/Molle-Italic.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: Zain;
+  src: url('./fonts/Zain-Light.ttf') format('truetype');
+}
+
+/* Real bold and italic for rich text, instead of synthesized ones */
+@font-face {
+  font-family: Zain;
+  font-weight: 700;
+  src: url('./fonts/Zain-Bold.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: Zain;
+  font-style: italic;
+  src: url('./fonts/Zain-LightItalic.ttf') format('truetype');
+}
+
+@theme {
+  --font-display: Molle, cursive;
+  --font-body: Zain, sans-serif;
+
+  /* Components use only these roles, so a theme swaps values, not class names */
+  --color-page: #f8f8f8;
+  --color-surface: #ffffff;
+  --color-subtle: #f0f0f0;
+  --color-line: #e5e5e5;
+  --color-fg: #444444;
+  --color-fg-strong: #000000;
+  /* ≥ 4.5:1 on page, surface and subtle (WCAG AA body text) */
+  --color-muted: #6b6b6b;
+  --color-accent: #444444;
+  --color-accent-hover: #000000;
+  --color-on-accent: #ffffff;
+  --color-focus: #444444;
+  --color-danger: var(--color-red-700);
+
+  --radius-card: 4px;
+}
+
+/* Layout hooks (Layout, NavBar, Footer): .site > .site-header, .site-main, .site-footer */
+@layer components {
+  .site {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+}

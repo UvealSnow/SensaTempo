@@ -1,52 +1,9 @@
 @import 'tailwindcss';
+/* The deploy's theme (PUBLIC_THEME → src/themes/<name>/), aliased in astro.config.mjs */
+@import '~theme/theme.css';
 
 /* src/utils/grid.ts builds responsive grid classes at runtime, so Tailwind can't find them by scanning */
 @source inline("{md:,lg:}col-{span,start}-{1..12}");
-
-@font-face {
-  font-family: Molle;
-  src: url('/fonts/Molle-Italic.ttf') format('truetype');
-}
-
-@font-face {
-  font-family: Zain;
-  src: url('/fonts/Zain-Light.ttf') format('truetype');
-}
-
-/* Real bold and italic for rich text, instead of synthesized ones */
-@font-face {
-  font-family: Zain;
-  font-weight: 700;
-  src: url('/fonts/Zain-Bold.ttf') format('truetype');
-}
-
-@font-face {
-  font-family: Zain;
-  font-style: italic;
-  src: url('/fonts/Zain-LightItalic.ttf') format('truetype');
-}
-
-@theme {
-  --font-display: Molle, cursive;
-  --font-body: Zain, sans-serif;
-
-  /* Components use only these roles, so a theme swaps values, not class names */
-  --color-page: #f8f8f8;
-  --color-surface: #ffffff;
-  --color-subtle: #f0f0f0;
-  --color-line: #e5e5e5;
-  --color-fg: #444444;
-  --color-fg-strong: #000000;
-  /* ≥ 4.5:1 on page, surface and subtle (WCAG AA body text) */
-  --color-muted: #6b6b6b;
-  --color-accent: #444444;
-  --color-accent-hover: #000000;
-  --color-on-accent: #ffffff;
-  --color-focus: #444444;
-  --color-danger: var(--color-red-700);
-
-  --radius-card: 4px;
-}
 
 /* Picture details overlay (components/Picture.astro): always visible, except inside a card
    (`.details-group`) on devices with hover, where hovering or focusing the card reveals it. Content
