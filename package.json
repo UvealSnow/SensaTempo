@@ -32,6 +32,8 @@
     "@astrojs/node": "^11.1.7",
     "@astrojs/rss": "^4.0.19",
     "@astrojs/sitemap": "^3.7.4",
+    "@fontsource-variable/raleway": "5.3.0",
+    "@fontsource/courier-prime": "5.3.0",
     "@storyblok/astro": "^10.3.2",
     "@storyblok/js": "^6.3.3",
     "@tailwindcss/vite": "^4.3.3",

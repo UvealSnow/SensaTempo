@@ -77,9 +77,16 @@ The sidebar (`BlogSidebar`) shows on every index page: **Quick links** ("All pos
 
 One codebase, several sites: each deploy picks a theme with `PUBLIC_THEME` (default `sensatempo`), a folder in `src/themes/<name>/`. `src/styles/global.css` imports its `theme.css` through the `~theme` alias (`astro.config.mjs`), so a build ships only that theme.
 
-- **`theme.css`** sets the role tokens (`@theme`: colors, fonts, `radius-card`), its `@font-face` rules (font files in the theme's `fonts/`, fingerprinted by Vite) and the layout hooks.
-- **Layout hooks:** `body.site` > `.site-header` (NavBar), `.site-main`, `.site-footer`. A theme arranges them in plain CSS, without changing markup.
-- **Adding a theme:** copy `src/themes/sensatempo/`, change the values, build with `PUBLIC_THEME=<name>`. An unknown theme fails the build.
+| Theme        | Look                                                                                   |
+| :----------- | :------------------------------------------------------------------------------------- |
+| `sensatempo` | Molle + Zain, grays; logo and nav in a row on top                                      |
+| `kevin`      | Courier Prime + Raleway (Fontsource packages), orange; sticky left sidebar on ≥ 768 px |
+
+- **`theme.css`** sets the role tokens (`@theme`: colors, fonts, `radius-card`), its fonts (`@font-face` with files in the theme's `fonts/`, or `@import` of a Fontsource package) and the layout of the hooks below.
+- **Layout hooks** (plain CSS, no markup changes): `body.site` > `.site-header`, `.site-main`, `.site-footer`. Header parts: `.site-header__bar`, `.site-brand` (`__logo`, `__placeholder`, `__name`), `.site-tagline`, `.site-menu-button` (`__open` / `__close`, shown from `aria-expanded`), `.site-nav`, `.site-nav__link` (`[aria-current=page]`, `.site-nav__language`). The open mobile menu is `.site-header:has([aria-expanded='true']) .site-nav`.
+- **Header content** comes from `layout/navbar`: `logo`, optional `title` (site name) and `tagline`. Empty fields render nothing.
+- **Contrast:** `src/themes/themes.test.ts` checks every theme's role colors (6-digit hex) against WCAG AA (`pnpm test`).
+- **Adding a theme:** copy a theme folder, change the values, run `pnpm test`, build with `PUBLIC_THEME=<name>`. An unknown theme fails the build.
 
 ## ♿ Accessibility
 

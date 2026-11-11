@@ -40,7 +40,7 @@
   --color-accent-hover: #000000;
   --color-on-accent: #ffffff;
   --color-focus: #444444;
-  --color-danger: var(--color-red-700);
+  --color-danger: #c10007;
 
   --radius-card: 4px;
 }
@@ -51,6 +51,42 @@
     display: flex;
     flex-direction: column;
     min-height: 100vh;
+  }
+}
+
+/* Content column (Layout <main>) */
+@layer components {
+  .site-main {
+    width: 100%;
+    margin-inline: auto;
+    padding: 0 1rem 2rem;
+  }
+  @media (width >= 40rem) {
+    .site-main {
+      max-width: 40rem;
+    }
+  }
+  @media (width >= 48rem) {
+    .site-main {
+      max-width: 48rem;
+      padding-inline: 2rem;
+    }
+  }
+  @media (width >= 64rem) {
+    .site-main {
+      max-width: 64rem;
+    }
+  }
+  @media (width >= 80rem) {
+    .site-main {
+      max-width: 80rem;
+      padding-inline: 0;
+    }
+  }
+  @media (width >= 96rem) {
+    .site-main {
+      max-width: 96rem;
+    }
   }
 }
 
@@ -87,6 +123,7 @@
   }
   .site-menu-button {
     cursor: pointer;
+    color: #1e1e1e;
   }
   .site-menu-button[aria-expanded='true'] .site-menu-button__open,
   .site-menu-button[aria-expanded='false'] .site-menu-button__close {

@@ -22,6 +22,8 @@ const slug = currentSlug(Astro);
 const strings = uiStrings(lang);
 
 const logo = blok?.logo as { filename?: string; alt?: string } | undefined;
+const title = (blok?.title as string | undefined)?.trim();
+const tagline = (blok?.tagline as string | undefined)?.trim();
 
 const links = resolveLinks(
   blok?.links as (LinkBlok & SbBlokData)[] | undefined,
@@ -42,18 +44,19 @@ const languageName = (code: string) => {
   <div class="site-header__bar">
     <a
       href={pagePath(lang, HOME_SLUG)}
-      aria-label={logo?.filename ? undefined : SITE_TITLE}
+      aria-label={logo?.filename || title ? undefined : SITE_TITLE}
       class="site-brand"
     >
       {logo?.filename ? (
         <img
           src={logo.filename}
-          alt={logo.alt || SITE_TITLE}
+          alt={title ? '' : logo.alt || SITE_TITLE}
           class="site-brand__logo"
         />
       ) : (
         <div class="site-brand__placeholder" />
       )}
+      {title && <span class="site-brand__name">{title}</span>}
     </a>
 
     <button
@@ -68,6 +71,8 @@ const languageName = (code: string) => {
       <Close class="site-menu-button__close" aria-hidden="true" />
     </button>
   </div>
+
+  {tagline && <p class="site-tagline">{tagline}</p>}
 
   <nav
     id="site-nav"

@@ -45,11 +45,7 @@ const [navbar, footer] = await Promise.all([
     </a>
     <NavBar blok={navbar} />
 
-    <main
-      id="main"
-      tabindex="-1"
-      class="site-main pb-8 px-4 container mx-auto outline-none md:px-8 xl:px-0"
-    >
+    <main id="main" tabindex="-1" class="site-main">
       <slot />
     </main>
 
