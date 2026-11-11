@@ -39,9 +39,9 @@ const monthLabel = (month: number) => {
 
 const section = 'group/section flex flex-col gap-6';
 const summary =
-  'font-display text-dark-gray flex cursor-pointer list-none items-center justify-between gap-4 rounded-sm text-2xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-dark-gray [&::-webkit-details-marker]:hidden';
+  'font-display text-fg flex cursor-pointer list-none items-center justify-between gap-4 rounded-sm text-2xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus [&::-webkit-details-marker]:hidden';
 const chevron =
-  'text-dark-gray shrink-0 rotate-90 transition-transform motion-reduce:transition-none';
+  'text-fg shrink-0 rotate-90 transition-transform motion-reduce:transition-none';
 ---
 
 <aside
@@ -63,7 +63,7 @@ const chevron =
           <a
             href={href}
             aria-current={current ? 'page' : undefined}
-            class="font-body text-dark-gray aria-[current=page]:font-bold flex items-center gap-3 rounded-sm text-base hover:text-black hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-dark-gray"
+            class="font-body text-fg aria-[current=page]:font-bold flex items-center gap-3 rounded-sm text-base hover:text-fg-strong hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
           >
             <ChevronRight width={16} height={16} class="shrink-0" />
             {label}
@@ -91,16 +91,14 @@ const chevron =
               <a
                 href={href}
                 aria-current={path === href ? 'page' : undefined}
-                class="font-body hover:bg-chip aria-[current=page]:bg-chip flex items-center justify-between gap-4 rounded-[4px] p-4 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-dark-gray"
+                class="font-body hover:bg-subtle aria-[current=page]:bg-subtle flex items-center justify-between gap-4 rounded-card p-4 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus"
               >
-                <span class="text-dark-gray min-w-0 text-base">
-                  {post.title}
-                </span>
+                <span class="text-fg min-w-0 text-base">{post.title}</span>
                 {post.date && (
                   <FormattedDate
                     date={post.date}
                     format={lang === 'es' ? 'D MMM' : 'MMM D'}
-                    class="text-light-gray shrink-0 text-sm"
+                    class="text-muted shrink-0 text-sm"
                   />
                 )}
               </a>
@@ -128,7 +126,7 @@ const chevron =
               open={year === openYear}
               class="group/year flex flex-col gap-3"
             >
-              <summary class="font-body text-dark-gray flex cursor-pointer list-none items-center justify-between rounded-sm text-base font-bold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-dark-gray [&::-webkit-details-marker]:hidden">
+              <summary class="font-body text-fg flex cursor-pointer list-none items-center justify-between rounded-sm text-base font-bold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus [&::-webkit-details-marker]:hidden">
                 {year}
                 <ChevronRight
                   width={16}
@@ -145,7 +143,7 @@ const chevron =
                       <a
                         href={archivePath(lang, year, month)}
                         aria-current={isCurrent ? 'page' : undefined}
-                        class="font-body text-light-gray aria-[current=page]:text-dark-gray aria-[current=page]:font-bold flex items-center gap-3 rounded-sm text-sm hover:text-dark-gray focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-dark-gray"
+                        class="font-body text-muted aria-[current=page]:text-fg aria-[current=page]:font-bold flex items-center gap-3 rounded-sm text-sm hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
                       >
                         <span class="flex-1">{monthLabel(month)}</span>
                         <span>{count}</span>

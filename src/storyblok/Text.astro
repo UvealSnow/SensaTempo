@@ -39,13 +39,13 @@ const hasContent =
 >
   {blok.heading && (
     <Heading
-      class={`font-display text-dark-gray mb-8 leading-tight md:mb-12 ${headingSize}`}
+      class={`font-display text-fg mb-8 leading-tight md:mb-12 ${headingSize}`}
     >
       {blok.heading}
     </Heading>
   )}
   {hasContent && (
-    <div class="rich-text font-body text-xl leading-[26px] text-black">
+    <div class="rich-text font-body text-xl leading-[26px] text-fg-strong">
       <StoryblokRichText document={blok.content as never} />
     </div>
   )}

@@ -76,8 +76,8 @@ The sidebar (`BlogSidebar`) shows on every index page: **Quick links** ("All pos
 
 Target: **WCAG 2.2 AA** (audit and plan in the vault, `Plans/Accessibility/`).
 
-- **Colors:** text tokens pass 4.5:1 on `off-white`, white and `chip` (`light-gray` is `#6b6b6b`); don't use lighter grays for text.
-- **Focus:** every interactive element shows a 2 px `dark-gray` outline on keyboard focus (`focus-visible:outline-2 … outline-dark-gray`).
+- **Colors:** components use role tokens only (`page`, `surface`, `subtle`, `line`, `fg`, `fg-strong`, `muted`, `accent`, `accent-hover`, `on-accent`, `focus`, `danger`, in `src/styles/global.css`), never palette colors. Text roles pass 4.5:1 on `page`, `surface` and `subtle` (`muted` is `#6b6b6b`).
+- **Focus:** every interactive element shows a 2 px `focus` outline on keyboard focus (`focus-visible:outline-2 … outline-focus`).
 - **Language links** show the code ("EN") and are named in their own language ("English"), with `lang` and `hreflang`.
 - **Links** open in the same tab.
 - **Skip link** ("Saltar al contenido") is the first focusable element and targets `<main id="main">`.

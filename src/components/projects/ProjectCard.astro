@@ -23,7 +23,7 @@ const cover = responsiveImage(project.cover, {
 ---
 
 <!-- Same card as the blog's PostCard: the title link covers the card -->
-<article class="details-group relative flex h-full flex-col overflow-hidden rounded-[4px] border border-line bg-white">
+<article class="details-group relative flex h-full flex-col overflow-hidden rounded-card border border-line bg-surface">
   {cover && (
     <Picture
       image={cover}
@@ -34,23 +34,23 @@ const cover = responsiveImage(project.cover, {
   )}
   <div class="flex flex-1 flex-col gap-6 p-6 md:p-10">
     {project.year && (
-      <p class="font-body text-light-gray text-base">{project.year}</p>
+      <p class="font-body text-muted text-base">{project.year}</p>
     )}
-    <h2 class="font-display text-dark-gray text-2xl leading-tight md:text-[32px]">
+    <h2 class="font-display text-fg text-2xl leading-tight md:text-[32px]">
       <a
         href={projectPath(lang, project.slug)}
-        class="after:absolute after:inset-0 after:rounded-[4px] focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-dark-gray"
+        class="after:absolute after:inset-0 after:rounded-card focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-focus"
       >
         {project.title}
       </a>
     </h2>
     {project.excerpt && (
-      <p class="font-body text-light-gray text-lg leading-[30px]">
+      <p class="font-body text-muted text-lg leading-[30px]">
         {project.excerpt}
       </p>
     )}
     <span
-      class="font-body text-dark-gray mt-auto flex items-center gap-2 pt-2 text-base font-bold underline"
+      class="font-body text-fg mt-auto flex items-center gap-2 pt-2 text-base font-bold underline"
       aria-hidden="true"
     >
       {strings.read_more_label}

@@ -111,7 +111,7 @@ const pickScript = `(function () {
     <Analytics />
   </head>
 
-  <body class="bg-off-white min-h-screen flex flex-col">
+  <body class="bg-page min-h-screen flex flex-col">
     <main class="flex flex-1 flex-col">
       {sections.map(({ lang, title, text, linkLabel, logo }) => (
         <section
@@ -127,18 +127,14 @@ const pickScript = `(function () {
                 class="h-[62px] w-auto"
               />
             ) : (
-              <span class="font-display text-dark-gray text-4xl">
-                {SITE_TITLE}
-              </span>
+              <span class="font-display text-fg text-4xl">{SITE_TITLE}</span>
             )}
           </a>
-          <h1 class="font-display text-dark-gray text-5xl md:text-6xl">
-            {title}
-          </h1>
-          <p class="font-body text-light-gray max-w-prose text-2xl">{text}</p>
+          <h1 class="font-display text-fg text-5xl md:text-6xl">{title}</h1>
+          <p class="font-body text-muted max-w-prose text-2xl">{text}</p>
           <a
             href={pagePath(lang, HOME_SLUG)}
-            class="font-body text-2xl text-gray-700 underline hover:text-gray-900"
+            class="font-body text-2xl text-fg underline hover:text-fg-strong"
           >
             {linkLabel}
           </a>

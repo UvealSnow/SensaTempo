@@ -30,15 +30,15 @@ const image = responsiveImage(cover);
 )}
 
 <header class="col-span-12 lg:col-span-10 lg:col-start-2">
-  <h1 class="font-display text-dark-gray text-4xl leading-tight md:text-[40px]">
+  <h1 class="font-display text-fg text-4xl leading-tight md:text-[40px]">
     {title}
   </h1>
   {date ? (
     <FormattedDate
       date={date}
-      class="font-body text-light-gray mt-2 block text-lg"
+      class="font-body text-muted mt-2 block text-lg"
     />
   ) : (
-    meta && <p class="font-body text-light-gray mt-2 text-lg">{meta}</p>
+    meta && <p class="font-body text-muted mt-2 text-lg">{meta}</p>
   )}
 </header>

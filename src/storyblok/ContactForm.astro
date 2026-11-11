@@ -43,9 +43,9 @@ const fields = [
   },
 ];
 
-const label = 'font-body text-dark-gray text-lg';
+const label = 'font-body text-fg text-lg';
 const input =
-  'font-body w-full rounded-[4px] border border-line bg-white px-4 py-3 text-lg text-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-dark-gray aria-[invalid=true]:border-red-700';
+  'font-body w-full rounded-card border border-line bg-surface px-4 py-3 text-lg text-fg-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus aria-[invalid=true]:border-danger';
 ---
 
 <section
@@ -59,7 +59,7 @@ const input =
     data-lang={lang}
     data-strings={JSON.stringify(strings)}
   >
-    <p class="font-body text-light-gray text-lg">{strings.required_note}</p>
+    <p class="font-body text-muted text-lg">{strings.required_note}</p>
 
     {fields.map(({ name, label: text, error, ...attrs }) => (
       <div class="flex flex-col gap-2">
@@ -86,7 +86,7 @@ const input =
         )}
         <p
           id={`contact-${name}-error`}
-          class="font-body hidden text-base text-red-700"
+          class="font-body hidden text-base text-danger"
           data-error-for={name}
         >
           {error}
@@ -116,27 +116,25 @@ const input =
     <div class="flex flex-wrap items-center gap-4">
       <button
         type="submit"
-        class="font-body bg-dark-gray cursor-pointer rounded-full px-8 py-3 text-lg text-white hover:bg-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-dark-gray disabled:cursor-wait disabled:opacity-60"
+        class="font-body bg-accent cursor-pointer rounded-full px-8 py-3 text-lg text-on-accent hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-wait disabled:opacity-60"
         data-submit
       >
         {strings.submit_label}
       </button>
       <p
-        class="font-body text-light-gray text-lg data-[state=error]:text-red-700"
+        class="font-body text-muted text-lg data-[state=error]:text-danger"
         role="status"
         aria-live="polite"
         data-status
       ></p>
     </div>
     <noscript>
-      <p class="font-body text-light-gray text-lg">
-        {strings.noscript_message}
-      </p>
+      <p class="font-body text-muted text-lg">{strings.noscript_message}</p>
     </noscript>
   </form>
 
   <p
-    class="font-body text-dark-gray hidden max-w-[640px] text-xl leading-8"
+    class="font-body text-fg hidden max-w-[640px] text-xl leading-8"
     tabindex="-1"
     data-success
   >
