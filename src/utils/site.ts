@@ -3,11 +3,13 @@
 import { isPreviewMode } from './storyblok.ts';
 
 const DEFAULT_SITE_URL = 'https://sensatempo.com';
+const DEFAULT_THEME = 'sensatempo';
 
 interface SiteEnv {
   PUBLIC_SITE_URL?: string;
   PUBLIC_ALLOW_INDEXING?: string;
   PUBLIC_BUILD_TYPE?: string;
+  PUBLIC_THEME?: string;
 }
 
 /** The deploy's public origin (canonical URLs, og:url, sitemap), without a trailing slash. */
@@ -19,6 +21,16 @@ export function siteUrl(env: SiteEnv): string {
   } catch {
     throw new Error(`PUBLIC_SITE_URL must be an absolute URL, got "${value}"`);
   }
+}
+
+/** The deploy's theme: a folder name under src/themes/. */
+export function themeName(env: SiteEnv): string {
+  const value = env.PUBLIC_THEME?.trim();
+  if (!value) return DEFAULT_THEME;
+  if (!/^[a-z][a-z0-9-]*$/.test(value)) {
+    throw new Error(`PUBLIC_THEME must be a theme folder name, got "${value}"`);
+  }
+  return value;
 }
 
 /** Search engines may index this deploy: opt-in, and never for the preview or `astro dev`. */

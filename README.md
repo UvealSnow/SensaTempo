@@ -21,7 +21,8 @@ Sensa Tempo is a minimal, fast, and SEO-friendly photography blog built with [As
 │   ├── middleware.ts     Basic auth for preview
 │   ├── pages/            Route pages (dynamic language routing)
 │   ├── storyblok/        Storyblok component definitions
-│   └── styles/           Global styles
+│   ├── styles/           Shared styles (Tailwind, components)
+│   └── themes/           One folder per theme (tokens, fonts, layout)
 ├── docker/               Production build Docker image
 ├── terraform/            AWS infrastructure as code
 ├── Makefile              Build and deployment helpers
@@ -71,6 +72,14 @@ The sidebar (`BlogSidebar`) shows on every index page: **Quick links** ("All pos
 - **Structured data** (JSON-LD): `WebSite` on the home page, `CollectionPage` on the blog and projects indexes, `BlogPosting` on posts (with author and date), `CreativeWork` on projects.
 - **Checking previews:** [opengraph.xyz](https://www.opengraph.xyz/), Facebook's [Sharing Debugger](https://developers.facebook.com/tools/debug/) (also refreshes its cache) and LinkedIn's [Post Inspector](https://www.linkedin.com/post-inspector/).
 - **Going live on a real domain:** set `PUBLIC_SITE_URL` to it, `PUBLIC_ALLOW_INDEXING=true`, and add it to `contact_allowed_origins` (Terraform).
+
+## 🎨 Themes
+
+One codebase, several sites: each deploy picks a theme with `PUBLIC_THEME` (default `sensatempo`), a folder in `src/themes/<name>/`. `src/styles/global.css` imports its `theme.css` through the `~theme` alias (`astro.config.mjs`), so a build ships only that theme.
+
+- **`theme.css`** sets the role tokens (`@theme`: colors, fonts, `radius-card`), its `@font-face` rules (font files in the theme's `fonts/`, fingerprinted by Vite) and the layout hooks.
+- **Layout hooks:** `body.site` > `.site-header` (NavBar), `.site-main`, `.site-footer`. A theme arranges them in plain CSS, without changing markup.
+- **Adding a theme:** copy `src/themes/sensatempo/`, change the values, build with `PUBLIC_THEME=<name>`. An unknown theme fails the build.
 
 ## ♿ Accessibility
 
@@ -138,6 +147,7 @@ Everything runs on **AWS (us-east-1)** and is pay-per-use: nothing bills while t
   - `PUBLIC_AVAILABLE_LANGUAGES` (default: es,en)
   - `PUBLIC_SITE_URL` (optional; this deploy's origin for canonical URLs, `og:url`, hreflang and the sitemap; default `https://sensatempo.com`)
   - `PUBLIC_ALLOW_INDEXING` (optional; `true` lets search engines index the deploy, never the preview; default noindex)
+  - `PUBLIC_THEME` (optional; folder in `src/themes/`; default `sensatempo`)
   - `PUBLIC_TURNSTILE_SITE_KEY` (optional; empty uses Cloudflare's always-pass test key, which the real secret rejects)
 
 ---
@@ -184,7 +194,7 @@ After rotating the preview token, the basic auth values or the webhook parameter
 
 **Storyblok Visual Editor:** the preview loads the Storyblok bridge (static builds don't). The editor iframe can't answer the basic auth prompt, so `src/middleware.ts` also lets in requests carrying a valid `_storyblok_tk` (sha1 of `space_id:preview_token:timestamp`, at most 1 hour old) and swaps it for a signed 8-hour session cookie (`SameSite=None; Partitioned`), so links clicked inside the editor keep working. In Storyblok, set the preview URL to `<preview_url>/es/` (the CloudFront one: Function URLs reject the editor's `_storyblok_tk[...]` query keys, so a CloudFront Function percent-encodes them) and the `home` story's real path to `/`.
 
-**GitHub repository variables** (not secret): `AWS_DEPLOY_ROLE_ARN`, `AWS_PROD_BUCKET`, `AWS_CF_DIST_ID` (from the Terraform outputs), `PUBLIC_DEFAULT_LANGUAGE`, `PUBLIC_AVAILABLE_LANGUAGES`, `PUBLIC_CF_ANALYTICS_TOKEN`, `PUBLIC_TURNSTILE_SITE_KEY` (Turnstile site key, prod and preview builds), `PUBLIC_SITE_URL` + `PUBLIC_ALLOW_INDEXING` (production build) and `PREVIEW_SITE_URL` (preview build's `PUBLIC_SITE_URL`). These make each deploy self-describing: pointing a deploy at another domain (or another Storyblok space) needs no code change.
+**GitHub repository variables** (not secret): `AWS_DEPLOY_ROLE_ARN`, `AWS_PROD_BUCKET`, `AWS_CF_DIST_ID` (from the Terraform outputs), `PUBLIC_DEFAULT_LANGUAGE`, `PUBLIC_AVAILABLE_LANGUAGES`, `PUBLIC_CF_ANALYTICS_TOKEN`, `PUBLIC_TURNSTILE_SITE_KEY` (Turnstile site key, prod and preview builds), `PUBLIC_THEME` (both builds; default `sensatempo`), `PUBLIC_SITE_URL` + `PUBLIC_ALLOW_INDEXING` (production build) and `PREVIEW_SITE_URL` (preview build's `PUBLIC_SITE_URL`). These make each deploy self-describing: pointing a deploy at another domain (or another Storyblok space) needs no code change.
 
 **Contact form:** pages post JSON to `/api/contact`, which both CloudFront distributions route to the `sensatempo-contact` Lambda (`terraform/contact/index.mjs`). It accepts only the allowed origins (`contact_allowed_origins` in `terraform/variables.tf`), drops honeypot submissions, validates the fields, verifies the [Cloudflare Turnstile](https://developers.cloudflare.com/turnstile/) token and sends the message with SES to `/sensatempo/contact/recipient` (Reply-To = the visitor). It never answers 403/404 (prod CloudFront turns those into the 404 page). **Changing the recipient:** `aws ssm put-parameter --type String --overwrite --name /sensatempo/contact/recipient --value <email>`, `pnpm tf:apply`, then click the verification link SES emails to that address. SES is in the sandbox (verified addresses only, 200 emails/day), which is enough while the recipient is also the sender.
 

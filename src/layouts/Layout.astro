@@ -36,7 +36,7 @@ const [navbar, footer] = await Promise.all([
     <Analytics />
   </head>
 
-  <body class="bg-page min-h-screen flex flex-col">
+  <body class="site bg-page">
     <a
       href="#main"
       class="font-body bg-accent sr-only z-[60] rounded-sm px-4 py-2 text-lg text-on-accent focus:not-sr-only focus:fixed focus:top-4 focus:left-4"
@@ -48,7 +48,7 @@ const [navbar, footer] = await Promise.all([
     <main
       id="main"
       tabindex="-1"
-      class="pb-8 px-4 container mx-auto outline-none md:px-8 xl:px-0"
+      class="site-main pb-8 px-4 container mx-auto outline-none md:px-8 xl:px-0"
     >
       <slot />
     </main>
