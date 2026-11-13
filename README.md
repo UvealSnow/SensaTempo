@@ -107,18 +107,22 @@ Target: **WCAG 2.2 AA** (audit and plan in the vault, `Plans/Accessibility/`).
 
 ## 🧞 Commands
 
-| Command             | Action                               |
-| :------------------ | :----------------------------------- |
-| `pnpm install`      | Install dependencies with pnpm 12    |
-| `pnpm dev`          | Start dev server at `localhost:4321` |
-| `pnpm build`        | Build production site to `./dist/`   |
-| `pnpm preview`      | Preview built site locally           |
-| `pnpm format`       | Format files with Prettier           |
-| `pnpm format:check` | Check format compliance              |
-| `pnpm lint`         | Lint with ESLint                     |
-| `pnpm lint:fix`     | Fix auto-fixable lint issues         |
-| `pnpm test`         | Run unit tests (`node --test`)       |
-| `pnpm check:links`  | Find broken internal links in `dist` |
+| Command                 | Action                                                               |
+| :---------------------- | :------------------------------------------------------------------- |
+| `pnpm install`          | Install dependencies with pnpm 12                                    |
+| `pnpm dev`              | Start dev server at `localhost:4321`                                 |
+| `pnpm build`            | Build production site to `./dist/`                                   |
+| `pnpm preview`          | Preview built site locally                                           |
+| `pnpm format`           | Format files with Prettier                                           |
+| `pnpm format:check`     | Check format compliance                                              |
+| `pnpm lint`             | Lint with ESLint                                                     |
+| `pnpm lint:fix`         | Fix auto-fixable lint issues                                         |
+| `pnpm test`             | Run unit tests (`node --test`)                                       |
+| `pnpm check:links`      | Find broken internal links in `dist`                                 |
+| `pnpm storyblok:export` | Save a space's block definitions to `storyblok/components.json`      |
+| `pnpm storyblok:push`   | Dry run of syncing a space with `storyblok/` (`-- --apply` to write) |
+
+**Storyblok spaces** (`scripts/storyblok-space.mjs`, env `STORYBLOK_MANAGEMENT_TOKEN` + `STORYBLOK_SPACE_ID`): every site's space has the same blocks. `storyblok/components.json` holds the block definitions (exported, never hand-edited) and `storyblok/structure.json` the languages, folders (allowed content types) and starter stories. After changing blocks in one space, run `storyblok:export`, commit, then `storyblok:push` on the other spaces. Push creates or updates languages, component groups, components and folders, and creates missing starter stories as drafts; it never edits or publishes existing stories.
 
 **Dependency release age:** pnpm 12 rejects package versions published less than 24 h ago (`minimumReleaseAge`). After a dependency release, wait a day before upgrading; for an urgent fix, temporarily add the package to `minimumReleaseAgeExclude` in `pnpm-workspace.yaml` and remove it afterwards. Build scripts only run for packages listed as `true` under `allowBuilds` there.
 
