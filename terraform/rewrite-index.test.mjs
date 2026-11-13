@@ -57,3 +57,27 @@ test('other paths are rewritten to index.html, never redirected', () => {
   assert.equal(viewerRequest('/en/about', 'es').uri, '/en/about/index.html');
   assert.equal(viewerRequest('/_astro/app.css').uri, '/_astro/app.css');
 });
+
+test('www. hosts redirect permanently to the bare domain, keeping the path', () => {
+  const response = handler({
+    request: {
+      uri: '/es/blog/',
+      headers: { host: { value: 'www.kevinavila.pro' } },
+    },
+  });
+  assert.equal(response.statusCode, 301);
+  assert.equal(
+    response.headers.location.value,
+    'https://kevinavila.pro/es/blog/'
+  );
+});
+
+test('other hosts are served as usual', () => {
+  const request = handler({
+    request: {
+      uri: '/es/blog/',
+      headers: { host: { value: 'kevinavila.pro' } },
+    },
+  });
+  assert.equal(request.uri, '/es/blog/index.html');
+});

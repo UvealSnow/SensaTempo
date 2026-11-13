@@ -160,3 +160,24 @@ test('validate trims fields; composeEmail keeps the subject on one line', () => 
     'Ana\r\nBcc: x@y.z <a@b.co>\nPage: /es/contact/\nLanguage: es\n\nHola'
   );
 });
+
+test('sends from CONTACT_SENDER with SENDER_NAME when set', async () => {
+  const calls = [];
+  const handler = createHandler({
+    env: {
+      ...env,
+      CONTACT_SENDER: 'noreply@example.com',
+      SENDER_NAME: 'Kevin Avila',
+    },
+    verify: async () => ({
+      success: true,
+      hostname: 'd1fr6xerqueq2v.cloudfront.net',
+    }),
+    send: async (mail) => calls.push(mail),
+  });
+  const response = await handler(event(valid));
+  assert.equal(response.statusCode, 200);
+  assert.equal(calls[0].from, 'noreply@example.com');
+  assert.equal(calls[0].fromName, 'Kevin Avila');
+  assert.equal(calls[0].to, 'hola@example.com');
+});
