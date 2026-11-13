@@ -1,0 +1,78 @@
+name: PR checks
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+# A new push to the PR replaces the run in progress
+concurrency:
+  group: pr-checks-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm format:check
+      - run: pnpm lint
+      - run: pnpm exec tsc --noEmit
+      - run: pnpm test
+
+  themes:
+    runs-on: ubuntu-latest
+    outputs:
+      list: ${{ steps.list.outputs.list }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: list
+        run: echo "list=$(ls -d src/themes/*/ | xargs -n1 basename | jq -Rcs 'split("\n") | map(select(. != ""))')" >> "$GITHUB_OUTPUT"
+
+  # One static build per theme, on published content (read-only public token)
+  build:
+    needs: themes
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        theme: ${{ fromJSON(needs.themes.outputs.list) }}
+    name: build (${{ matrix.theme }})
+    env:
+      STORYBLOK_PUBLIC_TOKEN: ${{ secrets.STORYBLOK_PUBLIC_TOKEN }}
+    steps:
+      # Secrets aren't passed to PRs from forks: those get the checks job only
+      - name: Skip without a token
+        if: env.STORYBLOK_PUBLIC_TOKEN == ''
+        run: echo "::notice::No STORYBLOK_PUBLIC_TOKEN (PR from a fork?); build skipped"
+      - uses: actions/checkout@v4
+        if: env.STORYBLOK_PUBLIC_TOKEN != ''
+      - uses: pnpm/action-setup@v6
+        if: env.STORYBLOK_PUBLIC_TOKEN != ''
+      - uses: actions/setup-node@v4
+        if: env.STORYBLOK_PUBLIC_TOKEN != ''
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+        if: env.STORYBLOK_PUBLIC_TOKEN != ''
+      - name: Build static site
+        if: env.STORYBLOK_PUBLIC_TOKEN != ''
+        run: pnpm build
+        env:
+          PUBLIC_DEFAULT_LANGUAGE: ${{ vars.PUBLIC_DEFAULT_LANGUAGE }}
+          PUBLIC_AVAILABLE_LANGUAGES: ${{ vars.PUBLIC_AVAILABLE_LANGUAGES }}
+          PUBLIC_BUILD_TYPE: static
+          PUBLIC_THEME: ${{ matrix.theme }}
+      # Reported, not blocking: content can link to stories that aren't published yet
+      - name: Check internal links
+        if: env.STORYBLOK_PUBLIC_TOKEN != ''
+        continue-on-error: true
+        run: pnpm check:links
