@@ -56,7 +56,7 @@ const isArticle = props.type === 'article';
 ---
 
 <title>{title}</title>
-<meta name="description" content={description} />
+{description && <meta name="description" content={description} />}
 {noindex && <meta name="robots" content="noindex" />}
 <link rel="canonical" href={url} />
 {AVAILABLE_LANGUAGES.map((language) => (
@@ -79,7 +79,7 @@ const isArticle = props.type === 'article';
 <meta property="og:site_name" content={defaults.siteName} />
 <meta property="og:url" content={url} />
 <meta property="og:title" content={title} />
-<meta property="og:description" content={description} />
+{description && <meta property="og:description" content={description} />}
 <meta property="og:locale" content={ogLocale(lang)} />
 {AVAILABLE_LANGUAGES.filter((language) => language !== lang).map((language) => (
   <meta property="og:locale:alternate" content={ogLocale(language)} />
@@ -112,7 +112,7 @@ const isArticle = props.type === 'article';
 
 <meta name="twitter:card" content={image ? 'summary_large_image' : 'summary'} />
 <meta name="twitter:title" content={title} />
-<meta name="twitter:description" content={description} />
+{description && <meta name="twitter:description" content={description} />}
 {image && <meta name="twitter:image" content={image.url} />}
 {image?.alt && <meta name="twitter:image:alt" content={image.alt} />}
 {defaults.xHandle && <meta name="twitter:site" content={defaults.xHandle} />}
