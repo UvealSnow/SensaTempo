@@ -167,14 +167,14 @@ Everything runs on **AWS (us-east-1)** and is pay-per-use: nothing bills while t
 
 ### 🚀 Makefile targets
 
-| Target                  | Action                                                                                             |
-| :---------------------- | :------------------------------------------------------------------------------------------------- |
-| `make run-preview`      | Build the SSR preview and run it locally on **http://localhost:8080** (what the Lambda runs).      |
-| `make package-preview`  | Build the SSR preview and zip it for Lambda (`preview-lambda.zip`, linux-arm64 runtime deps only). |
-| `make deploy-preview`   | Package and upload the preview to the `sensatempo-preview-ssr` Lambda from your machine.           |
-| `make build-prod`       | Build the static production site in Docker (`.env` mounted as a build secret).                     |
-| `make run-prod-preview` | Build the static site and serve it with **Nginx** on **http://localhost:8080**.                    |
-| `make clean`            | Remove the local Docker image and preview zip.                                                     |
+| Target                  | Action                                                                                                     |
+| :---------------------- | :--------------------------------------------------------------------------------------------------------- |
+| `make run-preview`      | Build the SSR preview and run it locally on **http://localhost:8080** (what the Lambda runs).              |
+| `make package-preview`  | Build the SSR preview and zip it for Lambda (`preview-lambda.zip`, linux-arm64 runtime deps only).         |
+| `make deploy-preview`   | Package and upload the preview to the `$(SITE)-preview-ssr` Lambda (`SITE=kevinavila` for the other site). |
+| `make build-prod`       | Build the static production site in Docker (`.env` mounted as a build secret).                             |
+| `make run-prod-preview` | Build the static site and serve it with **Nginx** on **http://localhost:8080**.                            |
+| `make clean`            | Remove the local Docker image and preview zip.                                                             |
 
 ---
 
