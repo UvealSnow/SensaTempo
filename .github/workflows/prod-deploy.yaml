@@ -4,35 +4,92 @@ on:
   # We have a new main version
   push:
     branches: [main]
-  # Content was published in Storyblok: the sensatempo-storyblok-webhook Lambda relays it here.
+  # Content was published in Storyblok: the site's <site>-storyblok-webhook Lambda relays it here.
   # Always runs on the default branch, so REF below resolves to main (inputs.ref is empty).
   repository_dispatch:
     types: [storyblok-publish]
-  # Any branch, on demand: called by deploy-branch.yaml (run from main; the AWS role only trusts main)
+  # Any branch, on demand: called by deploy-branch.yaml (run from main; the environments only allow main)
   workflow_call:
     inputs:
       ref:
         type: string
         required: false
         default: ''
+      site:
+        type: string
+        required: false
+        default: all
 
 permissions:
   id-token: write # GitHub OIDC -> AWS role, no long-lived keys
   contents: read
 
+env:
+  # Every site built from this repo; each has a GitHub Environment of the same name (README "Sites in CI")
+  SITES: '["sensatempo","kevinavila"]'
+  AWS_ACCOUNT_ID: '221135164152'
+
 jobs:
-  deploy-static-prod:
+  # A Storyblok publish rebuilds its own site; pushes and manual deploys rebuild the chosen (or all) sites
+  targets:
     runs-on: ubuntu-latest
-    # Queue deploys; never cancel a half-finished S3 sync
+    outputs:
+      sites: ${{ steps.pick.outputs.sites }}
+    steps:
+      - id: pick
+        env:
+          PAYLOAD_SITE: ${{ github.event.client_payload.site }}
+          INPUT_SITE: ${{ inputs.site }}
+        run: |
+          case "$GITHUB_EVENT_NAME" in
+            repository_dispatch) WANTED="${PAYLOAD_SITE:-sensatempo}" ;;
+            *) WANTED="${INPUT_SITE:-all}" ;;
+          esac
+          if [ "$WANTED" = all ]; then
+            echo "sites=$SITES" >> "$GITHUB_OUTPUT"
+          elif echo "$SITES" | jq -e --arg s "$WANTED" 'index($s)' >/dev/null; then
+            echo "sites=$(jq -cn --arg s "$WANTED" '[$s]')" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::Unknown site '$WANTED'"; exit 1
+          fi
+
+  deploy-static-prod:
+    needs: targets
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        site: ${{ fromJSON(needs.targets.outputs.sites) }}
+    name: deploy (${{ matrix.site }})
+    # Site settings (theme, URLs, distribution) are this environment's variables
+    environment: ${{ matrix.site }}
+    # Queue deploys per site; never cancel a half-finished S3 sync
     concurrency:
-      group: prod-deploy
+      group: prod-deploy-${{ matrix.site }}
       cancel-in-progress: false
     env:
       REF: ${{ inputs.ref || github.ref_name }}
+      SITE: ${{ matrix.site }}
     steps:
+      # Repository-level variables leak into every environment, so a site only deploys once its
+      # environment says who it is (SITE); names below derive from it, never from inherited values
+      - name: Check the environment
+        id: ready
+        env:
+          ENV_SITE: ${{ vars.SITE }}
+          ENV_DIST_ID: ${{ vars.AWS_CF_DIST_ID }}
+        run: |
+          if [ "$ENV_SITE" != "$SITE" ] || [ -z "$ENV_DIST_ID" ]; then
+            echo "::warning::Environment '$SITE' isn't set up (needs SITE=$SITE and AWS_CF_DIST_ID); skipped"
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          fi
+
       # push, dispatch (Deploy branch) or storyblok:<action> <full_slug>. The payload goes through
       # env, never inline, and is cut to printable characters before reaching GITHUB_ENV.
       - name: Describe trigger
+        if: steps.ready.outputs.ok == 'true'
         env:
           SB_ACTION: ${{ github.event.client_payload.action }}
           SB_SLUG: ${{ github.event.client_payload.full_slug }}
@@ -46,32 +103,39 @@ jobs:
           echo "TRIGGER=$TRIGGER" >> "$GITHUB_ENV"
 
       - uses: actions/checkout@v4
+        if: steps.ready.outputs.ok == 'true'
         with:
           ref: ${{ inputs.ref || github.ref }}
 
       - uses: pnpm/action-setup@v6
+        if: steps.ready.outputs.ok == 'true'
 
       - uses: actions/setup-node@v4
+        if: steps.ready.outputs.ok == 'true'
         with:
           node-version-file: .nvmrc
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
+        if: steps.ready.outputs.ok == 'true'
 
       - uses: aws-actions/configure-aws-credentials@v4
+        if: steps.ready.outputs.ok == 'true'
         with:
-          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/${{ matrix.site }}-github-deploy
           aws-region: us-east-1
 
       # Build secrets live in SSM Parameter Store, not GitHub (see README "Secrets")
       - name: Load secrets from SSM
+        if: steps.ready.outputs.ok == 'true'
         run: |
-          TOKEN=$(aws ssm get-parameter --name /sensatempo/storyblok/public-token \
+          TOKEN=$(aws ssm get-parameter --name /$SITE/storyblok/public-token \
             --with-decryption --query Parameter.Value --output text)
           echo "::add-mask::$TOKEN"
           echo "STORYBLOK_PUBLIC_TOKEN=$TOKEN" >> "$GITHUB_ENV"
 
       - name: Build static site
+        if: steps.ready.outputs.ok == 'true'
         run: pnpm build
         env:
           PUBLIC_DEFAULT_LANGUAGE: ${{ vars.PUBLIC_DEFAULT_LANGUAGE }}
@@ -88,11 +152,13 @@ jobs:
       # Reports broken internal links without blocking the deploy: a Storyblok publish shouldn't
       # be held back by a link to an unpublished story
       - name: Check internal links
+        if: steps.ready.outputs.ok == 'true'
         continue-on-error: true
         run: pnpm check:links
 
       # What prod is serving: https://<site>/version.json
       - name: Write version.json
+        if: steps.ready.outputs.ok == 'true'
         run: |
           jq -n --arg ref "$REF" --arg sha "$(git rev-parse HEAD)" --arg trigger "$TRIGGER" \
             --arg run "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
@@ -100,13 +166,15 @@ jobs:
             '{ref: $ref, sha: $sha, trigger: $trigger, run_url: $run, deployed_at: $at}' > dist/version.json
 
       - name: Deploy to S3
+        if: steps.ready.outputs.ok == 'true'
         run: |
-          aws s3 sync ./dist s3://${{ vars.AWS_PROD_BUCKET }} --delete
+          aws s3 sync ./dist "s3://$SITE-prod-assets" --delete
           aws cloudfront create-invalidation --distribution-id ${{ vars.AWS_CF_DIST_ID }} --paths "/*"
 
       - name: Summary
+        if: steps.ready.outputs.ok == 'true'
         run: |
-          echo "Deployed \`$REF\` ($(git rev-parse --short HEAD)) to production (trigger: \`$TRIGGER\`)" >>"$GITHUB_STEP_SUMMARY"
+          echo "Deployed \`$REF\` ($(git rev-parse --short HEAD)) to $SITE production (trigger: \`$TRIGGER\`)" >>"$GITHUB_STEP_SUMMARY"
           if [ "$REF" != main ]; then
             echo "::warning::Production is serving '$REF', not main. The next push to main replaces it; to roll back, run Deploy branch with ref=main."
           fi
