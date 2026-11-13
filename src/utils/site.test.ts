@@ -1,6 +1,13 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { allowIndexing, robotsTxt, siteUrl, themeName } from './site.ts';
+import {
+  allowIndexing,
+  robotsTxt,
+  siteDescription,
+  siteName,
+  siteUrl,
+  themeName,
+} from './site.ts';
 
 test('siteUrl normalizes to an origin and defaults to sensatempo.com', () => {
   assert.equal(
@@ -48,4 +55,11 @@ test('themeName defaults to sensatempo and rejects paths', () => {
   assert.equal(themeName({ PUBLIC_THEME: ' kevin ' }), 'kevin');
   assert.throws(() => themeName({ PUBLIC_THEME: '../secrets' }));
   assert.throws(() => themeName({ PUBLIC_THEME: 'Kevin' }));
+});
+
+test('siteName and siteDescription come from env with fallbacks', () => {
+  assert.equal(siteName({}), 'SensaTempo');
+  assert.equal(siteName({ PUBLIC_SITE_NAME: ' Kevin Avila ' }), 'Kevin Avila');
+  assert.equal(siteDescription({}), '');
+  assert.equal(siteDescription({ PUBLIC_SITE_DESCRIPTION: 'Notes' }), 'Notes');
 });

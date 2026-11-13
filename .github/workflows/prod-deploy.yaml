@@ -82,6 +82,8 @@ jobs:
           PUBLIC_SITE_URL: ${{ vars.PUBLIC_SITE_URL }}
           PUBLIC_ALLOW_INDEXING: ${{ vars.PUBLIC_ALLOW_INDEXING }}
           PUBLIC_THEME: ${{ vars.PUBLIC_THEME }}
+          PUBLIC_SITE_NAME: ${{ vars.PUBLIC_SITE_NAME }}
+          PUBLIC_SITE_DESCRIPTION: ${{ vars.PUBLIC_SITE_DESCRIPTION }}
 
       # Reports broken internal links without blocking the deploy: a Storyblok publish shouldn't
       # be held back by a link to an unpublished story

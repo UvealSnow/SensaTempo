@@ -86,6 +86,7 @@ One codebase, several sites: each deploy picks a theme with `PUBLIC_THEME` (defa
 - **Layout hooks** (plain CSS, no markup changes): `body.site` > `.site-header`, `.site-main`, `.site-footer`. Header parts: `.site-header__bar`, `.site-brand` (`__logo`, `__placeholder`, `__name`), `.site-tagline`, `.site-menu-button` (`__open` / `__close`, shown from `aria-expanded`), `.site-nav`, `.site-nav__link` (`[aria-current=page]`, `.site-nav__language`). The open mobile menu is `.site-header:has([aria-expanded='true']) .site-nav`.
 - **Header content** comes from `layout/navbar`: `logo`, optional `title` (site name) and `tagline`. Empty fields render nothing.
 - **Contrast:** `src/themes/themes.test.ts` checks every theme's role colors (6-digit hex) against WCAG AA (`pnpm test`).
+- **Favicon:** `src/themes/<name>/favicon.svg`, served at `/favicon.svg` (`src/pages/favicon.svg.ts`).
 - **Adding a theme:** copy a theme folder, change the values, run `pnpm test`, build with `PUBLIC_THEME=<name>`. An unknown theme fails the build.
 
 ## ♿ Accessibility
@@ -155,6 +156,7 @@ Everything runs on **AWS (us-east-1)** and is pay-per-use: nothing bills while t
   - `PUBLIC_SITE_URL` (optional; this deploy's origin for canonical URLs, `og:url`, hreflang and the sitemap; default `https://sensatempo.com`)
   - `PUBLIC_ALLOW_INDEXING` (optional; `true` lets search engines index the deploy, never the preview; default noindex)
   - `PUBLIC_THEME` (optional; folder in `src/themes/`; default `sensatempo`)
+  - `PUBLIC_SITE_NAME`, `PUBLIC_SITE_DESCRIPTION` (optional; fallbacks where Storyblok `layout/seo` isn't read: navbar labels, home `<h1>`, 404; default `SensaTempo` and empty)
   - `PUBLIC_TURNSTILE_SITE_KEY` (optional; empty uses Cloudflare's always-pass test key, which the real secret rejects)
 
 ---
@@ -201,7 +203,7 @@ After rotating the preview token, the basic auth values or the webhook parameter
 
 **Storyblok Visual Editor:** the preview loads the Storyblok bridge (static builds don't). The editor iframe can't answer the basic auth prompt, so `src/middleware.ts` also lets in requests carrying a valid `_storyblok_tk` (sha1 of `space_id:preview_token:timestamp`, at most 1 hour old) and swaps it for a signed 8-hour session cookie (`SameSite=None; Partitioned`), so links clicked inside the editor keep working. In Storyblok, set the preview URL to `<preview_url>/es/` (the CloudFront one: Function URLs reject the editor's `_storyblok_tk[...]` query keys, so a CloudFront Function percent-encodes them) and the `home` story's real path to `/`.
 
-**GitHub repository variables** (not secret): `AWS_DEPLOY_ROLE_ARN`, `AWS_PROD_BUCKET`, `AWS_CF_DIST_ID` (from the Terraform outputs), `PUBLIC_DEFAULT_LANGUAGE`, `PUBLIC_AVAILABLE_LANGUAGES`, `PUBLIC_CF_ANALYTICS_TOKEN`, `PUBLIC_TURNSTILE_SITE_KEY` (Turnstile site key, prod and preview builds), `PUBLIC_THEME` (both builds; default `sensatempo`), `PUBLIC_SITE_URL` + `PUBLIC_ALLOW_INDEXING` (production build) and `PREVIEW_SITE_URL` (preview build's `PUBLIC_SITE_URL`). These make each deploy self-describing: pointing a deploy at another domain (or another Storyblok space) needs no code change.
+**GitHub repository variables** (not secret): `AWS_DEPLOY_ROLE_ARN`, `AWS_PROD_BUCKET`, `AWS_CF_DIST_ID` (from the Terraform outputs), `PUBLIC_DEFAULT_LANGUAGE`, `PUBLIC_AVAILABLE_LANGUAGES`, `PUBLIC_CF_ANALYTICS_TOKEN`, `PUBLIC_TURNSTILE_SITE_KEY` (Turnstile site key, prod and preview builds), `PUBLIC_THEME`, `PUBLIC_SITE_NAME`, `PUBLIC_SITE_DESCRIPTION` (both builds), `PUBLIC_SITE_URL` + `PUBLIC_ALLOW_INDEXING` (production build) and `PREVIEW_SITE_URL` (preview build's `PUBLIC_SITE_URL`). These make each deploy self-describing: pointing a deploy at another domain (or another Storyblok space) needs no code change.
 
 **PR checks** (`pr-checks.yaml`, every pull request): format, lint and tests, then one static build per folder in `src/themes/`, each followed by `tsc` (it needs the types the build generates) and a non-blocking link check. Builds read published content with the `STORYBLOK_PUBLIC_TOKEN` repository secret; PRs from forks don't get secrets, so they skip the builds. Set or rotate the secret from SSM without printing it:
 
