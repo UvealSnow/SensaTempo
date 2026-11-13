@@ -12,6 +12,9 @@ locals {
 
 data "aws_caller_identity" "current" {}
 
+# The site's region (the module's default provider); CloudFront, IAM and Route 53 are global
+data "aws_region" "current" {}
+
 # --- 0. SECRETS: SSM PARAMETER STORE (SecureString, free standard tier) ---
 # Created once by hand so values never live in code (see README "Secrets"); Terraform only reads them.
 #   /<name>/storyblok/public-token         read by CI to build the static site (published content)
@@ -261,7 +264,7 @@ resource "aws_lambda_function" "preview_ssr" {
   source_code_hash = data.archive_file.preview_placeholder.output_base64sha256
 
   # Runs run.sh as a normal Node server and translates Lambda events to HTTP
-  layers = ["arn:aws:lambda:us-east-1:753240598075:layer:LambdaAdapterLayerArm64:${var.lambda_web_adapter_layer_version}"]
+  layers = ["arn:aws:lambda:${data.aws_region.current.region}:753240598075:layer:LambdaAdapterLayerArm64:${var.lambda_web_adapter_layer_version}"]
 
   timeout     = 30
   memory_size = 512
@@ -445,7 +448,7 @@ resource "aws_iam_role_policy" "github_deploy" {
         # SecureStrings use the AWS-managed aws/ssm key, so no kms:Decrypt grant is needed
         Effect   = "Allow"
         Action   = ["ssm:GetParameter"]
-        Resource = "arn:aws:ssm:us-east-1:${data.aws_caller_identity.current.account_id}:parameter${local.ssm_prefix}/storyblok/*"
+        Resource = "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter${local.ssm_prefix}/storyblok/*"
       },
       {
         Effect   = "Allow"

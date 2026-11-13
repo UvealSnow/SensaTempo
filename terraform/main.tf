@@ -25,6 +25,12 @@ provider "aws" {
   region = "us-east-1"
 }
 
+# Frankfurt, for sites that run there (their bucket, Lambdas, SES, SSM and alarms)
+provider "aws" {
+  alias  = "frankfurt"
+  region = "eu-central-1"
+}
+
 # Everything here is pay-per-use: no always-on servers, load balancers or NAT gateways.
 # One module per site (modules/site); the account-wide pieces below are shared by all of them.
 
@@ -61,6 +67,19 @@ resource "aws_sns_topic_subscription" "alerts_email" {
   endpoint  = data.aws_ssm_parameter.alerts_email.value
 }
 
+# Alarms can only notify a topic in their own region
+resource "aws_sns_topic" "alerts_frankfurt" {
+  provider = aws.frankfurt
+  name     = "sensatempo-alerts"
+}
+
+resource "aws_sns_topic_subscription" "alerts_email_frankfurt" {
+  provider  = aws.frankfurt
+  topic_arn = aws_sns_topic.alerts_frankfurt.arn
+  protocol  = "email"
+  endpoint  = data.aws_ssm_parameter.alerts_email.value
+}
+
 # Account-wide (baseline ~$1.2/month, Route 53). Separate from the hand-made "Monthly budget" ($10).
 resource "aws_budgets_budget" "sensatempo" {
   name         = "sensatempo-monthly"
@@ -90,6 +109,10 @@ resource "aws_budgets_budget" "sensatempo" {
 
 module "sensatempo" {
   source = "./modules/site"
+  providers = {
+    aws           = aws
+    aws.us_east_1 = aws
+  }
 
   name              = "sensatempo"
   display_name      = "SensaTempo"

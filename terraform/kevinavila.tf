@@ -43,8 +43,13 @@ resource "aws_route53_record" "kevinavila_zoho_dkim" {
   records = [join("\"\"", regexall(".{1,255}", var.kevinavila_zoho_dkim.value))]
 }
 
+# Runs in Frankfurt; the certificate (CloudFront's) stays in us-east-1
 module "kevinavila" {
   source = "./modules/site"
+  providers = {
+    aws           = aws.frankfurt
+    aws.us_east_1 = aws
+  }
 
   name              = "kevinavila"
   display_name      = "Kevin Avila"
@@ -63,5 +68,5 @@ module "kevinavila" {
   lambda_web_adapter_layer_version = var.lambda_web_adapter_layer_version
   origin_access_control_id         = aws_cloudfront_origin_access_control.default.id
   github_oidc_provider_arn         = aws_iam_openid_connect_provider.github.arn
-  alerts_topic_arn                 = aws_sns_topic.alerts.arn
+  alerts_topic_arn                 = aws_sns_topic.alerts_frankfurt.arn
 }

@@ -35,3 +35,7 @@ output "storyblok_webhook_url" {
 output "site_url" {
   value = local.attach_domain ? "https://${var.domain}" : "https://${aws_cloudfront_distribution.prod_site.domain_name}"
 }
+
+output "region" {
+  value = data.aws_region.current.region
+}

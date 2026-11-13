@@ -229,7 +229,9 @@ Infrastructure lives under **`terraform/`**. State is stored remotely in the `se
 
 **Custom domain** (module `domain` + `zone_id`): an ACM certificate for `<domain>`, `www.` and `preview.`, validated through the Route 53 zone. `attach_domain = true` (only once the zone's nameservers are live) puts prod on `<domain>` + `www.` (redirected to the bare domain by the rewrite function) and the preview on `preview.<domain>`. `ses_domain = true` verifies the domain in SES (DKIM + `mail.<domain>` MAIL FROM records) and the contact form sends from `noreply@<domain>`.
 
-**kevinavila.pro** (`terraform/kevinavila.tf`, theme `kevin`): the Route 53 zone with the Zoho mail records (MX, SPF), DMARC (`p=none`) and optional Zoho DKIM (`kevinavila_zoho_dkim`), plus `module "kevinavila"`. Before the first apply, create its SSM parameters (same meaning as SensaTempo's):
+**Regions:** a site runs in its module's default provider region: SensaTempo in `us-east-1`, kevinavila in Frankfurt (`eu-central-1`, provider `aws.frankfurt`). That covers its bucket, Lambdas, SES, SSM parameters and alarms (each region has its own `sensatempo-alerts` topic). CloudFront, IAM and Route 53 are global, and CloudFront's certificates always live in `us-east-1` (the module's `aws.us_east_1` provider). The Terraform state stays in `us-east-1`.
+
+**kevinavila.pro** (`terraform/kevinavila.tf`, theme `kevin`, Frankfurt): the Route 53 zone with the Zoho mail records (MX, SPF), DMARC (`p=none`) and optional Zoho DKIM (`kevinavila_zoho_dkim`), plus `module "kevinavila"`. Before the first apply, create its SSM parameters **in `eu-central-1`** (same meaning as SensaTempo's):
 
 - `/kevinavila/storyblok/public-token`, `/kevinavila/storyblok/preview-token`, `/kevinavila/storyblok/webhook-secret` (SecureString)
 - `/kevinavila/preview/basic-auth-user`, `/kevinavila/preview/basic-auth-password` (SecureString)

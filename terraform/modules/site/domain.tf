@@ -7,7 +7,9 @@ locals {
   cert_domains = var.domain == null ? [] : [var.domain, "www.${var.domain}", "preview.${var.domain}"]
 }
 
+# CloudFront only takes certificates from us-east-1, whatever the site's region
 resource "aws_acm_certificate" "site" {
+  provider                  = aws.us_east_1
   count                     = var.domain == null ? 0 : 1
   domain_name               = var.domain
   subject_alternative_names = slice(local.cert_domains, 1, 3)
@@ -38,6 +40,7 @@ resource "aws_route53_record" "cert_validation" {
 }
 
 resource "aws_acm_certificate_validation" "site" {
+  provider                = aws.us_east_1
   count                   = local.attach_domain ? 1 : 0
   certificate_arn         = aws_acm_certificate.site[0].arn
   validation_record_fqdns = [for record in aws_route53_record.cert_validation : record.fqdn]
@@ -101,7 +104,7 @@ resource "aws_route53_record" "ses_mail_from_mx" {
   name    = "mail.${var.domain}"
   type    = "MX"
   ttl     = 3600
-  records = ["10 feedback-smtp.us-east-1.amazonses.com"]
+  records = ["10 feedback-smtp.${data.aws_region.current.region}.amazonses.com"]
 }
 
 resource "aws_route53_record" "ses_mail_from_spf" {

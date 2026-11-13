@@ -43,6 +43,7 @@ output "kevinavila" {
     prod_bucket                = module.kevinavila.prod_bucket
     preview_url                = module.kevinavila.preview_url
     preview_function_name      = module.kevinavila.preview_function_name
+    region                     = module.kevinavila.region
     github_deploy_role_arn     = module.kevinavila.github_deploy_role_arn
     storyblok_webhook_url      = module.kevinavila.storyblok_webhook_url
   }
