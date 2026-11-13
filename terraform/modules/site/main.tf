@@ -6,6 +6,8 @@
 locals {
   preview_function_name = "${var.name}-preview-ssr"
   ssm_prefix            = "/${var.name}"
+  attach_domain         = var.domain != null && var.attach_domain
+  ses_domain            = var.domain != null && var.ses_domain
 }
 
 data "aws_caller_identity" "current" {}
@@ -46,6 +48,7 @@ resource "aws_s3_bucket_public_access_block" "prod_assets" {
 
 # S3 REST origins don't resolve /es/about/ to /es/about/index.html, and there is no root page,
 # so rewrite directory URLs and send / to /es/ or /en/ by the browser's preferred language.
+# A www. host is redirected to the bare domain.
 # The 302 is generated at viewer-request, so nothing is cached per language.
 # Tested by terraform/rewrite-index.test.mjs (pnpm test), which extracts this heredoc.
 resource "aws_cloudfront_function" "rewrite_index" {
@@ -81,6 +84,16 @@ resource "aws_cloudfront_function" "rewrite_index" {
       var request = event.request;
       var uri = request.uri;
 
+      // www.<domain> → <domain>, one canonical host (both are aliases of the distribution)
+      var host = request.headers.host ? request.headers.host.value : '';
+      if (host.indexOf('www.') === 0) {
+        return {
+          statusCode: 301,
+          statusDescription: 'Moved Permanently',
+          headers: { location: { value: 'https://' + host.slice(4) + uri } },
+        };
+      }
+
       if (uri === '/') {
         var acceptLanguage = request.headers['accept-language'];
         // No header (crawlers) → English; hreflang alternates point them at /es/ too
@@ -113,6 +126,7 @@ resource "aws_cloudfront_distribution" "prod_site" {
   is_ipv6_enabled = true
   # North America + Europe edges only: cheapest tier, still covers Mexico
   price_class = "PriceClass_100"
+  aliases     = local.attach_domain ? [var.domain, "www.${var.domain}"] : []
 
   origin {
     domain_name              = aws_s3_bucket.prod_assets.bucket_regional_domain_name
@@ -173,7 +187,10 @@ resource "aws_cloudfront_distribution" "prod_site" {
   }
 
   viewer_certificate {
-    cloudfront_default_certificate = true
+    cloudfront_default_certificate = !local.attach_domain
+    acm_certificate_arn            = local.attach_domain ? aws_acm_certificate_validation.site[0].certificate_arn : null
+    ssl_support_method             = local.attach_domain ? "sni-only" : null
+    minimum_protocol_version       = local.attach_domain ? "TLSv1.2_2021" : null
   }
 }
 
@@ -331,6 +348,7 @@ resource "aws_cloudfront_distribution" "preview" {
   is_ipv6_enabled = true
   price_class     = "PriceClass_100"
   comment         = "${var.display_name} preview (Storyblok Visual Editor)"
+  aliases         = local.attach_domain ? ["preview.${var.domain}"] : []
 
   origin {
     domain_name = trimsuffix(trimprefix(aws_lambda_function_url.preview_url.function_url, "https://"), "/")
@@ -388,7 +406,10 @@ resource "aws_cloudfront_distribution" "preview" {
   }
 
   viewer_certificate {
-    cloudfront_default_certificate = true
+    cloudfront_default_certificate = !local.attach_domain
+    acm_certificate_arn            = local.attach_domain ? aws_acm_certificate_validation.site[0].certificate_arn : null
+    ssl_support_method             = local.attach_domain ? "sni-only" : null
+    minimum_protocol_version       = local.attach_domain ? "TLSv1.2_2021" : null
   }
 }
 
@@ -636,6 +657,8 @@ data "aws_ssm_parameter" "turnstile_secret" {
 
 # AWS emails a verification link; SES won't send from or (in the sandbox) to it until it's clicked
 resource "aws_sesv2_email_identity" "contact" {
+  # A verified domain (ses_domain) already covers a recipient on that domain
+  count          = local.ses_domain ? 0 : 1
   email_identity = data.aws_ssm_parameter.contact_recipient.value
 }
 
@@ -664,7 +687,7 @@ resource "aws_iam_role_policy" "contact_send" {
     Statement = [{
       Effect   = "Allow"
       Action   = "ses:SendEmail"
-      Resource = aws_sesv2_email_identity.contact.arn
+      Resource = local.ses_domain ? aws_sesv2_email_identity.domain[0].arn : aws_sesv2_email_identity.contact[0].arn
     }]
   })
 }
@@ -695,11 +718,15 @@ resource "aws_lambda_function" "contact" {
   reserved_concurrent_executions = 2
 
   environment {
-    variables = {
-      CONTACT_RECIPIENT = data.aws_ssm_parameter.contact_recipient.value
-      TURNSTILE_SECRET  = data.aws_ssm_parameter.turnstile_secret.value
-      ALLOWED_ORIGINS   = join(",", var.contact_allowed_origins)
-    }
+    variables = merge(
+      {
+        CONTACT_RECIPIENT = data.aws_ssm_parameter.contact_recipient.value
+        SENDER_NAME       = var.display_name
+        TURNSTILE_SECRET  = data.aws_ssm_parameter.turnstile_secret.value
+        ALLOWED_ORIGINS   = join(",", var.contact_allowed_origins)
+      },
+      local.ses_domain ? { CONTACT_SENDER = "noreply@${var.domain}" } : {},
+    )
   }
 
   depends_on = [

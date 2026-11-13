@@ -227,6 +227,17 @@ Infrastructure lives under **`terraform/`**. State is stored remotely in the `se
 
 **One module per site:** `terraform/modules/site` holds everything one site needs (the resources below), prefixed with the module's `name` (`sensatempo-…`) and reading its secrets from SSM `/<name>/…`. `terraform/main.tf` holds the account-wide pieces (GitHub OIDC provider, S3 Origin Access Control, the alerts SNS topic and the budget) and one `module` block per site; one `pnpm tf:apply` covers every site. `moved.tf` maps the pre-module addresses for existing states.
 
+**Custom domain** (module `domain` + `zone_id`): an ACM certificate for `<domain>`, `www.` and `preview.`, validated through the Route 53 zone. `attach_domain = true` (only once the zone's nameservers are live) puts prod on `<domain>` + `www.` (redirected to the bare domain by the rewrite function) and the preview on `preview.<domain>`. `ses_domain = true` verifies the domain in SES (DKIM + `mail.<domain>` MAIL FROM records) and the contact form sends from `noreply@<domain>`.
+
+**kevinavila.pro** (`terraform/kevinavila.tf`, theme `kevin`): the Route 53 zone with the Zoho mail records (MX, SPF), DMARC (`p=none`) and optional Zoho DKIM (`kevinavila_zoho_dkim`), plus `module "kevinavila"`. Before the first apply, create its SSM parameters (same meaning as SensaTempo's):
+
+- `/kevinavila/storyblok/public-token`, `/kevinavila/storyblok/preview-token`, `/kevinavila/storyblok/webhook-secret` (SecureString)
+- `/kevinavila/preview/basic-auth-user`, `/kevinavila/preview/basic-auth-password` (SecureString)
+- `/kevinavila/github/dispatch-token` (SecureString; the same fine-grained PAT as SensaTempo's works)
+- `/kevinavila/contact/recipient` (String, e.g. `hola@kevinavila.pro`), `/kevinavila/contact/turnstile-secret` (SecureString)
+
+Going live: `pnpm tf:apply` → set GoDaddy's nameservers to the `kevinavila_name_servers` output (DNSSEC off first) → once they resolve, apply with `kevinavila_domain_live = true` (e.g. `terraform.tfvars`, git-ignored). The certificate and SES records validate on their own as soon as the zone is live.
+
 | Area           | Resources                                                                                                                                                                                                                          |
 | :------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Production** | Private S3 bucket, CloudFront distribution (Origin Access Control, managed caching policy, `PriceClass_100`, `/404.html` error page), CloudFront Function for index rewrites.                                                      |

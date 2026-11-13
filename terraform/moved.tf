@@ -127,7 +127,7 @@ moved {
 
 moved {
   from = aws_sesv2_email_identity.contact
-  to   = module.sensatempo.aws_sesv2_email_identity.contact
+  to   = module.sensatempo.aws_sesv2_email_identity.contact[0]
 }
 
 moved {

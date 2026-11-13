@@ -48,3 +48,27 @@ variable "alerts_topic_arn" {
   type        = string
   description = "SNS topic the alarms notify."
 }
+
+variable "domain" {
+  type        = string
+  default     = null
+  description = "Custom domain (e.g. kevinavila.pro): prod on it and www., preview on preview.<domain>. Needs zone_id."
+}
+
+variable "zone_id" {
+  type        = string
+  default     = null
+  description = "Route 53 hosted zone of var.domain."
+}
+
+variable "attach_domain" {
+  type        = bool
+  default     = false
+  description = "Serve the distributions on var.domain. Only once the zone's nameservers are live: it waits for the certificate to validate."
+}
+
+variable "ses_domain" {
+  type        = bool
+  default     = false
+  description = "Verify var.domain in SES (DKIM + MAIL FROM records in the zone); the contact form sends from noreply@<domain>."
+}
