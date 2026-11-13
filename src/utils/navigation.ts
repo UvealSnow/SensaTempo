@@ -107,3 +107,19 @@ export function resolveLinks<T extends LinkBlok>(
     ];
   });
 }
+
+/**
+ * The Visual Editor's preview URL is `<site>/<default lang>/` and Storyblok appends translations'
+ * `full_slug` (`en/blog/x`) to it, giving `/es/en/blog/x`. Returns the real path (`/en/blog/x`), or
+ * null when `pathname` isn't one of those.
+ */
+export function editorTranslationPath(
+  pathname: string,
+  defaultLang: string,
+  languages: readonly string[]
+): string | null {
+  const [, first, second, ...rest] = pathname.split('/');
+  if (first !== defaultLang || second === defaultLang) return null;
+  if (!languages.includes(second)) return null;
+  return `/${[second, ...rest].join('/')}`;
+}
