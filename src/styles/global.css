@@ -5,6 +5,11 @@
 /* src/utils/grid.ts builds responsive grid classes at runtime, so Tailwind can't find them by scanning */
 @source inline("{md:,lg:}col-{span,start}-{1..12}");
 
+/* <main> is focused by the skip link (tabindex="-1"); it isn't interactive, so no focus ring */
+.site-main {
+  outline: none;
+}
+
 /* Picture details overlay (components/Picture.astro): always visible, except inside a card
    (`.details-group`) on devices with hover, where hovering or focusing the card reveals it. Content
    pictures have nothing to focus, so hiding theirs would lock out keyboard users */
