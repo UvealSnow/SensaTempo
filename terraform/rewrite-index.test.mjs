@@ -1,9 +1,9 @@
-// Runs the sensatempo-rewrite-index CloudFront Function from main.tf's heredoc in Node.
+// Runs the sensatempo-rewrite-index CloudFront Function from modules/site/main.tf's heredoc in Node.
 import { strict as assert } from 'node:assert';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 
-const mainTf = readFileSync(new URL('./main.tf', import.meta.url), 'utf8');
+const mainTf = readFileSync(new URL('./modules/site/main.tf', import.meta.url), 'utf8');
 const heredoc = mainTf.match(
   /resource "aws_cloudfront_function" "rewrite_index"[\s\S]*?<<-EOT\n([\s\S]*?)\n\s*EOT/
 )?.[1];
