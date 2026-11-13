@@ -24,7 +24,6 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm format:check
       - run: pnpm lint
-      - run: pnpm exec tsc --noEmit
       - run: pnpm test
 
   themes:
@@ -71,6 +70,10 @@ jobs:
           PUBLIC_AVAILABLE_LANGUAGES: ${{ vars.PUBLIC_AVAILABLE_LANGUAGES }}
           PUBLIC_BUILD_TYPE: static
           PUBLIC_THEME: ${{ matrix.theme }}
+      # Needs the types the build generates in .astro/ (the Astro config needs a Storyblok token)
+      - name: Type check
+        if: env.STORYBLOK_PUBLIC_TOKEN != ''
+        run: pnpm exec tsc --noEmit
       # Reported, not blocking: content can link to stories that aren't published yet
       - name: Check internal links
         if: env.STORYBLOK_PUBLIC_TOKEN != ''

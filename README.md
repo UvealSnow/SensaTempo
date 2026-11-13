@@ -196,7 +196,7 @@ After rotating the preview token, the basic auth values or the webhook parameter
 
 **GitHub repository variables** (not secret): `AWS_DEPLOY_ROLE_ARN`, `AWS_PROD_BUCKET`, `AWS_CF_DIST_ID` (from the Terraform outputs), `PUBLIC_DEFAULT_LANGUAGE`, `PUBLIC_AVAILABLE_LANGUAGES`, `PUBLIC_CF_ANALYTICS_TOKEN`, `PUBLIC_TURNSTILE_SITE_KEY` (Turnstile site key, prod and preview builds), `PUBLIC_THEME` (both builds; default `sensatempo`), `PUBLIC_SITE_URL` + `PUBLIC_ALLOW_INDEXING` (production build) and `PREVIEW_SITE_URL` (preview build's `PUBLIC_SITE_URL`). These make each deploy self-describing: pointing a deploy at another domain (or another Storyblok space) needs no code change.
 
-**PR checks** (`pr-checks.yaml`, every pull request): format, lint, `tsc` and tests, then one static build per folder in `src/themes/` (with a non-blocking link check). Builds read published content with the `STORYBLOK_PUBLIC_TOKEN` repository secret; PRs from forks don't get secrets, so they skip the builds. Set or rotate the secret from SSM without printing it:
+**PR checks** (`pr-checks.yaml`, every pull request): format, lint and tests, then one static build per folder in `src/themes/`, each followed by `tsc` (it needs the types the build generates) and a non-blocking link check. Builds read published content with the `STORYBLOK_PUBLIC_TOKEN` repository secret; PRs from forks don't get secrets, so they skip the builds. Set or rotate the secret from SSM without printing it:
 
 ```bash
 aws ssm get-parameter --name /sensatempo/storyblok/public-token --with-decryption --query Parameter.Value --output text | gh secret set STORYBLOK_PUBLIC_TOKEN
