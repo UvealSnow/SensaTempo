@@ -225,6 +225,8 @@ aws ssm get-parameter --name /sensatempo/storyblok/public-token --with-decryptio
 
 Infrastructure lives under **`terraform/`**. State is stored remotely in the `sensatempo-tfstate-221135164152` S3 bucket (versioned, S3-native locking). That bucket was created once by hand, as were the SSM parameters above.
 
+**One module per site:** `terraform/modules/site` holds everything one site needs (the resources below), prefixed with the module's `name` (`sensatempo-…`) and reading its secrets from SSM `/<name>/…`. `terraform/main.tf` holds the account-wide pieces (GitHub OIDC provider, S3 Origin Access Control, the alerts SNS topic and the budget) and one `module` block per site; one `pnpm tf:apply` covers every site. `moved.tf` maps the pre-module addresses for existing states.
+
 | Area           | Resources                                                                                                                                                                                                                          |
 | :------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Production** | Private S3 bucket, CloudFront distribution (Origin Access Control, managed caching policy, `PriceClass_100`, `/404.html` error page), CloudFront Function for index rewrites.                                                      |
