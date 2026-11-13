@@ -429,8 +429,12 @@ resource "aws_iam_role" "github_deploy" {
       Condition = {
         StringEquals = {
           "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
-          # Only workflows running on main can deploy
-          "token.actions.githubusercontent.com:sub" = "repo:${var.github_repository}:ref:refs/heads/main"
+          # Deploy jobs run in this site's GitHub Environment, which only allows the main branch
+          # (README "Sites in CI"); the ref:main subject covers jobs without an environment
+          "token.actions.githubusercontent.com:sub" = [
+            "repo:${var.github_repository}:environment:${var.name}",
+            "repo:${var.github_repository}:ref:refs/heads/main",
+          ]
         }
       }
     }]
@@ -540,6 +544,7 @@ resource "aws_lambda_function" "storyblok_webhook" {
 
   environment {
     variables = {
+      SITE                     = var.name
       STORYBLOK_WEBHOOK_SECRET = data.aws_ssm_parameter.storyblok_webhook_secret.value
       GITHUB_DISPATCH_TOKEN    = data.aws_ssm_parameter.github_dispatch_token.value
     }

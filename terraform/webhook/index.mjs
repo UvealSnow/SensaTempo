@@ -89,11 +89,14 @@ export const handler = async (event) => {
     return reply(400, { error: 'invalid JSON' });
   }
 
-  const clientPayload = describe(payload ?? {});
-  if (!clientPayload) {
+  const described = describe(payload ?? {});
+  if (!described) {
     console.log('ignored', text(payload?.action));
     return { statusCode: 204 };
   }
+  // Which site's space this is (one relay per site), so only that site rebuilds
+  const site = text(process.env.SITE);
+  const clientPayload = site ? { ...described, site } : described;
 
   let response;
   try {
