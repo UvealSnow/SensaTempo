@@ -214,6 +214,7 @@ Set up each environment (Settings → Environments), with **Deployment branches:
 | Variable                                      | `sensatempo`                           | `kevinavila`                                                                                          |
 | :-------------------------------------------- | :------------------------------------- | :---------------------------------------------------------------------------------------------------- |
 | `SITE`                                        | `sensatempo`                           | `kevinavila`                                                                                          |
+| `AWS_REGION`                                  | (default `us-east-1`)                  | `eu-central-1`                                                                                        |
 | `AWS_CF_DIST_ID`                              | Terraform `cloudfront_distribution_id` | `kevinavila.cloudfront_distribution_id`                                                               |
 | `PUBLIC_THEME`                                | (default)                              | `kevin`                                                                                               |
 | `PUBLIC_SITE_NAME`, `PUBLIC_SITE_DESCRIPTION` | optional                               | `Kevin Avila`, optional                                                                               |

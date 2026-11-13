@@ -106,7 +106,7 @@ jobs:
         if: steps.ready.outputs.ok == 'true'
         with:
           role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/${{ matrix.site }}-github-deploy
-          aws-region: us-east-1
+          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
 
       # Build secrets live in SSM Parameter Store, not GitHub (see README "Secrets")
       - name: Load secrets from SSM
