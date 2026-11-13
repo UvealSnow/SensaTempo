@@ -167,7 +167,7 @@ Everything runs on **AWS (us-east-1)** and is pay-per-use: nothing bills while t
 
 ### 🔒 Secrets
 
-Secrets live in **AWS SSM Parameter Store** as `SecureString`s (free standard tier, AWS-managed `aws/ssm` key). Nothing secret is stored in GitHub or in the repo.
+Secrets live in **AWS SSM Parameter Store** as `SecureString`s (free standard tier, AWS-managed `aws/ssm` key). Nothing secret is stored in the repo. The one copy in GitHub is the read-only public token (published content only), as the `STORYBLOK_PUBLIC_TOKEN` repository secret for PR builds (see PR checks).
 
 | Parameter                                 | Used by                                                                                             |
 | :---------------------------------------- | :-------------------------------------------------------------------------------------------------- |
@@ -195,6 +195,12 @@ After rotating the preview token, the basic auth values or the webhook parameter
 **Storyblok Visual Editor:** the preview loads the Storyblok bridge (static builds don't). The editor iframe can't answer the basic auth prompt, so `src/middleware.ts` also lets in requests carrying a valid `_storyblok_tk` (sha1 of `space_id:preview_token:timestamp`, at most 1 hour old) and swaps it for a signed 8-hour session cookie (`SameSite=None; Partitioned`), so links clicked inside the editor keep working. In Storyblok, set the preview URL to `<preview_url>/es/` (the CloudFront one: Function URLs reject the editor's `_storyblok_tk[...]` query keys, so a CloudFront Function percent-encodes them) and the `home` story's real path to `/`.
 
 **GitHub repository variables** (not secret): `AWS_DEPLOY_ROLE_ARN`, `AWS_PROD_BUCKET`, `AWS_CF_DIST_ID` (from the Terraform outputs), `PUBLIC_DEFAULT_LANGUAGE`, `PUBLIC_AVAILABLE_LANGUAGES`, `PUBLIC_CF_ANALYTICS_TOKEN`, `PUBLIC_TURNSTILE_SITE_KEY` (Turnstile site key, prod and preview builds), `PUBLIC_THEME` (both builds; default `sensatempo`), `PUBLIC_SITE_URL` + `PUBLIC_ALLOW_INDEXING` (production build) and `PREVIEW_SITE_URL` (preview build's `PUBLIC_SITE_URL`). These make each deploy self-describing: pointing a deploy at another domain (or another Storyblok space) needs no code change.
+
+**PR checks** (`pr-checks.yaml`, every pull request): format, lint and tests, then one static build per folder in `src/themes/`, each followed by `tsc` (it needs the types the build generates) and a non-blocking link check. Builds read published content with the `STORYBLOK_PUBLIC_TOKEN` repository secret; PRs from forks don't get secrets, so they skip the builds. Set or rotate the secret from SSM without printing it:
+
+```bash
+aws ssm get-parameter --name /sensatempo/storyblok/public-token --with-decryption --query Parameter.Value --output text | gh secret set STORYBLOK_PUBLIC_TOKEN
+```
 
 **Contact form:** pages post JSON to `/api/contact`, which both CloudFront distributions route to the `sensatempo-contact` Lambda (`terraform/contact/index.mjs`). It accepts only the allowed origins (`contact_allowed_origins` in `terraform/variables.tf`), drops honeypot submissions, validates the fields, verifies the [Cloudflare Turnstile](https://developers.cloudflare.com/turnstile/) token and sends the message with SES to `/sensatempo/contact/recipient` (Reply-To = the visitor). It never answers 403/404 (prod CloudFront turns those into the 404 page). **Changing the recipient:** `aws ssm put-parameter --type String --overwrite --name /sensatempo/contact/recipient --value <email>`, `pnpm tf:apply`, then click the verification link SES emails to that address. SES is in the sandbox (verified addresses only, 200 emails/day), which is enough while the recipient is also the sender.
 
