@@ -1,0 +1,1675 @@
+[
+  {
+    "name": "author",
+    "display_name": "Author",
+    "is_root": true,
+    "is_nestable": false,
+    "group": null,
+    "schema": {
+      "name": {
+        "pos": 0,
+        "type": "text",
+        "display_name": "Name",
+        "required": true
+      },
+      "bio": {
+        "pos": 1,
+        "type": "textarea",
+        "display_name": "Bio",
+        "translatable": true
+      },
+      "photo": {
+        "pos": 2,
+        "type": "asset",
+        "display_name": "Photo",
+        "filetypes": ["images"]
+      },
+      "socials": {
+        "pos": 3,
+        "type": "bloks",
+        "display_name": "Socials",
+        "restrict_components": true,
+        "component_whitelist": ["social_link"]
+      }
+    }
+  },
+  {
+    "name": "blog_index",
+    "display_name": "Blog index",
+    "is_root": true,
+    "is_nestable": false,
+    "group": null,
+    "schema": {
+      "title": {
+        "pos": 0,
+        "type": "text",
+        "display_name": "Title",
+        "translatable": true
+      },
+      "description": {
+        "pos": 1,
+        "type": "textarea",
+        "display_name": "Description",
+        "translatable": true
+      },
+      "featured": {
+        "pos": 2,
+        "type": "options",
+        "display_name": "Featured posts",
+        "description": "Sidebar only, in this order. Left out of the /blog card feed",
+        "source": "internal_stories",
+        "folder_slug": "blog/post/",
+        "filter_content_type": ["post"]
+      },
+      "quick_link_tags": {
+        "pos": 3,
+        "type": "options",
+        "display_name": "Quick link tags",
+        "description": "Up to 4, after \"All posts\"",
+        "source": "internal_stories",
+        "folder_slug": "blog/tag/",
+        "filter_content_type": ["tag"],
+        "max_options": "4"
+      },
+      "tab_strings": {
+        "pos": 4,
+        "type": "tab",
+        "display_name": "UI strings",
+        "keys": [
+          "quick_links_label",
+          "featured_label",
+          "archive_label",
+          "all_posts_label",
+          "by_label",
+          "read_more_label",
+          "previous_label",
+          "next_label",
+          "page_label",
+          "archive_title",
+          "archive_description",
+          "pagination_label",
+          "empty_label"
+        ]
+      },
+      "quick_links_label": {
+        "pos": 5,
+        "type": "text",
+        "translatable": true,
+        "description": "Quick links heading (\"Quick links\")"
+      },
+      "featured_label": {
+        "pos": 6,
+        "type": "text",
+        "translatable": true,
+        "description": "Featured posts heading (\"Featured posts\")"
+      },
+      "archive_label": {
+        "pos": 7,
+        "type": "text",
+        "translatable": true,
+        "description": "Archive heading (\"Archive\")"
+      },
+      "all_posts_label": {
+        "pos": 8,
+        "type": "text",
+        "translatable": true,
+        "description": "First quick link (\"All posts\")"
+      },
+      "by_label": {
+        "pos": 9,
+        "type": "text",
+        "translatable": true,
+        "description": "Before the author on cards (\"By\")"
+      },
+      "read_more_label": {
+        "pos": 10,
+        "type": "text",
+        "translatable": true,
+        "description": "Card link (\"Read full article\")"
+      },
+      "previous_label": {
+        "pos": 11,
+        "type": "text",
+        "translatable": true,
+        "description": "Paginator, previous page (\"Previous\")"
+      },
+      "next_label": {
+        "pos": 12,
+        "type": "text",
+        "translatable": true,
+        "description": "Paginator, next page (\"Next\")"
+      },
+      "page_label": {
+        "pos": 13,
+        "type": "text",
+        "translatable": true,
+        "description": "Title suffix on page 2+ (\"Page\")"
+      },
+      "archive_title": {
+        "pos": 14,
+        "type": "text",
+        "translatable": true,
+        "description": "Month archive title; {month} and {year} are replaced"
+      },
+      "archive_description": {
+        "pos": 15,
+        "type": "text",
+        "translatable": true,
+        "description": "Month archive description; {month} and {year} are replaced"
+      },
+      "pagination_label": {
+        "type": "text",
+        "translatable": true,
+        "description": "Paginator landmark, for screen readers (\"Pagination\")",
+        "pos": 99
+      },
+      "empty_label": {
+        "type": "text",
+        "translatable": true,
+        "description": "Author or tag page without posts (\"No posts yet.\")",
+        "pos": 100
+      },
+      "tab_seo": {
+        "type": "tab",
+        "display_name": "SEO",
+        "keys": ["seo"],
+        "pos": 101
+      },
+      "seo": {
+        "type": "bloks",
+        "display_name": "SEO",
+        "restrict_components": true,
+        "component_whitelist": ["seo"],
+        "maximum": "1",
+        "description": "Optional: overrides for search results and link previews",
+        "pos": 102
+      }
+    }
+  },
+  {
+    "name": "contact_form",
+    "display_name": "Contact form",
+    "is_root": false,
+    "is_nestable": true,
+    "group": null,
+    "schema": {
+      "name_label": {
+        "type": "text",
+        "translatable": true,
+        "description": "Name field label (\"Name\"). Empty = built-in text",
+        "pos": 0
+      },
+      "email_label": {
+        "type": "text",
+        "translatable": true,
+        "description": "Email field label (\"Email\"). Empty = built-in text",
+        "pos": 1
+      },
+      "message_label": {
+        "type": "text",
+        "translatable": true,
+        "description": "Message field label (\"Message\"). Empty = built-in text",
+        "pos": 2
+      },
+      "submit_label": {
+        "type": "text",
+        "translatable": true,
+        "description": "Button (\"Send\"). Empty = built-in text",
+        "pos": 3
+      },
+      "sending_label": {
+        "type": "text",
+        "translatable": true,
+        "description": "Button while sending (\"Sending…\"). Empty = built-in text",
+        "pos": 4
+      },
+      "success_message": {
+        "type": "text",
+        "translatable": true,
+        "description": "Shown instead of the form once sent. Empty = built-in text",
+        "pos": 5
+      },
+      "error_message": {
+        "type": "text",
+        "translatable": true,
+        "description": "The message could not be sent (server or network error). Empty = built-in text",
+        "pos": 6
+      },
+      "invalid_message": {
+        "type": "text",
+        "translatable": true,
+        "description": "Some fields are empty or invalid. Empty = built-in text",
+        "pos": 7
+      },
+      "captcha_message": {
+        "type": "text",
+        "translatable": true,
+        "description": "The bot check failed. Empty = built-in text",
+        "pos": 8
+      },
+      "noscript_message": {
+        "type": "text",
+        "translatable": true,
+        "description": "Shown when JavaScript is off (the form needs it). Empty = built-in text",
+        "pos": 9
+      },
+      "tab_layout": {
+        "type": "tab",
+        "display_name": "Layout",
+        "keys": ["size", "start", "size_tablet", "start_tablet"],
+        "pos": 10
+      },
+      "size": {
+        "type": "option",
+        "pos": 11,
+        "display_name": "Width (desktop)",
+        "options": [
+          {
+            "name": "1/12",
+            "value": "1/12"
+          },
+          {
+            "name": "2/12",
+            "value": "2/12"
+          },
+          {
+            "name": "3/12",
+            "value": "3/12"
+          },
+          {
+            "name": "4/12",
+            "value": "4/12"
+          },
+          {
+            "name": "5/12",
+            "value": "5/12"
+          },
+          {
+            "name": "6/12",
+            "value": "6/12"
+          },
+          {
+            "name": "7/12",
+            "value": "7/12"
+          },
+          {
+            "name": "8/12",
+            "value": "8/12"
+          },
+          {
+            "name": "9/12",
+            "value": "9/12"
+          },
+          {
+            "name": "10/12",
+            "value": "10/12"
+          },
+          {
+            "name": "11/12",
+            "value": "11/12"
+          },
+          {
+            "name": "12/12",
+            "value": "12/12"
+          }
+        ],
+        "default_value": "8/12"
+      },
+      "start": {
+        "type": "option",
+        "pos": 12,
+        "display_name": "Start column (desktop)",
+        "options": [
+          {
+            "name": "1/12",
+            "value": "1/12"
+          },
+          {
+            "name": "2/12",
+            "value": "2/12"
+          },
+          {
+            "name": "3/12",
+            "value": "3/12"
+          },
+          {
+            "name": "4/12",
+            "value": "4/12"
+          },
+          {
+            "name": "5/12",
+            "value": "5/12"
+          },
+          {
+            "name": "6/12",
+            "value": "6/12"
+          },
+          {
+            "name": "7/12",
+            "value": "7/12"
+          },
+          {
+            "name": "8/12",
+            "value": "8/12"
+          },
+          {
+            "name": "9/12",
+            "value": "9/12"
+          },
+          {
+            "name": "10/12",
+            "value": "10/12"
+          },
+          {
+            "name": "11/12",
+            "value": "11/12"
+          },
+          {
+            "name": "12/12",
+            "value": "12/12"
+          }
+        ]
+      },
+      "size_tablet": {
+        "type": "option",
+        "pos": 13,
+        "display_name": "Width (tablet)",
+        "options": [
+          {
+            "name": "1/12",
+            "value": "1/12"
+          },
+          {
+            "name": "2/12",
+            "value": "2/12"
+          },
+          {
+            "name": "3/12",
+            "value": "3/12"
+          },
+          {
+            "name": "4/12",
+            "value": "4/12"
+          },
+          {
+            "name": "5/12",
+            "value": "5/12"
+          },
+          {
+            "name": "6/12",
+            "value": "6/12"
+          },
+          {
+            "name": "7/12",
+            "value": "7/12"
+          },
+          {
+            "name": "8/12",
+            "value": "8/12"
+          },
+          {
+            "name": "9/12",
+            "value": "9/12"
+          },
+          {
+            "name": "10/12",
+            "value": "10/12"
+          },
+          {
+            "name": "11/12",
+            "value": "11/12"
+          },
+          {
+            "name": "12/12",
+            "value": "12/12"
+          }
+        ],
+        "description": "Defaults to the desktop width"
+      },
+      "start_tablet": {
+        "type": "option",
+        "pos": 14,
+        "display_name": "Start column (tablet)",
+        "options": [
+          {
+            "name": "1/12",
+            "value": "1/12"
+          },
+          {
+            "name": "2/12",
+            "value": "2/12"
+          },
+          {
+            "name": "3/12",
+            "value": "3/12"
+          },
+          {
+            "name": "4/12",
+            "value": "4/12"
+          },
+          {
+            "name": "5/12",
+            "value": "5/12"
+          },
+          {
+            "name": "6/12",
+            "value": "6/12"
+          },
+          {
+            "name": "7/12",
+            "value": "7/12"
+          },
+          {
+            "name": "8/12",
+            "value": "8/12"
+          },
+          {
+            "name": "9/12",
+            "value": "9/12"
+          },
+          {
+            "name": "10/12",
+            "value": "10/12"
+          },
+          {
+            "name": "11/12",
+            "value": "11/12"
+          },
+          {
+            "name": "12/12",
+            "value": "12/12"
+          }
+        ],
+        "description": "Defaults to the desktop start"
+      },
+      "required_note": {
+        "type": "text",
+        "translatable": true,
+        "description": "Above the fields (\"All fields are required.\"). Empty = built-in text",
+        "pos": 15
+      },
+      "name_error": {
+        "type": "text",
+        "translatable": true,
+        "description": "Under the name field when it is empty. Empty = built-in text",
+        "pos": 16
+      },
+      "email_error": {
+        "type": "text",
+        "translatable": true,
+        "description": "Under the email field when it is invalid. Empty = built-in text",
+        "pos": 17
+      },
+      "message_error": {
+        "type": "text",
+        "translatable": true,
+        "description": "Under the message field when it is empty. Empty = built-in text",
+        "pos": 18
+      }
+    }
+  },
+  {
+    "name": "Footer",
+    "is_root": true,
+    "is_nestable": false,
+    "group": "Content",
+    "schema": {
+      "copyright_holder": {
+        "type": "text",
+        "pos": 0,
+        "display_name": "Copyright holder"
+      },
+      "credit_label": {
+        "type": "text",
+        "pos": 1,
+        "translatable": true,
+        "display_name": "Credit label"
+      },
+      "credit_name": {
+        "type": "text",
+        "pos": 2,
+        "display_name": "Credit name"
+      },
+      "credit_link": {
+        "type": "multilink",
+        "pos": 3,
+        "display_name": "Credit link",
+        "email_link_type": true,
+        "asset_link_type": false,
+        "allow_target_blank": false
+      }
+    }
+  },
+  {
+    "name": "nav_link",
+    "display_name": "Nav link",
+    "is_root": false,
+    "is_nestable": true,
+    "group": null,
+    "schema": {
+      "label": {
+        "type": "text",
+        "pos": 0,
+        "translatable": true,
+        "required": true
+      },
+      "link": {
+        "type": "multilink",
+        "pos": 1,
+        "required": true,
+        "allow_target_blank": true
+      }
+    }
+  },
+  {
+    "name": "Navbar",
+    "description": "Barra de navegación del sitio",
+    "is_root": true,
+    "is_nestable": false,
+    "group": "Content",
+    "schema": {
+      "logo": {
+        "type": "asset",
+        "pos": 0,
+        "filetypes": ["images"]
+      },
+      "title": {
+        "type": "text",
+        "pos": 1,
+        "display_name": "Site name",
+        "description": "Shown next to the logo by themes that display it. Optional."
+      },
+      "tagline": {
+        "type": "text",
+        "pos": 2,
+        "translatable": true,
+        "display_name": "Tagline",
+        "description": "Short line under the site name, shown by themes that display it. Optional."
+      },
+      "links": {
+        "type": "bloks",
+        "pos": 3,
+        "restrict_components": true,
+        "component_whitelist": ["nav_link"]
+      }
+    }
+  },
+  {
+    "name": "NotFound",
+    "display_name": "Not found",
+    "is_root": true,
+    "is_nestable": false,
+    "group": null,
+    "schema": {
+      "title": {
+        "type": "text",
+        "pos": 0,
+        "translatable": true,
+        "display_name": "Title"
+      },
+      "text": {
+        "type": "textarea",
+        "pos": 1,
+        "translatable": true,
+        "display_name": "Text"
+      },
+      "link_label": {
+        "type": "text",
+        "pos": 2,
+        "translatable": true,
+        "display_name": "Link label",
+        "description": "Link back to the home page of the current language"
+      }
+    }
+  },
+  {
+    "name": "page",
+    "is_root": true,
+    "is_nestable": false,
+    "group": "Content",
+    "schema": {
+      "title": {
+        "pos": 0,
+        "type": "text",
+        "translatable": true,
+        "display_name": "Title",
+        "description": "Optional: shows a post-style header (cover + title)"
+      },
+      "excerpt": {
+        "pos": 1,
+        "type": "textarea",
+        "translatable": true,
+        "display_name": "Excerpt",
+        "description": "Used in lists and search engines"
+      },
+      "cover": {
+        "pos": 2,
+        "type": "asset",
+        "filetypes": ["images"],
+        "display_name": "Cover image"
+      },
+      "cover_description": {
+        "pos": 3,
+        "type": "textarea",
+        "translatable": true,
+        "display_name": "Cover description",
+        "description": "Shown over the cover on hover"
+      },
+      "cover_taken_at": {
+        "pos": 4,
+        "type": "datetime",
+        "disable_time": true,
+        "display_name": "Cover date taken"
+      },
+      "slug": {
+        "type": "text",
+        "pos": 5,
+        "translatable": true
+      },
+      "body": {
+        "type": "bloks",
+        "pos": 6
+      },
+      "tab_seo": {
+        "type": "tab",
+        "display_name": "SEO",
+        "keys": ["seo"],
+        "pos": 7
+      },
+      "seo": {
+        "type": "bloks",
+        "display_name": "SEO",
+        "restrict_components": true,
+        "component_whitelist": ["seo"],
+        "maximum": "1",
+        "description": "Optional: overrides for search results and link previews",
+        "pos": 8
+      }
+    }
+  },
+  {
+    "name": "picture",
+    "display_name": "Picture",
+    "is_root": false,
+    "is_nestable": true,
+    "group": "Content",
+    "schema": {
+      "image": {
+        "pos": 0,
+        "type": "asset",
+        "filetypes": ["images"],
+        "required": true,
+        "display_name": "Image"
+      },
+      "description": {
+        "pos": 1,
+        "type": "textarea",
+        "display_name": "Description",
+        "translatable": true,
+        "description": "Shown over the image on hover"
+      },
+      "caption": {
+        "pos": 1,
+        "type": "text",
+        "translatable": true,
+        "display_name": "Caption (deprecated: use Description)"
+      },
+      "taken_at": {
+        "pos": 2,
+        "type": "datetime",
+        "disable_time": true,
+        "display_name": "Date taken"
+      },
+      "ratio": {
+        "pos": 2,
+        "type": "option",
+        "display_name": "Crop",
+        "options": [
+          {
+            "name": "Golden ratio (landscape)",
+            "value": "golden"
+          },
+          {
+            "name": "Square",
+            "value": "square"
+          },
+          {
+            "name": "Original",
+            "value": "original"
+          }
+        ],
+        "default_value": "golden"
+      },
+      "size": {
+        "pos": 3,
+        "type": "option",
+        "display_name": "Width (desktop)",
+        "options": [
+          {
+            "name": "1/12",
+            "value": "1/12"
+          },
+          {
+            "name": "2/12",
+            "value": "2/12"
+          },
+          {
+            "name": "3/12",
+            "value": "3/12"
+          },
+          {
+            "name": "4/12",
+            "value": "4/12"
+          },
+          {
+            "name": "5/12",
+            "value": "5/12"
+          },
+          {
+            "name": "6/12",
+            "value": "6/12"
+          },
+          {
+            "name": "7/12",
+            "value": "7/12"
+          },
+          {
+            "name": "8/12",
+            "value": "8/12"
+          },
+          {
+            "name": "9/12",
+            "value": "9/12"
+          },
+          {
+            "name": "10/12",
+            "value": "10/12"
+          },
+          {
+            "name": "11/12",
+            "value": "11/12"
+          },
+          {
+            "name": "12/12",
+            "value": "12/12"
+          }
+        ],
+        "default_value": "12/12"
+      },
+      "start": {
+        "pos": 4,
+        "type": "option",
+        "display_name": "Start column (desktop)",
+        "options": [
+          {
+            "name": "1/12",
+            "value": "1/12"
+          },
+          {
+            "name": "2/12",
+            "value": "2/12"
+          },
+          {
+            "name": "3/12",
+            "value": "3/12"
+          },
+          {
+            "name": "4/12",
+            "value": "4/12"
+          },
+          {
+            "name": "5/12",
+            "value": "5/12"
+          },
+          {
+            "name": "6/12",
+            "value": "6/12"
+          },
+          {
+            "name": "7/12",
+            "value": "7/12"
+          },
+          {
+            "name": "8/12",
+            "value": "8/12"
+          },
+          {
+            "name": "9/12",
+            "value": "9/12"
+          },
+          {
+            "name": "10/12",
+            "value": "10/12"
+          },
+          {
+            "name": "11/12",
+            "value": "11/12"
+          },
+          {
+            "name": "12/12",
+            "value": "12/12"
+          }
+        ]
+      },
+      "size_tablet": {
+        "pos": 5,
+        "type": "option",
+        "display_name": "Width (tablet)",
+        "options": [
+          {
+            "name": "1/12",
+            "value": "1/12"
+          },
+          {
+            "name": "2/12",
+            "value": "2/12"
+          },
+          {
+            "name": "3/12",
+            "value": "3/12"
+          },
+          {
+            "name": "4/12",
+            "value": "4/12"
+          },
+          {
+            "name": "5/12",
+            "value": "5/12"
+          },
+          {
+            "name": "6/12",
+            "value": "6/12"
+          },
+          {
+            "name": "7/12",
+            "value": "7/12"
+          },
+          {
+            "name": "8/12",
+            "value": "8/12"
+          },
+          {
+            "name": "9/12",
+            "value": "9/12"
+          },
+          {
+            "name": "10/12",
+            "value": "10/12"
+          },
+          {
+            "name": "11/12",
+            "value": "11/12"
+          },
+          {
+            "name": "12/12",
+            "value": "12/12"
+          }
+        ],
+        "description": "Defaults to the desktop width"
+      },
+      "start_tablet": {
+        "pos": 6,
+        "type": "option",
+        "display_name": "Start column (tablet)",
+        "options": [
+          {
+            "name": "1/12",
+            "value": "1/12"
+          },
+          {
+            "name": "2/12",
+            "value": "2/12"
+          },
+          {
+            "name": "3/12",
+            "value": "3/12"
+          },
+          {
+            "name": "4/12",
+            "value": "4/12"
+          },
+          {
+            "name": "5/12",
+            "value": "5/12"
+          },
+          {
+            "name": "6/12",
+            "value": "6/12"
+          },
+          {
+            "name": "7/12",
+            "value": "7/12"
+          },
+          {
+            "name": "8/12",
+            "value": "8/12"
+          },
+          {
+            "name": "9/12",
+            "value": "9/12"
+          },
+          {
+            "name": "10/12",
+            "value": "10/12"
+          },
+          {
+            "name": "11/12",
+            "value": "11/12"
+          },
+          {
+            "name": "12/12",
+            "value": "12/12"
+          }
+        ],
+        "description": "Defaults to the desktop start"
+      },
+      "vertical": {
+        "pos": 7,
+        "type": "option",
+        "display_name": "Vertical alignment",
+        "options": [
+          {
+            "name": "Top",
+            "value": "start"
+          },
+          {
+            "name": "Center",
+            "value": "center"
+          },
+          {
+            "name": "Bottom",
+            "value": "end"
+          }
+        ],
+        "default_value": "start"
+      }
+    }
+  },
+  {
+    "name": "post",
+    "display_name": "Blog post",
+    "is_root": true,
+    "is_nestable": false,
+    "group": "Content",
+    "schema": {
+      "title": {
+        "pos": 0,
+        "type": "text",
+        "translatable": true,
+        "required": true,
+        "display_name": "Title"
+      },
+      "excerpt": {
+        "pos": 1,
+        "type": "textarea",
+        "translatable": true,
+        "display_name": "Excerpt",
+        "description": "Used in the blog list, search engines and RSS"
+      },
+      "cover": {
+        "pos": 2,
+        "type": "asset",
+        "filetypes": ["images"],
+        "display_name": "Cover image"
+      },
+      "cover_description": {
+        "pos": 3,
+        "type": "textarea",
+        "display_name": "Cover description",
+        "translatable": true,
+        "description": "Shown over the cover on hover"
+      },
+      "date": {
+        "pos": 3,
+        "type": "datetime",
+        "disable_time": true,
+        "display_name": "Date (deprecated: use Publishing date)",
+        "description": "Defaults to the first publish date"
+      },
+      "cover_taken_at": {
+        "pos": 4,
+        "type": "datetime",
+        "disable_time": true,
+        "display_name": "Cover date taken"
+      },
+      "body": {
+        "pos": 4,
+        "type": "bloks",
+        "restrict_components": true,
+        "component_whitelist": ["picture", "text"],
+        "display_name": "Body"
+      },
+      "published_at": {
+        "pos": 5,
+        "type": "datetime",
+        "disable_time": true,
+        "display_name": "Publishing date",
+        "description": "Drives the order and the archive month. Defaults to the first publish date"
+      },
+      "author": {
+        "pos": 6,
+        "type": "option",
+        "display_name": "Author",
+        "source": "internal_stories",
+        "folder_slug": "blog/author/",
+        "filter_content_type": ["author"]
+      },
+      "tags": {
+        "pos": 7,
+        "type": "options",
+        "display_name": "Tags",
+        "source": "internal_stories",
+        "folder_slug": "blog/tag/",
+        "filter_content_type": ["tag"]
+      },
+      "tab_seo": {
+        "type": "tab",
+        "display_name": "SEO",
+        "keys": ["seo"],
+        "pos": 8
+      },
+      "seo": {
+        "type": "bloks",
+        "display_name": "SEO",
+        "restrict_components": true,
+        "component_whitelist": ["seo"],
+        "maximum": "1",
+        "description": "Optional: overrides for search results and link previews",
+        "pos": 9
+      }
+    }
+  },
+  {
+    "name": "post_list",
+    "display_name": "Post list",
+    "is_root": false,
+    "is_nestable": true,
+    "group": "Content",
+    "schema": {
+      "title": {
+        "type": "text",
+        "pos": 0,
+        "translatable": true,
+        "display_name": "Title"
+      },
+      "posts": {
+        "type": "options",
+        "pos": 1,
+        "display_name": "Posts",
+        "source": "internal_stories",
+        "folder_slug": "blog/post/",
+        "filter_content_type": ["post"],
+        "description": "Shown in this order"
+      }
+    }
+  },
+  {
+    "name": "project",
+    "display_name": "Project",
+    "is_root": true,
+    "is_nestable": false,
+    "group": "Content",
+    "schema": {
+      "title": {
+        "pos": 0,
+        "type": "text",
+        "translatable": true,
+        "display_name": "Title"
+      },
+      "excerpt": {
+        "pos": 1,
+        "type": "textarea",
+        "translatable": true,
+        "display_name": "Excerpt",
+        "description": "Used in lists and search engines"
+      },
+      "cover": {
+        "pos": 2,
+        "type": "asset",
+        "filetypes": ["images"],
+        "display_name": "Cover image"
+      },
+      "cover_description": {
+        "pos": 3,
+        "type": "textarea",
+        "translatable": true,
+        "display_name": "Cover description",
+        "description": "Shown over the cover on hover"
+      },
+      "cover_taken_at": {
+        "pos": 4,
+        "type": "datetime",
+        "disable_time": true,
+        "display_name": "Cover date taken"
+      },
+      "year": {
+        "pos": 5,
+        "type": "text",
+        "display_name": "Year",
+        "description": "Shown on the card and the page, e.g. 2025 or 2024–2025. Projects are sorted by it, newest first"
+      },
+      "body": {
+        "pos": 6,
+        "type": "bloks",
+        "restrict_components": true,
+        "component_whitelist": ["picture", "text"],
+        "display_name": "Body"
+      },
+      "tab_seo": {
+        "type": "tab",
+        "display_name": "SEO",
+        "keys": ["seo"],
+        "pos": 7
+      },
+      "seo": {
+        "type": "bloks",
+        "display_name": "SEO",
+        "restrict_components": true,
+        "component_whitelist": ["seo"],
+        "maximum": "1",
+        "description": "Optional: overrides for search results and link previews",
+        "pos": 8
+      }
+    }
+  },
+  {
+    "name": "projects_index",
+    "display_name": "Projects index",
+    "is_root": true,
+    "is_nestable": false,
+    "group": "Content",
+    "schema": {
+      "title": {
+        "pos": 0,
+        "type": "text",
+        "translatable": true,
+        "display_name": "Title"
+      },
+      "description": {
+        "pos": 1,
+        "type": "textarea",
+        "translatable": true,
+        "display_name": "Description"
+      },
+      "tab_strings": {
+        "pos": 2,
+        "type": "tab",
+        "display_name": "UI strings",
+        "keys": ["read_more_label", "empty_label"]
+      },
+      "read_more_label": {
+        "pos": 3,
+        "type": "text",
+        "translatable": true,
+        "display_name": "Card link label"
+      },
+      "empty_label": {
+        "pos": 4,
+        "type": "text",
+        "translatable": true,
+        "display_name": "No projects text"
+      },
+      "tab_seo": {
+        "type": "tab",
+        "display_name": "SEO",
+        "keys": ["seo"],
+        "pos": 5
+      },
+      "seo": {
+        "type": "bloks",
+        "display_name": "SEO",
+        "restrict_components": true,
+        "component_whitelist": ["seo"],
+        "maximum": "1",
+        "description": "Optional: overrides for search results and link previews",
+        "pos": 6
+      }
+    }
+  },
+  {
+    "name": "seo",
+    "display_name": "SEO",
+    "is_root": false,
+    "is_nestable": true,
+    "group": null,
+    "schema": {
+      "title": {
+        "type": "text",
+        "translatable": true,
+        "display_name": "Title",
+        "description": "Search results and link previews (~60 characters). Empty = the entry's title",
+        "max_length": "70",
+        "pos": 0
+      },
+      "description": {
+        "type": "textarea",
+        "translatable": true,
+        "display_name": "Description",
+        "description": "~155 characters. Empty = the excerpt or description",
+        "max_length": "200",
+        "pos": 1
+      },
+      "image": {
+        "type": "asset",
+        "filetypes": ["images"],
+        "display_name": "Share image",
+        "description": "Link preview image, cropped to 1200×630 around the focal point. Empty = the cover, then the site default",
+        "pos": 2
+      },
+      "noindex": {
+        "type": "boolean",
+        "display_name": "Hide from search engines",
+        "description": "Adds noindex to this page only",
+        "pos": 3
+      }
+    }
+  },
+  {
+    "name": "SeoDefaults",
+    "display_name": "SEO defaults",
+    "is_root": true,
+    "is_nestable": false,
+    "group": null,
+    "schema": {
+      "site_name": {
+        "type": "text",
+        "display_name": "Site name",
+        "description": "og:site_name and the suffix of every page title",
+        "pos": 0
+      },
+      "description": {
+        "type": "textarea",
+        "translatable": true,
+        "display_name": "Default description",
+        "description": "For pages without their own description (~155 characters)",
+        "pos": 1
+      },
+      "image": {
+        "type": "asset",
+        "filetypes": ["images"],
+        "display_name": "Default share image",
+        "description": "Link preview for pages without a cover or SEO image. Cropped to 1200×630 around the focal point",
+        "pos": 2
+      },
+      "x_handle": {
+        "type": "text",
+        "display_name": "X handle",
+        "description": "Optional, e.g. @sensatempo (twitter:site)",
+        "pos": 3
+      }
+    }
+  },
+  {
+    "name": "social_link",
+    "display_name": "Social link",
+    "is_root": false,
+    "is_nestable": true,
+    "group": null,
+    "schema": {
+      "icon": {
+        "pos": 0,
+        "type": "option",
+        "display_name": "Icon",
+        "required": true,
+        "options": [
+          {
+            "name": "instagram",
+            "value": "instagram"
+          },
+          {
+            "name": "facebook",
+            "value": "facebook"
+          },
+          {
+            "name": "x",
+            "value": "x"
+          },
+          {
+            "name": "tiktok",
+            "value": "tiktok"
+          },
+          {
+            "name": "youtube",
+            "value": "youtube"
+          },
+          {
+            "name": "website",
+            "value": "website"
+          },
+          {
+            "name": "email",
+            "value": "email"
+          }
+        ]
+      },
+      "url": {
+        "pos": 1,
+        "type": "text",
+        "display_name": "URL",
+        "required": true
+      }
+    }
+  },
+  {
+    "name": "tag",
+    "display_name": "Tag",
+    "is_root": true,
+    "is_nestable": false,
+    "group": null,
+    "schema": {
+      "name": {
+        "pos": 0,
+        "type": "text",
+        "display_name": "Name",
+        "translatable": true,
+        "required": true
+      },
+      "description": {
+        "pos": 1,
+        "type": "textarea",
+        "display_name": "Description",
+        "translatable": true
+      }
+    }
+  },
+  {
+    "name": "text",
+    "display_name": "Text",
+    "is_root": false,
+    "is_nestable": true,
+    "group": "Content",
+    "schema": {
+      "heading": {
+        "type": "text",
+        "pos": 0,
+        "translatable": true,
+        "display_name": "Heading"
+      },
+      "heading_level": {
+        "type": "option",
+        "pos": 1,
+        "display_name": "Heading level",
+        "options": [
+          {
+            "name": "H1 (page title)",
+            "value": "h1"
+          },
+          {
+            "name": "H2",
+            "value": "h2"
+          },
+          {
+            "name": "H3",
+            "value": "h3"
+          }
+        ],
+        "default_value": "h2"
+      },
+      "content": {
+        "type": "richtext",
+        "pos": 2,
+        "translatable": true,
+        "display_name": "Content"
+      },
+      "align": {
+        "type": "option",
+        "pos": 3,
+        "display_name": "Text alignment",
+        "options": [
+          {
+            "name": "Left",
+            "value": "left"
+          },
+          {
+            "name": "Right",
+            "value": "right"
+          }
+        ],
+        "default_value": "left"
+      },
+      "size": {
+        "type": "option",
+        "pos": 4,
+        "display_name": "Width (desktop)",
+        "options": [
+          {
+            "name": "1/12",
+            "value": "1/12"
+          },
+          {
+            "name": "2/12",
+            "value": "2/12"
+          },
+          {
+            "name": "3/12",
+            "value": "3/12"
+          },
+          {
+            "name": "4/12",
+            "value": "4/12"
+          },
+          {
+            "name": "5/12",
+            "value": "5/12"
+          },
+          {
+            "name": "6/12",
+            "value": "6/12"
+          },
+          {
+            "name": "7/12",
+            "value": "7/12"
+          },
+          {
+            "name": "8/12",
+            "value": "8/12"
+          },
+          {
+            "name": "9/12",
+            "value": "9/12"
+          },
+          {
+            "name": "10/12",
+            "value": "10/12"
+          },
+          {
+            "name": "11/12",
+            "value": "11/12"
+          },
+          {
+            "name": "12/12",
+            "value": "12/12"
+          }
+        ],
+        "default_value": "12/12"
+      },
+      "start": {
+        "type": "option",
+        "pos": 5,
+        "display_name": "Start column (desktop)",
+        "options": [
+          {
+            "name": "1/12",
+            "value": "1/12"
+          },
+          {
+            "name": "2/12",
+            "value": "2/12"
+          },
+          {
+            "name": "3/12",
+            "value": "3/12"
+          },
+          {
+            "name": "4/12",
+            "value": "4/12"
+          },
+          {
+            "name": "5/12",
+            "value": "5/12"
+          },
+          {
+            "name": "6/12",
+            "value": "6/12"
+          },
+          {
+            "name": "7/12",
+            "value": "7/12"
+          },
+          {
+            "name": "8/12",
+            "value": "8/12"
+          },
+          {
+            "name": "9/12",
+            "value": "9/12"
+          },
+          {
+            "name": "10/12",
+            "value": "10/12"
+          },
+          {
+            "name": "11/12",
+            "value": "11/12"
+          },
+          {
+            "name": "12/12",
+            "value": "12/12"
+          }
+        ]
+      },
+      "size_tablet": {
+        "type": "option",
+        "pos": 6,
+        "display_name": "Width (tablet)",
+        "options": [
+          {
+            "name": "1/12",
+            "value": "1/12"
+          },
+          {
+            "name": "2/12",
+            "value": "2/12"
+          },
+          {
+            "name": "3/12",
+            "value": "3/12"
+          },
+          {
+            "name": "4/12",
+            "value": "4/12"
+          },
+          {
+            "name": "5/12",
+            "value": "5/12"
+          },
+          {
+            "name": "6/12",
+            "value": "6/12"
+          },
+          {
+            "name": "7/12",
+            "value": "7/12"
+          },
+          {
+            "name": "8/12",
+            "value": "8/12"
+          },
+          {
+            "name": "9/12",
+            "value": "9/12"
+          },
+          {
+            "name": "10/12",
+            "value": "10/12"
+          },
+          {
+            "name": "11/12",
+            "value": "11/12"
+          },
+          {
+            "name": "12/12",
+            "value": "12/12"
+          }
+        ],
+        "description": "Defaults to the desktop width"
+      },
+      "start_tablet": {
+        "type": "option",
+        "pos": 7,
+        "display_name": "Start column (tablet)",
+        "options": [
+          {
+            "name": "1/12",
+            "value": "1/12"
+          },
+          {
+            "name": "2/12",
+            "value": "2/12"
+          },
+          {
+            "name": "3/12",
+            "value": "3/12"
+          },
+          {
+            "name": "4/12",
+            "value": "4/12"
+          },
+          {
+            "name": "5/12",
+            "value": "5/12"
+          },
+          {
+            "name": "6/12",
+            "value": "6/12"
+          },
+          {
+            "name": "7/12",
+            "value": "7/12"
+          },
+          {
+            "name": "8/12",
+            "value": "8/12"
+          },
+          {
+            "name": "9/12",
+            "value": "9/12"
+          },
+          {
+            "name": "10/12",
+            "value": "10/12"
+          },
+          {
+            "name": "11/12",
+            "value": "11/12"
+          },
+          {
+            "name": "12/12",
+            "value": "12/12"
+          }
+        ],
+        "description": "Defaults to the desktop start"
+      },
+      "vertical": {
+        "type": "option",
+        "pos": 8,
+        "display_name": "Vertical alignment",
+        "options": [
+          {
+            "name": "Top",
+            "value": "start"
+          },
+          {
+            "name": "Center",
+            "value": "center"
+          },
+          {
+            "name": "Bottom",
+            "value": "end"
+          }
+        ],
+        "default_value": "start"
+      }
+    }
+  }
+]
