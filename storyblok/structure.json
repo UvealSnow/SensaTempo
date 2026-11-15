@@ -1,0 +1,104 @@
+{
+  "languages": [
+    {
+      "code": "en",
+      "name": "English"
+    }
+  ],
+  "folders": [
+    {
+      "slug": "layout",
+      "name": "Layout",
+      "content_types": ["Navbar", "Footer", "NotFound", "SeoDefaults"],
+      "default_root": "Navbar"
+    },
+    {
+      "slug": "blog",
+      "name": "Blog",
+      "content_types": ["blog_index"],
+      "default_root": "blog_index"
+    },
+    {
+      "slug": "blog/post",
+      "name": "Posts",
+      "content_types": ["post"],
+      "default_root": "post"
+    },
+    {
+      "slug": "blog/author",
+      "name": "Authors",
+      "content_types": ["author"],
+      "default_root": "author"
+    },
+    {
+      "slug": "blog/tag",
+      "name": "Tags",
+      "content_types": ["tag"],
+      "default_root": "tag"
+    },
+    {
+      "slug": "projects",
+      "name": "Projects",
+      "default_root": "project"
+    }
+  ],
+  "stories": [
+    {
+      "slug": "layout/navbar",
+      "name": "Navbar",
+      "component": "Navbar"
+    },
+    {
+      "slug": "layout/footer",
+      "name": "Footer",
+      "component": "Footer"
+    },
+    {
+      "slug": "layout/seo",
+      "name": "SEO",
+      "component": "SeoDefaults"
+    },
+    {
+      "slug": "layout/not-found",
+      "name": "Not found",
+      "component": "NotFound"
+    },
+    {
+      "slug": "blog",
+      "name": "Blog",
+      "component": "blog_index",
+      "startpage": true
+    },
+    {
+      "slug": "projects",
+      "name": "Projects",
+      "component": "projects_index",
+      "startpage": true
+    },
+    {
+      "slug": "home",
+      "name": "Home",
+      "component": "page"
+    },
+    {
+      "slug": "about",
+      "name": "About",
+      "component": "page"
+    },
+    {
+      "slug": "contact",
+      "name": "Contact",
+      "component": "page",
+      "content": {
+        "body": [
+          {
+            "component": "text"
+          },
+          {
+            "component": "contact_form"
+          }
+        ]
+      }
+    }
+  ]
+}

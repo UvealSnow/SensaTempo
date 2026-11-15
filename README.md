@@ -86,6 +86,7 @@ One codebase, several sites: each deploy picks a theme with `PUBLIC_THEME` (defa
 - **Layout hooks** (plain CSS, no markup changes): `body.site` > `.site-header`, `.site-main`, `.site-footer`. Header parts: `.site-header__bar`, `.site-brand` (`__logo`, `__placeholder`, `__name`), `.site-tagline`, `.site-menu-button` (`__open` / `__close`, shown from `aria-expanded`), `.site-nav`, `.site-nav__link` (`[aria-current=page]`, `.site-nav__language`). The open mobile menu is `.site-header:has([aria-expanded='true']) .site-nav`.
 - **Header content** comes from `layout/navbar`: `logo`, optional `title` (site name) and `tagline`. Empty fields render nothing.
 - **Contrast:** `src/themes/themes.test.ts` checks every theme's role colors (6-digit hex) against WCAG AA (`pnpm test`).
+- **Favicon:** `src/themes/<name>/favicon.svg`, served at `/favicon.svg` (`src/pages/favicon.svg.ts`).
 - **Adding a theme:** copy a theme folder, change the values, run `pnpm test`, build with `PUBLIC_THEME=<name>`. An unknown theme fails the build.
 
 ## ♿ Accessibility
@@ -106,18 +107,22 @@ Target: **WCAG 2.2 AA** (audit and plan in the vault, `Plans/Accessibility/`).
 
 ## 🧞 Commands
 
-| Command             | Action                               |
-| :------------------ | :----------------------------------- |
-| `pnpm install`      | Install dependencies with pnpm 12    |
-| `pnpm dev`          | Start dev server at `localhost:4321` |
-| `pnpm build`        | Build production site to `./dist/`   |
-| `pnpm preview`      | Preview built site locally           |
-| `pnpm format`       | Format files with Prettier           |
-| `pnpm format:check` | Check format compliance              |
-| `pnpm lint`         | Lint with ESLint                     |
-| `pnpm lint:fix`     | Fix auto-fixable lint issues         |
-| `pnpm test`         | Run unit tests (`node --test`)       |
-| `pnpm check:links`  | Find broken internal links in `dist` |
+| Command                 | Action                                                               |
+| :---------------------- | :------------------------------------------------------------------- |
+| `pnpm install`          | Install dependencies with pnpm 12                                    |
+| `pnpm dev`              | Start dev server at `localhost:4321`                                 |
+| `pnpm build`            | Build production site to `./dist/`                                   |
+| `pnpm preview`          | Preview built site locally                                           |
+| `pnpm format`           | Format files with Prettier                                           |
+| `pnpm format:check`     | Check format compliance                                              |
+| `pnpm lint`             | Lint with ESLint                                                     |
+| `pnpm lint:fix`         | Fix auto-fixable lint issues                                         |
+| `pnpm test`             | Run unit tests (`node --test`)                                       |
+| `pnpm check:links`      | Find broken internal links in `dist`                                 |
+| `pnpm storyblok:export` | Save a space's block definitions to `storyblok/components.json`      |
+| `pnpm storyblok:push`   | Dry run of syncing a space with `storyblok/` (`-- --apply` to write) |
+
+**Storyblok spaces** (`scripts/storyblok-space.mjs`, env `STORYBLOK_MANAGEMENT_TOKEN` + `STORYBLOK_SPACE_ID`): every site's space has the same blocks. `storyblok/components.json` holds the block definitions (exported, never hand-edited) and `storyblok/structure.json` the languages, folders (allowed content types) and starter stories. After changing blocks in one space, run `storyblok:export`, commit, then `storyblok:push` on the other spaces. Push creates or updates languages, component groups, components and folders, and creates missing starter stories as drafts; it never edits or publishes existing stories.
 
 **Dependency release age:** pnpm 12 rejects package versions published less than 24 h ago (`minimumReleaseAge`). After a dependency release, wait a day before upgrading; for an urgent fix, temporarily add the package to `minimumReleaseAgeExclude` in `pnpm-workspace.yaml` and remove it afterwards. Build scripts only run for packages listed as `true` under `allowBuilds` there.
 
@@ -138,7 +143,7 @@ Everything runs on **AWS (us-east-1)** and is pay-per-use: nothing bills while t
 
 **Deploying any branch:** Actions → _Deploy branch_ → _Run workflow_. Keep "Use workflow from" on `main` (the AWS role only trusts `main`), enter the branch, tag or SHA in **ref** and pick **target** (`preview`, `production` or `both`). The deploy stays until the next one; any push to `main` redeploys `main`. Production publishes what it's serving at `/version.json`; to roll back, run it again with `ref=main`.
 
-**Publishing content rebuilds production:** a Storyblok webhook (story published, unpublished, deleted or moved; datasource entries saved or deleted) calls the `sensatempo-storyblok-webhook` Lambda (`terraform/webhook/index.mjs`). It requires the webhook secret, either as the `webhook-signature` header (HMAC-SHA1 of the body; paid Storyblok plans) or as `?key=<secret>` in the URL (the free plan has no secret field), and sends a `storyblok-publish` `repository_dispatch` to GitHub, which runs `prod-deploy.yaml` on `main` (~1–2 min). Bursts queue into at most one extra build. After the build, `pnpm check:links` reports broken internal links as warnings (it doesn't block the deploy). This replaces any branch deployed to production. `/version.json` shows the `trigger` (`push`, `dispatch` or `storyblok:<action> <full_slug>`). Storyblok setup: Settings → Webhooks, URL = Terraform output `storyblok_webhook_url` + `?key=<secret>` (secret = `/sensatempo/storyblok/webhook-secret`); on a paid plan put the secret in the secret field instead.
+**Publishing content rebuilds production:** a Storyblok webhook (story published, unpublished, deleted or moved; datasource entries saved or deleted) calls that site's `<site>-storyblok-webhook` Lambda (`terraform/webhook/index.mjs`). It requires the webhook secret, either as the `webhook-signature` header (HMAC-SHA1 of the body; paid Storyblok plans) or as `?key=<secret>` in the URL (the free plan has no secret field), and sends a `storyblok-publish` `repository_dispatch` (with its `site`) to GitHub, which runs `prod-deploy.yaml` on `main` for that site only (~1–2 min). Bursts queue into at most one extra build. After the build, `pnpm check:links` reports broken internal links as warnings (it doesn't block the deploy). This replaces any branch deployed to production. `/version.json` shows the `trigger` (`push`, `dispatch` or `storyblok:<action> <full_slug>`). Storyblok setup: Settings → Webhooks, URL = Terraform output `storyblok_webhook_url` + `?key=<secret>` (secret = `/<site>/storyblok/webhook-secret`); on a paid plan put the secret in the secret field instead.
 
 ---
 
@@ -155,20 +160,21 @@ Everything runs on **AWS (us-east-1)** and is pay-per-use: nothing bills while t
   - `PUBLIC_SITE_URL` (optional; this deploy's origin for canonical URLs, `og:url`, hreflang and the sitemap; default `https://sensatempo.com`)
   - `PUBLIC_ALLOW_INDEXING` (optional; `true` lets search engines index the deploy, never the preview; default noindex)
   - `PUBLIC_THEME` (optional; folder in `src/themes/`; default `sensatempo`)
+  - `PUBLIC_SITE_NAME`, `PUBLIC_SITE_DESCRIPTION` (optional; fallbacks where Storyblok `layout/seo` isn't read: navbar labels, home `<h1>`, 404; default `SensaTempo` and empty)
   - `PUBLIC_TURNSTILE_SITE_KEY` (optional; empty uses Cloudflare's always-pass test key, which the real secret rejects)
 
 ---
 
 ### 🚀 Makefile targets
 
-| Target                  | Action                                                                                             |
-| :---------------------- | :------------------------------------------------------------------------------------------------- |
-| `make run-preview`      | Build the SSR preview and run it locally on **http://localhost:8080** (what the Lambda runs).      |
-| `make package-preview`  | Build the SSR preview and zip it for Lambda (`preview-lambda.zip`, linux-arm64 runtime deps only). |
-| `make deploy-preview`   | Package and upload the preview to the `sensatempo-preview-ssr` Lambda from your machine.           |
-| `make build-prod`       | Build the static production site in Docker (`.env` mounted as a build secret).                     |
-| `make run-prod-preview` | Build the static site and serve it with **Nginx** on **http://localhost:8080**.                    |
-| `make clean`            | Remove the local Docker image and preview zip.                                                     |
+| Target                  | Action                                                                                                     |
+| :---------------------- | :--------------------------------------------------------------------------------------------------------- |
+| `make run-preview`      | Build the SSR preview and run it locally on **http://localhost:8080** (what the Lambda runs).              |
+| `make package-preview`  | Build the SSR preview and zip it for Lambda (`preview-lambda.zip`, linux-arm64 runtime deps only).         |
+| `make deploy-preview`   | Package and upload the preview to the `$(SITE)-preview-ssr` Lambda (`SITE=kevinavila` for the other site). |
+| `make build-prod`       | Build the static production site in Docker (`.env` mounted as a build secret).                             |
+| `make run-prod-preview` | Build the static site and serve it with **Nginx** on **http://localhost:8080**.                            |
+| `make clean`            | Remove the local Docker image and preview zip.                                                             |
 
 ---
 
@@ -201,7 +207,23 @@ After rotating the preview token, the basic auth values or the webhook parameter
 
 **Storyblok Visual Editor:** the preview loads the Storyblok bridge (static builds don't). The editor iframe can't answer the basic auth prompt, so `src/middleware.ts` also lets in requests carrying a valid `_storyblok_tk` (sha1 of `space_id:preview_token:timestamp`, at most 1 hour old) and swaps it for a signed 8-hour session cookie (`SameSite=None; Partitioned`), so links clicked inside the editor keep working. In Storyblok, set the preview URL to `<preview_url>/es/` (the CloudFront one: Function URLs reject the editor's `_storyblok_tk[...]` query keys, so a CloudFront Function percent-encodes them) and the `home` story's real path to `/`.
 
-**GitHub repository variables** (not secret): `AWS_DEPLOY_ROLE_ARN`, `AWS_PROD_BUCKET`, `AWS_CF_DIST_ID` (from the Terraform outputs), `PUBLIC_DEFAULT_LANGUAGE`, `PUBLIC_AVAILABLE_LANGUAGES`, `PUBLIC_CF_ANALYTICS_TOKEN`, `PUBLIC_TURNSTILE_SITE_KEY` (Turnstile site key, prod and preview builds), `PUBLIC_THEME` (both builds; default `sensatempo`), `PUBLIC_SITE_URL` + `PUBLIC_ALLOW_INDEXING` (production build) and `PREVIEW_SITE_URL` (preview build's `PUBLIC_SITE_URL`). These make each deploy self-describing: pointing a deploy at another domain (or another Storyblok space) needs no code change.
+**Sites in CI:** `prod-deploy.yaml` and `preview-deploy.yaml` run one job per site (`SITES` in both files), each in the **GitHub Environment** of the same name. A push to `main` deploys every site, a Storyblok publish only its own site, and _Deploy branch_ the chosen one. Names derive from the site: role `<site>-github-deploy` (it trusts only that environment, or `main`), bucket `<site>-prod-assets`, Lambda `<site>-preview-ssr`, SSM `/<site>/…`. Repository-level variables are inherited by every environment, so a job only deploys when its environment sets `SITE` to its own name (otherwise it's skipped with a warning).
+
+Set up each environment (Settings → Environments), with **Deployment branches: `main` only**:
+
+| Variable                                      | `sensatempo`                           | `kevinavila`                                                                                          |
+| :-------------------------------------------- | :------------------------------------- | :---------------------------------------------------------------------------------------------------- |
+| `SITE`                                        | `sensatempo`                           | `kevinavila`                                                                                          |
+| `AWS_REGION`                                  | (default `us-east-1`)                  | `eu-central-1`                                                                                        |
+| `AWS_CF_DIST_ID`                              | Terraform `cloudfront_distribution_id` | `kevinavila.cloudfront_distribution_id`                                                               |
+| `PUBLIC_THEME`                                | (default)                              | `kevin`                                                                                               |
+| `PUBLIC_SITE_NAME`, `PUBLIC_SITE_DESCRIPTION` | optional                               | `Kevin Avila`, optional                                                                               |
+| `PUBLIC_SITE_URL`, `PREVIEW_SITE_URL`         | CloudFront URLs                        | `https://kevinavila.pro`, `https://preview.kevinavila.pro` (CloudFront URLs until the domain is live) |
+| `PUBLIC_ALLOW_INDEXING`                       | `false` until a real domain            | `false` until launch                                                                                  |
+| `PUBLIC_TURNSTILE_SITE_KEY`                   | its widget                             | its widget (hostname `kevinavila.pro`)                                                                |
+| `PUBLIC_CF_ANALYTICS_TOKEN`                   | its token                              | its own token, or leave unset at both levels                                                          |
+
+**Repository-level variables** (shared by all sites; not secret): `PUBLIC_DEFAULT_LANGUAGE`, `PUBLIC_AVAILABLE_LANGUAGES`. Keep site-specific values out of the repository level, since every environment would inherit them. These make each deploy self-describing: pointing a deploy at another domain (or another Storyblok space) needs no code change.
 
 **PR checks** (`pr-checks.yaml`, every pull request): format, lint and tests, then one static build per folder in `src/themes/`, each followed by `tsc` (it needs the types the build generates) and a non-blocking link check. Builds read published content with the `STORYBLOK_PUBLIC_TOKEN` repository secret; PRs from forks don't get secrets, so they skip the builds. Set or rotate the secret from SSM without printing it:
 
@@ -218,6 +240,21 @@ aws ssm get-parameter --name /sensatempo/storyblok/public-token --with-decryptio
 ### ☁️ Terraform (AWS)
 
 Infrastructure lives under **`terraform/`**. State is stored remotely in the `sensatempo-tfstate-221135164152` S3 bucket (versioned, S3-native locking). That bucket was created once by hand, as were the SSM parameters above.
+
+**One module per site:** `terraform/modules/site` holds everything one site needs (the resources below), prefixed with the module's `name` (`sensatempo-…`) and reading its secrets from SSM `/<name>/…`. `terraform/main.tf` holds the account-wide pieces (GitHub OIDC provider, S3 Origin Access Control, the alerts SNS topic and the budget) and one `module` block per site; one `pnpm tf:apply` covers every site. `moved.tf` maps the pre-module addresses for existing states.
+
+**Custom domain** (module `domain` + `zone_id`): an ACM certificate for `<domain>`, `www.` and `preview.`, validated through the Route 53 zone. `attach_domain = true` (only once the zone's nameservers are live) puts prod on `<domain>` + `www.` (redirected to the bare domain by the rewrite function) and the preview on `preview.<domain>`. `ses_domain = true` verifies the domain in SES (DKIM + `mail.<domain>` MAIL FROM records) and the contact form sends from `noreply@<domain>`.
+
+**Regions:** a site runs in its module's default provider region: SensaTempo in `us-east-1`, kevinavila in Frankfurt (`eu-central-1`, provider `aws.frankfurt`). That covers its bucket, Lambdas, SES, SSM parameters and alarms (each region has its own `sensatempo-alerts` topic). CloudFront, IAM and Route 53 are global, and CloudFront's certificates always live in `us-east-1` (the module's `aws.us_east_1` provider). The Terraform state stays in `us-east-1`.
+
+**kevinavila.pro** (`terraform/kevinavila.tf`, theme `kevin`, Frankfurt): the Route 53 zone with the Zoho mail records (MX, SPF), DMARC (`p=none`) and optional Zoho DKIM (`kevinavila_zoho_dkim`), plus `module "kevinavila"`. Before the first apply, create its SSM parameters **in `eu-central-1`** (same meaning as SensaTempo's):
+
+- `/kevinavila/storyblok/public-token`, `/kevinavila/storyblok/preview-token`, `/kevinavila/storyblok/webhook-secret` (SecureString)
+- `/kevinavila/preview/basic-auth-user`, `/kevinavila/preview/basic-auth-password` (SecureString)
+- `/kevinavila/github/dispatch-token` (SecureString; the same fine-grained PAT as SensaTempo's works)
+- `/kevinavila/contact/recipient` (String, e.g. `hola@kevinavila.pro`), `/kevinavila/contact/turnstile-secret` (SecureString)
+
+Going live: `pnpm tf:apply` → set GoDaddy's nameservers to the `kevinavila_name_servers` output (DNSSEC off first) → once they resolve, apply with `kevinavila_domain_live = true` (e.g. `terraform.tfvars`, git-ignored). The certificate and SES records validate on their own as soon as the zone is live.
 
 | Area           | Resources                                                                                                                                                                                                                          |
 | :------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

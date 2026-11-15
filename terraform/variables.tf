@@ -10,12 +10,17 @@ variable "lambda_web_adapter_layer_version" {
   description = "Version of the public LambdaAdapterLayerArm64 layer (30 = Lambda Web Adapter 1.1.0)."
 }
 
-variable "contact_allowed_origins" {
-  type = list(string)
-  default = [
-    "https://d1fr6xerqueq2v.cloudfront.net",
-    "https://d22dvpdtgdplg6.cloudfront.net",
-    "https://sensatempo.com",
-  ]
-  description = "Sites whose pages may post to the contact form (the Origin header). Literal domains: the distributions route /api/contact to the Lambda, so referencing them here would be a cycle."
+variable "kevinavila_domain_live" {
+  type        = bool
+  default     = false
+  description = "Set to true once kevinavila.pro's nameservers point at the Route 53 zone: puts the domain on CloudFront (waits for the certificate)."
+}
+
+variable "kevinavila_zoho_dkim" {
+  type = object({
+    selector = string
+    value    = string
+  })
+  default     = null
+  description = "Zoho's DKIM TXT record for kevinavila.pro (a public key); null until generated in Zoho."
 }

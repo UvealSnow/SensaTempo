@@ -1,9 +1,12 @@
-// Runs the sensatempo-rewrite-index CloudFront Function from main.tf's heredoc in Node.
+// Runs the sensatempo-rewrite-index CloudFront Function from modules/site/main.tf's heredoc in Node.
 import { strict as assert } from 'node:assert';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 
-const mainTf = readFileSync(new URL('./main.tf', import.meta.url), 'utf8');
+const mainTf = readFileSync(
+  new URL('./modules/site/main.tf', import.meta.url),
+  'utf8'
+);
 const heredoc = mainTf.match(
   /resource "aws_cloudfront_function" "rewrite_index"[\s\S]*?<<-EOT\n([\s\S]*?)\n\s*EOT/
 )?.[1];
@@ -53,4 +56,28 @@ test('other paths are rewritten to index.html, never redirected', () => {
   assert.equal(viewerRequest('/es/', 'en').uri, '/es/index.html');
   assert.equal(viewerRequest('/en/about', 'es').uri, '/en/about/index.html');
   assert.equal(viewerRequest('/_astro/app.css').uri, '/_astro/app.css');
+});
+
+test('www. hosts redirect permanently to the bare domain, keeping the path', () => {
+  const response = handler({
+    request: {
+      uri: '/es/blog/',
+      headers: { host: { value: 'www.kevinavila.pro' } },
+    },
+  });
+  assert.equal(response.statusCode, 301);
+  assert.equal(
+    response.headers.location.value,
+    'https://kevinavila.pro/es/blog/'
+  );
+});
+
+test('other hosts are served as usual', () => {
+  const request = handler({
+    request: {
+      uri: '/es/blog/',
+      headers: { host: { value: 'kevinavila.pro' } },
+    },
+  });
+  assert.equal(request.uri, '/es/blog/index.html');
 });

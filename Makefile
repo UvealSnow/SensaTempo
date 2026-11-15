@@ -1,7 +1,8 @@
 # Variables
 IMAGE_NAME := sensatempo-prod
 DOCKERFILE := ./docker/Dockerfile
-PREVIEW_LAMBDA_NAME ?= sensatempo-preview-ssr
+SITE ?= sensatempo
+PREVIEW_LAMBDA_NAME ?= $(SITE)-preview-ssr
 PREVIEW_ZIP := preview-lambda.zip
 
 # Load PUBLIC variables from .env for build-args

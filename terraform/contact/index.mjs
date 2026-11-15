@@ -58,13 +58,13 @@ async function verifyTurnstile(token, secret) {
 }
 
 let sesClient;
-async function sendWithSes({ from, to, replyTo, subject, text }) {
+async function sendWithSes({ from, fromName, to, replyTo, subject, text }) {
   const { SESv2Client, SendEmailCommand } =
     await import('@aws-sdk/client-sesv2');
   sesClient ??= new SESv2Client({});
   await sesClient.send(
     new SendEmailCommand({
-      FromEmailAddress: `SensaTempo <${from}>`,
+      FromEmailAddress: `${fromName} <${from}>`,
       Destination: { ToAddresses: [to] },
       ReplyToAddresses: [replyTo],
       Content: {
@@ -124,7 +124,7 @@ export function createHandler({
       return reply(502, { error: 'captcha' });
     }
     if (!check?.success || check.hostname !== new URL(origin).hostname) {
-      // Counted by the "captcha" CloudWatch metric filter (terraform/main.tf)
+      // Counted by the "captcha" CloudWatch metric filter (terraform/modules/site/main.tf)
       console.log('captcha failed', (check?.['error-codes'] ?? []).join(','));
       return reply(422, { error: 'captcha' });
     }
@@ -135,14 +135,16 @@ export function createHandler({
     });
     try {
       await send({
-        from: env.CONTACT_RECIPIENT,
+        // A verified domain identity can send from another address (noreply@…); else the recipient
+        from: env.CONTACT_SENDER || env.CONTACT_RECIPIENT,
+        fromName: env.SENDER_NAME || 'SensaTempo',
         to: env.CONTACT_RECIPIENT,
         replyTo: fields.email,
         subject,
         text,
       });
     } catch (error) {
-      // Counted by the "send failed" CloudWatch metric filter (terraform/main.tf)
+      // Counted by the "send failed" CloudWatch metric filter (terraform/modules/site/main.tf)
       console.error('send failed', error.name);
       return reply(502, { error: 'send' });
     }

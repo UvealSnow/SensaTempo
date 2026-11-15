@@ -190,3 +190,15 @@ test('a GitHub error or network failure is a 502', async () => {
     502
   );
 });
+
+test('SITE is added to the payload so only that site rebuilds', async () => {
+  process.env.SITE = 'kevinavila';
+  try {
+    const response = await handler(functionUrlEvent({ body: published }));
+    assert.equal(response.statusCode, 202);
+    const body = JSON.parse(fetchMock.mock.calls.at(-1).arguments[1].body);
+    assert.equal(body.client_payload.site, 'kevinavila');
+  } finally {
+    delete process.env.SITE;
+  }
+});

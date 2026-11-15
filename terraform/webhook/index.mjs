@@ -77,7 +77,7 @@ export const handler = async (event) => {
     !validSignature(rawBody, event.headers?.['webhook-signature'], secret) &&
     !validKey(event.queryStringParameters?.key, secret)
   ) {
-    // Counted by the "unauthorized" CloudWatch metric filter (terraform/main.tf)
+    // Counted by the "unauthorized" CloudWatch metric filter (terraform/modules/site/main.tf)
     console.log('unauthorized');
     return reply(401, { error: 'invalid signature or key' });
   }
@@ -89,11 +89,14 @@ export const handler = async (event) => {
     return reply(400, { error: 'invalid JSON' });
   }
 
-  const clientPayload = describe(payload ?? {});
-  if (!clientPayload) {
+  const described = describe(payload ?? {});
+  if (!described) {
     console.log('ignored', text(payload?.action));
     return { statusCode: 204 };
   }
+  // Which site's space this is (one relay per site), so only that site rebuilds
+  const site = text(process.env.SITE);
+  const clientPayload = site ? { ...described, site } : described;
 
   let response;
   try {

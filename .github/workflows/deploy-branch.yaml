@@ -1,7 +1,7 @@
 name: Deploy branch
 
-# Manual deploy of any branch, tag or SHA. Keep "Use workflow from" on main: the AWS role only
-# trusts main, and the OIDC subject comes from this (calling) workflow's ref.
+# Manual deploy of any branch, tag or SHA. Keep "Use workflow from" on main: each site's
+# environment only allows main, which is checked against this (calling) workflow's ref.
 on:
   workflow_dispatch:
     inputs:
@@ -14,6 +14,11 @@ on:
         type: choice
         options: [preview, production, both]
         default: preview
+      site:
+        description: Which site
+        type: choice
+        options: [all, sensatempo, kevinavila]
+        default: all
 
 permissions:
   id-token: write # GitHub OIDC -> AWS role, no long-lived keys
@@ -25,9 +30,11 @@ jobs:
     uses: ./.github/workflows/preview-deploy.yaml
     with:
       ref: ${{ inputs.ref }}
+      site: ${{ inputs.site }}
 
   production:
     if: inputs.target != 'preview'
     uses: ./.github/workflows/prod-deploy.yaml
     with:
       ref: ${{ inputs.ref }}
+      site: ${{ inputs.site }}

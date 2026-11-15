@@ -17,6 +17,8 @@
     "format:check": "prettier --check .",
     "test": "node --test",
     "check:links": "node scripts/check-links.mjs dist",
+    "storyblok:export": "node scripts/storyblok-space.mjs export",
+    "storyblok:push": "node scripts/storyblok-space.mjs push",
     "docker:prod:build": "make build-prod",
     "docker:prod:preview": "make run-prod-preview",
     "docker:cleanup": "make clean",
