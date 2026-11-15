@@ -1,5 +1,7 @@
 import { defineMiddleware } from 'astro:middleware';
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
+import { AVAILABLE_LANGUAGES, DEFAULT_LANGUAGE } from '~/consts';
+import { editorTranslationPath } from '~/utils/navigation';
 
 // Hash first so both buffers have equal length, as timingSafeEqual requires
 const safeEqual = (a: string, b: string): boolean =>
@@ -70,6 +72,16 @@ function isValidEditorSession(
 }
 
 export const onRequest = defineMiddleware(async (context, next) => {
+  // Before auth: the redirect keeps the query, so the editor token still works on the real path
+  const translationPath = editorTranslationPath(
+    context.url.pathname,
+    DEFAULT_LANGUAGE,
+    AVAILABLE_LANGUAGES
+  );
+  if (translationPath) {
+    return context.redirect(`${translationPath}${context.url.search}`, 302);
+  }
+
   const expectedUser = process.env.PREVIEW_BASIC_AUTH_USER?.trim();
   const expectedPass = process.env.PREVIEW_BASIC_AUTH_PASSWORD?.trim();
   const previewToken = process.env.STORYBLOK_PREVIEW_TOKEN?.trim();
