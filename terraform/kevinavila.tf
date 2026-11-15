@@ -1,6 +1,6 @@
 # --- kevinavila.pro: Kevin's blog (theme "kevin") ---
 # The domain stays registered at GoDaddy; its DNS moves to this zone (README "kevinavila.pro DNS").
-# Mail stays on Zoho: the records below copy the GoDaddy zone (export of 2026-11-10).
+# Mail stays on Zoho: the records below copy the GoDaddy zone (exports of 2026-11-10 and 2026-11-15).
 
 resource "aws_route53_zone" "kevinavila" {
   name    = "kevinavila.pro"
@@ -21,6 +21,14 @@ resource "aws_route53_record" "kevinavila_spf" {
   type    = "TXT"
   ttl     = 3600
   records = ["v=spf1 include:zohomail.com ~all"]
+}
+
+resource "aws_route53_record" "kevinavila_opengym" {
+  zone_id = aws_route53_zone.kevinavila.zone_id
+  name    = "opengym.kevinavila.pro"
+  type    = "A"
+  ttl     = 600
+  records = ["130.61.47.169"]
 }
 
 # Report-only to start; tighten to quarantine once Zoho and SES both pass DKIM
