@@ -277,7 +277,7 @@ pnpm tf:apply
 - `sensatempo-webhook-failed`: any failed dispatch to GitHub (usually an expired dispatch token)
 - `sensatempo-contact-failed`: SES refused a contact message (recipient not verified, sandbox limit)
 - `sensatempo-contact-too-many`: > 20 contact messages in 1 hour
-- Budget `sensatempo-monthly`: forecast or actual account spend over $5/month
+- Budget `sensatempo-monthly`: forecast or actual spend over $5/month on resources tagged `project=sensatempo` (every resource here, via the providers' `default_tags`; the `project` cost-allocation tag is activated by Terraform)
 
 **Outputs:** `cloudfront_domain`, `cloudfront_distribution_id`, `prod_bucket`, `preview_url`, `preview_lambda_url`, `github_deploy_role_arn`, `storyblok_webhook_url`.
 
