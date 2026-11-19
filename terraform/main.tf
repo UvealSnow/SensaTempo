@@ -23,12 +23,21 @@ terraform {
 
 provider "aws" {
   region = "us-east-1"
+
+  # Lets the budget count only this repo's resources (other projects share the account)
+  default_tags {
+    tags = { project = "sensatempo" }
+  }
 }
 
 # Frankfurt, for sites that run there (their bucket, Lambdas, SES, SSM and alarms)
 provider "aws" {
   alias  = "frankfurt"
   region = "eu-central-1"
+
+  default_tags {
+    tags = { project = "sensatempo" }
+  }
 }
 
 # Everything here is pay-per-use: no always-on servers, load balancers or NAT gateways.
@@ -80,13 +89,25 @@ resource "aws_sns_topic_subscription" "alerts_email_frankfurt" {
   endpoint  = data.aws_ssm_parameter.alerts_email.value
 }
 
-# Account-wide (baseline ~$1.2/month, Route 53). Separate from the hand-made "Monthly budget" ($10).
+# Account-wide setting; "project" is also the key other projects in the account tag with
+resource "aws_ce_cost_allocation_tag" "project" {
+  tag_key = "project"
+  status  = "Active"
+}
+
+# Only resources tagged project=sensatempo (both sites; baseline ~$0.50/month, the Route 53 zone).
+# Tags count from activation on; domain registrations and tax can't be tagged.
 resource "aws_budgets_budget" "sensatempo" {
   name         = "sensatempo-monthly"
   budget_type  = "COST"
   limit_amount = "5"
   limit_unit   = "USD"
   time_unit    = "MONTHLY"
+
+  cost_filter {
+    name   = "TagKeyValue"
+    values = ["user:project$sensatempo"]
+  }
 
   notification {
     comparison_operator        = "GREATER_THAN"
